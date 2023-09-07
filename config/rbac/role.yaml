@@ -7,7 +7,7 @@ rules:
 - apiGroups:
   - clusterinventory.kyma-project.io
   resources:
-  - clusterinventories
+  - clusters
   verbs:
   - create
   - delete
@@ -19,13 +19,13 @@ rules:
 - apiGroups:
   - clusterinventory.kyma-project.io
   resources:
-  - clusterinventories/finalizers
+  - clusters/finalizers
   verbs:
   - update
 - apiGroups:
   - clusterinventory.kyma-project.io
   resources:
-  - clusterinventories/status
+  - clusters/status
   verbs:
   - get
   - patch
