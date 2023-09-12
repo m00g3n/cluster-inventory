@@ -4,6 +4,7 @@ on:
     branches:
       - master
       - main
+      - gh_actions_linter_test
   pull_request:
 
 permissions:
