@@ -11,13 +11,11 @@ metadata:
     kyma-project.io/shoot-name: shoot-name
     kyma-project.io/region: region
     operator.kyma-project.io/kyma-name: kymaName
-  name: cluster-sample
+  name: shoot-name
   namespace: default
 spec:
-  shoot:
-    name: "my-shoot"
   kubeconfig:
-    secretKeyRef:
+    secret:
       name: "kubeconfig-secret-name"
       namespace: "kubeconfig-secret-namespace"
       key: "config"

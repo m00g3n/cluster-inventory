@@ -20,8 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type State string
-
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
@@ -30,7 +28,7 @@ type GardenerCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   GardenerClusterSpec   `json:"spec,omitempty"`
+	Spec   GardenerClusterSpec   `json:"spec"`
 	Status GardenerClusterStatus `json:"status,omitempty"`
 }
 
@@ -45,26 +43,29 @@ type GardenerClusterList struct {
 
 // GardenerClusterSpec defines the desired state of GardenerCluster
 type GardenerClusterSpec struct {
-	Shoot      Shoot      `json:"shoot,omitempty"`
-	Kubeconfig Kubeconfig `json:"kubeconfig,omitempty"`
-}
-
-// Shoot defines the desired state of the Gardener's shoot
-type Shoot struct {
-	Name string `json:"name,omitempty"`
+	Kubeconfig Kubeconfig `json:"kubeconfig"`
 }
 
 // Kubeconfig defines the desired kubeconfig location
 type Kubeconfig struct {
-	SecretKeyRef SecretKeyRef `json:"secretKeyRef,omitempty"`
+	Secret Secret `json:"secret"`
 }
 
 // SecretKeyRef defines the location, and structure of the secret containing kubeconfig
-type SecretKeyRef struct {
-	Name      string `json:"name,omitempty"`
-	Namespace string `json:"namespace,omitempty"`
-	Key       string `json:"key,omitempty"`
+type Secret struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+	Key       string `json:"key"`
 }
+
+type State string
+
+const (
+	ReadyState      State = "Ready"
+	ProcessingState State = "Processing"
+	ErrorState      State = "Error"
+	DeletingState   State = "Deleting"
+)
 
 // GardenerClusterStatus defines the observed state of GardenerCluster
 type GardenerClusterStatus struct {
