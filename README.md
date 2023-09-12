@@ -9,31 +9,83 @@
 > - `Code of Conduct` - do not change this!
 > - `Licensing` - do not change this!
 
-# {Project Title}
-<!--- mandatory --->
-> Modify the title and insert the name of your project. Use Heading 1 (H1).
+# Cluster Inventory
 
 ## Overview
 <!--- mandatory section --->
 
-> Provide a description of the project's functionality.
->
-> If it is an example README.md, describe what the example illustrates.
+This project **will be** responsible for managing [Kyma](https://kyma-project.io/#/) clusters infrastructure. Buil using [kubebuilder framework](https://github.com/kubernetes-sigs/kubebuilder)
+It's main responsibilities **will be**:
+- Provisioning and deprovisioning Kyma clusters
+- Generating dynamic kubeconfigs
+
 
 ## Prerequisites
 
-> List the requirements to run the project or example.
+- Access to a k8s cluster.
+- [k3d](https://k3d.io) to get a local cluster for testing, or run against a remote cluster.
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [kubebuilder](https://book.kubebuilder.io/)
 
 ## Installation
 
-> Explain the steps to install your project. Create an ordered list for each installation task.
->
-> If it is an example README.md, describe how to build, run locally, and deploy the example. Format the example as code blocks and specify the language, highlighting where possible. Explain how you can validate that the example ran successfully. For example, define the expected output or commands to run which check a successful deployment.
->
-> Add subsections (H3) for better readability.
+1. Clone the project.
+
+```bash
+git clone https://github.com/kyma-project/cluster-inventory.git && cd cluster-inventory/
+```
+
+2. Set the `cluster-inventory` image name.
+
+```bash
+export IMG=custom-cluster-inventory:0.0.1
+export K3D_CLUSTER_NAME=cluster-inventory-demo
+```
+
+3. Build the project.
+
+```bash
+make build
+```
+
+4. Build the image.
+
+```bash
+make docker-build
+```
+
+5. Push the image to the registry.
+
+<div tabs name="Push image" group="cluster-inventory-installation">
+  <details>
+  <summary label="k3d">
+  k3d
+  </summary>
+
+   ```bash
+   k3d image import $IMG -c $K3D_CLUSTER_NAME
+   ```
+  </details>
+  <details>
+  <summary label="Docker registry">
+  Globally available Docker registry
+  </summary>
+
+   ```bash
+   make docker-push
+   ```
+
+  </details>
+</div>
+
+6. Deploy.
+
+```bash
+make deploy
+```
 
 ## Usage
-
+TODO:
 > Explain how to use the project. You can create multiple subsections (H3). Include the instructions or provide links to the related documentation.
 
 ## Development

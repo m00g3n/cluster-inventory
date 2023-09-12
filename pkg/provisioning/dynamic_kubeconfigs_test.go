@@ -1,8 +1,9 @@
 package provisioning
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestDynamicKubeconfig(t *testing.T) {
