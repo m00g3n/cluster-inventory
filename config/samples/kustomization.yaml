@@ -1,4 +1,4 @@
 ## Append samples of your project ##
 resources:
-- clusterinventory_v1_cluster.yaml
+- clusterinventory_v1_gardenercluster.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

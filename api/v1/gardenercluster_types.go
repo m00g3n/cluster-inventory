@@ -20,23 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-// GardenerClusterSpec defines the desired state of GardenerCluster
-type GardenerClusterSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of GardenerCluster. Edit gardenercluster_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
-}
-
-// GardenerClusterStatus defines the observed state of GardenerCluster
-type GardenerClusterStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-}
+type State string
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
@@ -57,6 +41,42 @@ type GardenerClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []GardenerCluster `json:"items"`
+}
+
+// GardenerClusterSpec defines the desired state of GardenerCluster
+type GardenerClusterSpec struct {
+	Shoot      Shoot      `json:"shoot,omitempty"`
+	Kubeconfig Kubeconfig `json:"kubeconfig,omitempty"`
+}
+
+// Shoot defines the desired state of the Gardener's shoot
+type Shoot struct {
+	Name string `json:"name,omitempty"`
+}
+
+// Kubeconfig defines the desired kubeconfig location
+type Kubeconfig struct {
+	SecretKeyRef SecretKeyRef `json:"secretKeyRef,omitempty"`
+}
+
+// SecretKeyRef defines the location, and structure of the secret containing kubeconfig
+type SecretKeyRef struct {
+	Name      string `json:"name,omitempty"`
+	Namespace string `json:"namespace,omitempty"`
+	Key       string `json:"key,omitempty"`
+}
+
+// GardenerClusterStatus defines the observed state of GardenerCluster
+type GardenerClusterStatus struct {
+	// State signifies current state of Gardener Cluster.
+	// Value can be one of ("Ready", "Processing", "Error", "Deleting").
+	State State `json:"state,omitempty"`
+
+	// List of status conditions to indicate the status of a ServiceInstance.
+	// +optional
+	// +listType=map
+	// +listMapKey=type
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 func init() {

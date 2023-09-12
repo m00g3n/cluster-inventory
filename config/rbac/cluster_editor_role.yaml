@@ -14,7 +14,7 @@ rules:
 - apiGroups:
   - clusterinventory.kyma-project.io
   resources:
-  - clusters
+  - gardenerclusters
   verbs:
   - create
   - delete
@@ -26,6 +26,6 @@ rules:
 - apiGroups:
   - clusterinventory.kyma-project.io
   resources:
-  - clusters/status
+  - gardenerclusters/status
   verbs:
   - get
