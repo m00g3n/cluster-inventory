@@ -4,20 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.12.0
-  name: clusters.clusterinventory.kyma-project.io
+  name: gardenerclusters.clusterinventory.kyma-project.io
 spec:
   group: clusterinventory.kyma-project.io
   names:
-    kind: Cluster
-    listKind: ClusterList
-    plural: clusters
-    singular: cluster
+    kind: GardenerCluster
+    listKind: GardenerClusterList
+    plural: gardenerclusters
+    singular: gardenercluster
   scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Cluster is the Schema for the clusters API
+        description: Gardener Cluster is the Schema for the gardenerclusters API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -32,7 +32,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ClusterSpec defines the desired state of Cluster
+            description: GardenerClusterSpec defines the desired state of GardenerCluster
             properties:
               foo:
                 description: Foo is an example field of Cluster. Edit cluster_types.go
@@ -40,7 +40,7 @@ spec:
                 type: string
             type: object
           status:
-            description: ClusterStatus defines the observed state of Cluster
+            description: GardenerClusterStatus defines the observed state of Cluster
             type: object
         type: object
     served: true
