@@ -11,7 +11,7 @@ metadata:
     kyma-project.io/shoot-name: shoot-name
     kyma-project.io/region: region
     operator.kyma-project.io/kyma-name: kymaName
-  name: runtimeID
+  name: runtime-id
   namespace: kcp-system
 spec:
   shoot:
