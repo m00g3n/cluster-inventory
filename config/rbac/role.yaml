@@ -5,7 +5,7 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - clusterinventory.kyma-project.io
+  - infrastructuremanager.kyma-project.io
   resources:
   - clusters
   verbs:
@@ -17,13 +17,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - clusterinventory.kyma-project.io
+  - infrastructuremanager.kyma-project.io
   resources:
   - clusters/finalizers
   verbs:
   - update
 - apiGroups:
-  - clusterinventory.kyma-project.io
+  - infrastructuremanager.kyma-project.io
   resources:
   - clusters/status
   verbs:
