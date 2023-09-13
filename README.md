@@ -1,24 +1,13 @@
-[![REUSE status](https://api.reuse.software/badge/github.com/kyma-project/cluster-inventory)](https://api.reuse.software/info/github.com/kyma-project/cluster-inventory)
+[![REUSE status](https://api.reuse.software/badge/github.com/kyma-project/infrastructure-manager)](https://api.reuse.software/info/github.com/kyma-project/infrastructure-manager)
 
-> **NOTE:** This is a general template that can be used for a project README.md, example README.md, or any other README.md type in all Kyma repositories in the Kyma organization. Except for the mandatory sections, use only those sections that suit your use case but keep the proposed section order.
->
-> Mandatory sections: 
-> - `Overview`
-> - `Prerequisites`, if there are any requirements regarding hard- or software
-> - `Contributing` - do not change this!
-> - `Code of Conduct` - do not change this!
-> - `Licensing` - do not change this!
-
-# Cluster Inventory
+# Infrastructure manager
 
 ## Overview
-<!--- mandatory section --->
 
 This project **will be** responsible for managing [Kyma](https://kyma-project.io/#/) clusters infrastructure. Buil using [kubebuilder framework](https://github.com/kubernetes-sigs/kubebuilder)
 It's main responsibilities **will be**:
 - Provisioning and deprovisioning Kyma clusters
 - Generating dynamic kubeconfigs
-
 
 ## Prerequisites
 
@@ -32,14 +21,14 @@ It's main responsibilities **will be**:
 1. Clone the project.
 
 ```bash
-git clone https://github.com/kyma-project/cluster-inventory.git && cd cluster-inventory/
+git clone https://github.com/kyma-project/infrastructure-manager.git && cd infrastructure-manager/
 ```
 
-2. Set the `cluster-inventory` image name.
+2. Set the `infrastructure-manager` image name.
 
 ```bash
-export IMG=custom-cluster-inventory:0.0.1
-export K3D_CLUSTER_NAME=cluster-inventory-demo
+export IMG=custom-infrastructure-manager:0.0.1
+export K3D_CLUSTER_NAME=infrastructure-manager-demo
 ```
 
 3. Build the project.
@@ -56,7 +45,7 @@ make docker-build
 
 5. Push the image to the registry.
 
-<div tabs name="Push image" group="cluster-inventory-installation">
+<div tabs name="Push image" group="infrastructure-manager-installation">
   <details>
   <summary label="k3d">
   k3d

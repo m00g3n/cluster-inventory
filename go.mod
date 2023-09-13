@@ -1,4 +1,4 @@
-module github.com/kyma-project/cluster-inventory
+module github.com/kyma-project/infrastructure-manager
 
 go 1.20
 
