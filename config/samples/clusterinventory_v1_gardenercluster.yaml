@@ -11,11 +11,13 @@ metadata:
     kyma-project.io/shoot-name: shoot-name
     kyma-project.io/region: region
     operator.kyma-project.io/kyma-name: kymaName
-  name: shoot-name
-  namespace: default
+  name: runtimeID
+  namespace: kcp-system
 spec:
+  shoot:
+    name: shoot-name
   kubeconfig:
     secret:
       name: "kubeconfig-secret-name"
-      namespace: "kubeconfig-secret-namespace"
+      namespace: kcp-system
       key: "config"
