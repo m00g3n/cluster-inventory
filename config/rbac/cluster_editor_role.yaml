@@ -6,13 +6,13 @@ metadata:
     app.kubernetes.io/name: clusterrole
     app.kubernetes.io/instance: cluster-editor-role
     app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: cluster-inventory
-    app.kubernetes.io/part-of: cluster-inventory
+    app.kubernetes.io/created-by: infrastructure-manager
+    app.kubernetes.io/part-of: infrastructure-manager
     app.kubernetes.io/managed-by: kustomize
   name: cluster-editor-role
 rules:
 - apiGroups:
-  - clusterinventory.kyma-project.io
+  - infrastructuremanager.kyma-project.io
   resources:
   - clusters
   verbs:
@@ -24,7 +24,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - clusterinventory.kyma-project.io
+  - infrastructuremanager.kyma-project.io
   resources:
   - clusters/status
   verbs:

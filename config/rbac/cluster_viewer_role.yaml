@@ -6,13 +6,13 @@ metadata:
     app.kubernetes.io/name: clusterrole
     app.kubernetes.io/instance: cluster-viewer-role
     app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: cluster-inventory
-    app.kubernetes.io/part-of: cluster-inventory
+    app.kubernetes.io/created-by: infrastructure-manager
+    app.kubernetes.io/part-of: infrastructure-manager
     app.kubernetes.io/managed-by: kustomize
   name: cluster-viewer-role
 rules:
 - apiGroups:
-  - clusterinventory.kyma-project.io
+  - infrastructuremanager.kyma-project.io
   resources:
   - clusters
   verbs:
@@ -20,7 +20,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - clusterinventory.kyma-project.io
+  - infrastructuremanager.kyma-project.io
   resources:
   - clusters/status
   verbs:
