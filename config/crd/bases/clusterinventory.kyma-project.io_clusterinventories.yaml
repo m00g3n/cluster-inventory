@@ -4,20 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.12.0
-  name: clusterinventories.clusterinventory.kyma-project.io
+  name: clusterinventories.infrastructuremanager.kyma-project.io
 spec:
-  group: clusterinventory.kyma-project.io
+  group: infrastructuremanager.kyma-project.io
   names:
-    kind: ClusterInventory
-    listKind: ClusterInventoryList
+    kind: infrastructuremanager
+    listKind: infrastructuremanagerList
     plural: clusterinventories
-    singular: clusterinventory
+    singular: infrastructuremanager
   scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: ClusterInventory is the Schema for the clusterinventories API
+        description: infrastructuremanager is the Schema for the clusterinventories API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -32,15 +32,15 @@ spec:
           metadata:
             type: object
           spec:
-            description: ClusterInventorySpec defines the desired state of ClusterInventory
+            description: infrastructuremanagerSpec defines the desired state of infrastructuremanager
             properties:
               foo:
-                description: Foo is an example field of ClusterInventory. Edit clusterinventory_types.go
+                description: Foo is an example field of infrastructuremanager. Edit infrastructuremanager_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: ClusterInventoryStatus defines the observed state of ClusterInventory
+            description: infrastructuremanagerStatus defines the observed state of infrastructuremanager
             type: object
         type: object
     served: true

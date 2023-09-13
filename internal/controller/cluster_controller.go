@@ -19,7 +19,7 @@ package controller
 import (
 	"context"
 
-	clusterinventoryv1 "github.com/kyma-project/cluster-inventory/api/v1"
+	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,9 +32,9 @@ type ClusterReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=clusterinventory.kyma-project.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=clusterinventory.kyma-project.io,resources=clusters/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=clusterinventory.kyma-project.io,resources=clusters/finalizers,verbs=update
+//+kubebuilder:rbac:groups=infrastructuremanager.kyma-project.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=infrastructuremanager.kyma-project.io,resources=clusters/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=infrastructuremanager.kyma-project.io,resources=clusters/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -56,6 +56,6 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 // SetupWithManager sets up the controller with the Manager.
 func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&clusterinventoryv1.Cluster{}).
+		For(&infrastructuremanagerv1.Cluster{}).
 		Complete(r)
 }

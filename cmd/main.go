@@ -20,8 +20,8 @@ import (
 	"flag"
 	"os"
 
-	clusterinventoryv1 "github.com/kyma-project/cluster-inventory/api/v1"
-	"github.com/kyma-project/cluster-inventory/internal/controller"
+	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/controller"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -41,7 +41,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(clusterinventoryv1.AddToScheme(scheme))
+	utilruntime.Must(infrastructuremanagerv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

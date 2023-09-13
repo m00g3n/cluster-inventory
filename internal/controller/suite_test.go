@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	clusterinventoryv1 "github.com/kyma-project/cluster-inventory/api/v1"
+	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -59,7 +59,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = clusterinventoryv1.AddToScheme(scheme.Scheme)
+	err = infrastructuremanagerv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
