@@ -18,6 +18,6 @@ spec:
     name: shoot-name
   kubeconfig:
     secret:
-      name: "kubeconfig-secret-name"
+      name: kubeconfig-runtime-id
       namespace: kcp-system
       key: "config"
