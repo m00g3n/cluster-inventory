@@ -1,0 +1,23 @@
+apiVersion: clusterinventory.kyma-project.io/v1
+kind: GardenerCluster
+metadata:
+  labels:
+    kyma-project.io/instance-id: instance-id
+    kyma-project.io/runtime-id: runtime-id
+    kyma-project.io/broker-plan-id: plan-id
+    kyma-project.io/broker-plan-name: plan-name
+    kyma-project.io/global-account-id: global-account-id
+    kyma-project.io/subaccount-id: subAccount-id
+    kyma-project.io/shoot-name: shoot-name
+    kyma-project.io/region: region
+    operator.kyma-project.io/kyma-name: kymaName
+  name: runtime-id
+  namespace: kcp-system
+spec:
+  shoot:
+    name: shoot-name
+  kubeconfig:
+    secret:
+      name: kubeconfig-runtime-id
+      namespace: kcp-system
+      key: "config"

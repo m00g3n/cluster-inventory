@@ -1,4 +1,4 @@
 ## Append samples of your project ##
 resources:
-- infrastructuremanager_v1_cluster.yaml
+- infrastructuremanager_v1_gardenercluster.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

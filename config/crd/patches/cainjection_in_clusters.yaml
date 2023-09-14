@@ -4,4 +4,4 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: CERTIFICATE_NAMESPACE/CERTIFICATE_NAME
-  name: clusters.infrastructuremanager.kyma-project.io
+  name: gardenerclusters.infrastructuremanager.kyma-project.io

@@ -10,7 +10,7 @@ repo: github.com/kyma-project/infrastructure-manager
 resources:
 - api:
     crdVersion: v1
-    namespaced: true
+    namespaced: false
   controller: true
   domain: kyma-project.io
   group: infrastructuremanager
