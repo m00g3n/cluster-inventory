@@ -17,18 +17,19 @@ limitations under the License.
 package controller
 
 import (
-	"path/filepath"
-	"testing"
-
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/mocks"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"path/filepath"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"testing"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -45,7 +46,8 @@ func TestControllers(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+	logger := zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true))
+	logf.SetLogger(logger)
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
@@ -59,7 +61,20 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
+	kubeconfigProviderMock := &mocks.KubeconfigProvider{}
+	setupKubeconfigProviderMock(kubeconfigProviderMock)
+
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme.Scheme})
+	Expect(err).ToNot(HaveOccurred())
+
+	controller := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger)
+	Expect(controller).NotTo(BeNil())
+
 	err = infrastructuremanagerv1.AddToScheme(scheme.Scheme)
+
+	err = controller.SetupWithManager(mgr)
+	Expect(err).To(BeNil())
+
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
@@ -69,6 +84,12 @@ var _ = BeforeSuite(func() {
 	Expect(k8sClient).NotTo(BeNil())
 
 })
+
+func setupKubeconfigProviderMock(kpMock *mocks.KubeconfigProvider) {
+	kpMock.On("Fetch", "shootName1").Return("kubeconfig1", nil)
+	kpMock.On("Fetch", "shootName2").Return("kubeconfig2", nil)
+	kpMock.On("Fetch", "shootName3").Return("kubeconfig3", nil)
+}
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")

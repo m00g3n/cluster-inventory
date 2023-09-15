@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"os"
 
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -60,7 +61,9 @@ func main() {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	logger := zap.New(zap.UseFlagOptions(&opts))
+
+	ctrl.SetLogger(logger)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
@@ -86,10 +89,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.GardenerClusterReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	provider := gardener.KubeconfigProvider{}
+
+	if err = (controller.NewGardenerClusterController(mgr, provider, logger)).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GardenerCluster")
 		os.Exit(1)
 	}

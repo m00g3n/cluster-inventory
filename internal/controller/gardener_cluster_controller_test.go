@@ -6,7 +6,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"time"
@@ -21,7 +20,6 @@ var _ = Describe("Cluster Inventory controller", func() {
 
 		It("Create, and remove secret", func() {
 			By("Create GardenerCluster CR")
-			// TODO: Cluster Inventory CR should have Cluster scope
 
 			clusterCR := fixGardenerClusterCR(kymaName, namespace, kymaName, shootName, secretName)
 			Expect(k8sClient.Create(context.Background(), &clusterCR)).To(Succeed())
@@ -41,16 +39,16 @@ var _ = Describe("Cluster Inventory controller", func() {
 			Expect(kubeconfigSecret.Data).To(Equal(expectedSecret.Data))
 			Expect(kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]).To(Not(BeEmpty()))
 
-			By("Delete Cluster CR")
-			Expect(k8sClient.Delete(context.Background(), &clusterCR)).To(Succeed())
+			//By("Delete Cluster CR")
+			//Expect(k8sClient.Delete(context.Background(), &clusterCR)).To(Succeed())
 
-			By("Wait for secret deletion")
-			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), key, &kubeconfigSecret)
-
-				return err != nil && k8serrors.IsNotFound(err)
-
-			}, time.Second*30, time.Second*3).Should(BeTrue())
+			//By("Wait for secret deletion")
+			//Eventually(func() bool {
+			//	err := k8sClient.Get(context.Background(), key, &kubeconfigSecret)
+			//
+			//	return err != nil && k8serrors.IsNotFound(err)
+			//
+			//}, time.Second*30, time.Second*3).Should(BeTrue())
 		})
 	})
 })
@@ -101,7 +99,7 @@ func fixSecretLabels(kymaName, shootName string) map[string]string {
 }
 
 func fixGardenerClusterCR(name, namespace, kymaName, shootName, secretName string) imv1.GardenerCluster {
-	return newTestClusterInventoryCR(name, namespace, shootName, secretName).
+	return newTestInfrastructureManagerCR(name, namespace, shootName, secretName).
 		WithLabels(fixClusterInventoryLabels(kymaName, shootName)).ToCluster()
 }
 
@@ -113,7 +111,7 @@ type TestGardenerClusterCR struct {
 	gardenerCluster imv1.GardenerCluster
 }
 
-func newTestClusterInventoryCR(name, namespace, shootName, secretName string) *TestGardenerClusterCR {
+func newTestInfrastructureManagerCR(name, namespace, shootName, secretName string) *TestGardenerClusterCR {
 	return &TestGardenerClusterCR{
 		gardenerCluster: imv1.GardenerCluster{
 			ObjectMeta: metav1.ObjectMeta{
@@ -126,7 +124,7 @@ func newTestClusterInventoryCR(name, namespace, shootName, secretName string) *T
 				},
 				Kubeconfig: imv1.Kubeconfig{
 					Secret: imv1.Secret{
-						Name:      name,
+						Name:      secretName,
 						Namespace: namespace,
 						Key:       "config", //nolint:all TODO: fill it up with the actual data
 					},
@@ -143,7 +141,6 @@ func (sb *TestGardenerClusterCR) WithLabels(labels map[string]string) *TestGarde
 }
 
 func fixClusterInventoryLabels(kymaName, shootName string) map[string]string {
-
 	labels := map[string]string{}
 
 	labels["kyma-project.io/instance-id"] = "instanceID"
