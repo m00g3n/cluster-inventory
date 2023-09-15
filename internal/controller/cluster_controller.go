@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// ClusterReconciler reconciles a Cluster object
+// ClusterReconciler reconciles a GardenerCluster object
 type ClusterReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -39,7 +39,7 @@ type ClusterReconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // nolint:all TODO(user): Modify the Reconcile function to compare the state specified by
-// the Cluster object against the actual cluster state, and then
+// the GardenerCluster object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
@@ -56,6 +56,6 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 // SetupWithManager sets up the controller with the Manager.
 func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&infrastructuremanagerv1.Cluster{}).
+		For(&infrastructuremanagerv1.GardenerCluster{}).
 		Complete(r)
 }
