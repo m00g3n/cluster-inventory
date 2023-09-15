@@ -44,6 +44,12 @@ type GardenerClusterList struct {
 // GardenerClusterSpec defines the desired state of GardenerCluster
 type GardenerClusterSpec struct {
 	Kubeconfig Kubeconfig `json:"kubeconfig"`
+	Shoot      Shoot      `json:"shoot"`
+}
+
+// Shoot defines the name of the Shoot resource
+type Shoot struct {
+	Name string `json:"name"`
 }
 
 // Kubeconfig defines the desired kubeconfig location

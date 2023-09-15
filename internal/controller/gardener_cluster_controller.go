@@ -26,8 +26,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// ClusterReconciler reconciles a GardenerCluster object
-type ClusterReconciler struct {
+const (
+	lastKubeconfigSyncAnnotation = "operator.kyma-project.io/last-sync"
+)
+
+// GardenerClusterReconciler reconciles a GardenerCluster object
+type GardenerClusterReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
@@ -45,7 +49,7 @@ type ClusterReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
-func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) { //nolint:revive
+func (r *GardenerClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) { //nolint:revive
 	_ = log.FromContext(ctx)
 
 	// nolint:all TODO(user): your logic here
@@ -54,7 +58,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *GardenerClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&infrastructuremanagerv1.GardenerCluster{}).
 		Complete(r)
