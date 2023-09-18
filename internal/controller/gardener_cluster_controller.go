@@ -65,7 +65,6 @@ type KubeconfigProvider interface {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// nolint:all TODO(user): Modify the Reconcile function to compare the state specified by
 // the GardenerCluster object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
@@ -73,7 +72,6 @@ type KubeconfigProvider interface {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (r *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) { //nolint:revive
-
 	r.log.Info("Starting reconciliation loop")
 
 	var cluster infrastructuremanagerv1.GardenerCluster
@@ -82,9 +80,7 @@ func (r *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Requ
 
 	if err != nil {
 		r.log.Error(err, "could not get the CR for "+req.NamespacedName.Name)
-		return ctrl.Result{
-			Requeue: false,
-		}, err
+		return r.ResultWithoutRequeue(), err
 	}
 
 	secret, err := r.getSecret(cluster.Spec.Shoot.Name)
@@ -92,9 +88,7 @@ func (r *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Requ
 		r.log.Error(err, "could not get the Secret for "+cluster.Spec.Shoot.Name)
 
 		if !k8serrors.IsNotFound(err) {
-			return ctrl.Result{
-				Requeue: false,
-			}, err
+			return r.ResultWithoutRequeue(), err
 		}
 	}
 
@@ -104,25 +98,27 @@ func (r *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Requ
 		err = r.createSecret(ctx, cluster)
 
 		if err != nil {
-			return ctrl.Result{
-				Requeue: false,
-			}, err
+			return r.ResultWithoutRequeue(), err
 		}
-
-		//TODO: consider if ctx should not be passed here
 	}
 
 	return ctrl.Result{}, nil
 }
 
+func (r *GardenerClusterController) ResultWithoutRequeue() ctrl.Result {
+	return ctrl.Result{
+		Requeue: false,
+	}
+}
+
 func (r *GardenerClusterController) getSecret(shootName string) (*corev1.Secret, error) {
 	var secretList corev1.SecretList
 
-	selector := client.MatchingLabels(map[string]string{
+	shootNameSelector := client.MatchingLabels(map[string]string{
 		"kyma-project.io/shoot-name": shootName,
 	})
 
-	err := r.Client.List(context.Background(), &secretList, selector) //TODO: how this context is used
+	err := r.Client.List(context.Background(), &secretList, shootNameSelector)
 	if err != nil {
 		return nil, err
 	}

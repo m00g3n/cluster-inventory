@@ -18,7 +18,7 @@ var _ = Describe("Cluster Inventory controller", func() {
 		shootName := "shootName1"
 		namespace := "default"
 
-		It("Create, and remove secret", func() {
+		It("Create secret", func() {
 			By("Create GardenerCluster CR")
 
 			gardenerClusterCR := fixGardenerClusterCR(kymaName, namespace, shootName, secretName)
@@ -56,7 +56,7 @@ func (sb *TestSecret) WithLabels(labels map[string]string) *TestSecret {
 }
 
 func (sb *TestSecret) WithData(data string) *TestSecret {
-	sb.secret.Data = (map[string][]byte{"config": []byte(data)})
+	sb.secret.Data = map[string][]byte{"config": []byte(data)}
 
 	return sb
 }
