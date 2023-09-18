@@ -41,8 +41,8 @@ var (
 	cfg            *rest.Config         //nolint:gochecknoglobals
 	k8sClient      client.Client        //nolint:gochecknoglobals
 	testEnv        *envtest.Environment //nolint:gochecknoglobals
-	suiteCtx       context.Context
-	cancelSuiteCtx context.CancelFunc
+	suiteCtx       context.Context      //nolint:gochecknoglobals
+	cancelSuiteCtx context.CancelFunc   //nolint:gochecknoglobals
 )
 
 func TestControllers(t *testing.T) {

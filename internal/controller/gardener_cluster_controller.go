@@ -18,17 +18,18 @@ package controller
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"time"
+
 	"github.com/go-logr/logr"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 const (
@@ -50,7 +51,7 @@ func NewGardenerClusterController(mgr ctrl.Manager, kubeconfigProvider Kubeconfi
 		Client:             mgr.GetClient(),
 		Scheme:             mgr.GetScheme(),
 		KubeconfigProvider: kubeconfigProvider,
-		log:                logger, //TODO:
+		log:                logger,
 	}
 }
 
@@ -126,11 +127,11 @@ func (r *GardenerClusterController) getSecret(shootName string) (*corev1.Secret,
 	size := len(secretList.Items)
 
 	if size == 0 {
-		return nil, nil
+		return nil, k8serrors.NewNotFound(schema.GroupResource{}, "") //nolint:all TODO: update with valid GroupResource
 	}
 
 	if size > 1 {
-		return nil, errors.New(fmt.Sprintf("unexpected numer of secrets found for shoot `%s`", shootName))
+		return nil, fmt.Errorf("unexpected numer of secrets found for shoot `%s`", shootName)
 	}
 
 	return &secretList.Items[0], nil

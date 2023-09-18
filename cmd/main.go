@@ -18,11 +18,11 @@ package main
 
 import (
 	"flag"
-	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"os"
 
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/controller"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
