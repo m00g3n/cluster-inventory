@@ -21,8 +21,8 @@ var _ = Describe("Cluster Inventory controller", func() {
 		It("Create, and remove secret", func() {
 			By("Create GardenerCluster CR")
 
-			clusterCR := fixGardenerClusterCR(kymaName, namespace, kymaName, shootName, secretName)
-			Expect(k8sClient.Create(context.Background(), &clusterCR)).To(Succeed())
+			gardenerClusterCR := fixGardenerClusterCR(kymaName, namespace, shootName, secretName)
+			Expect(k8sClient.Create(context.Background(), &gardenerClusterCR)).To(Succeed())
 
 			By("Wait for secret creation")
 			var kubeconfigSecret corev1.Secret
@@ -38,17 +38,6 @@ var _ = Describe("Cluster Inventory controller", func() {
 			Expect(kubeconfigSecret.Labels).To(Equal(expectedSecret.Labels))
 			Expect(kubeconfigSecret.Data).To(Equal(expectedSecret.Data))
 			Expect(kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]).To(Not(BeEmpty()))
-
-			//By("Delete Cluster CR")
-			//Expect(k8sClient.Delete(context.Background(), &clusterCR)).To(Succeed())
-
-			//By("Wait for secret deletion")
-			//Eventually(func() bool {
-			//	err := k8sClient.Get(context.Background(), key, &kubeconfigSecret)
-			//
-			//	return err != nil && k8serrors.IsNotFound(err)
-			//
-			//}, time.Second*30, time.Second*3).Should(BeTrue())
 		})
 	})
 })
@@ -98,17 +87,9 @@ func fixSecretLabels(kymaName, shootName string) map[string]string {
 	return labels
 }
 
-func fixGardenerClusterCR(name, namespace, kymaName, shootName, secretName string) imv1.GardenerCluster {
-	return newTestInfrastructureManagerCR(name, namespace, shootName, secretName).
+func fixGardenerClusterCR(kymaName, namespace, shootName, secretName string) imv1.GardenerCluster {
+	return newTestInfrastructureManagerCR(kymaName, namespace, shootName, secretName).
 		WithLabels(fixClusterInventoryLabels(kymaName, shootName)).ToCluster()
-}
-
-func (sb *TestGardenerClusterCR) ToCluster() imv1.GardenerCluster {
-	return sb.gardenerCluster
-}
-
-type TestGardenerClusterCR struct {
-	gardenerCluster imv1.GardenerCluster
 }
 
 func newTestInfrastructureManagerCR(name, namespace, shootName, secretName string) *TestGardenerClusterCR {
@@ -138,6 +119,14 @@ func (sb *TestGardenerClusterCR) WithLabels(labels map[string]string) *TestGarde
 	sb.gardenerCluster.Labels = labels
 
 	return sb
+}
+
+func (sb *TestGardenerClusterCR) ToCluster() imv1.GardenerCluster {
+	return sb.gardenerCluster
+}
+
+type TestGardenerClusterCR struct {
+	gardenerCluster imv1.GardenerCluster
 }
 
 func fixClusterInventoryLabels(kymaName, shootName string) map[string]string {
