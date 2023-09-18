@@ -1,10 +1,7 @@
 name: Run unit tests
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    # Trigger for Pull Request
-    branches: [ "main" ]
+
+on: [push, pull_request]
+
 permissions:
   contents: read
 jobs:
