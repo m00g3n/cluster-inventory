@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-var _ = Describe("Cluster Inventory controller", func() {
+var _ = Describe("Gardener Cluster controller", func() {
 	Context("Secret with kubeconfig doesn't exist", func() {
 		kymaName := "kymaname1"
 		secretName := "secret-name1"
