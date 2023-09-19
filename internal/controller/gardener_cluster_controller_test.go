@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"time"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -39,6 +40,15 @@ var _ = Describe("Gardener Cluster controller", func() {
 			Expect(kubeconfigSecret.Labels).To(Equal(expectedSecret.Labels))
 			Expect(kubeconfigSecret.Data).To(Equal(expectedSecret.Data))
 			Expect(kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]).To(Not(BeEmpty()))
+
+			By("Delete Cluster CR")
+			Expect(k8sClient.Delete(context.Background(), &gardenerClusterCR)).To(Succeed())
+
+			By("Wait for secret deletion")
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), key, &kubeconfigSecret)
+				return err != nil && k8serrors.IsNotFound(err)
+			}, time.Second*30, time.Second*3).Should(BeTrue())
 		})
 	})
 })

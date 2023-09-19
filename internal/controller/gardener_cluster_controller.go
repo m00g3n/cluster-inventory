@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -78,10 +79,18 @@ func (r *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Requ
 	var cluster infrastructuremanagerv1.GardenerCluster
 
 	err := r.Client.Get(ctx, req.NamespacedName, &cluster)
-
 	if err != nil {
-		r.log.Error(err, "could not get the CR for "+req.NamespacedName.Name)
-		return r.ResultWithoutRequeue(), err
+		if k8serrors.IsNotFound(err) {
+			err = r.deleteSecret(req.NamespacedName.Name)
+			if err != nil {
+				r.log.Error(err, "failed to delete secret")
+			}
+		}
+
+		return ctrl.Result{
+			Requeue:      true,
+			RequeueAfter: defaultRequeuInSeconds,
+		}, err
 	}
 
 	secret, err := r.getSecret(cluster.Spec.Shoot.Name)
@@ -104,6 +113,24 @@ func (r *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *GardenerClusterController) deleteSecret(clusterCRName string) error {
+	selector := client.MatchingLabels(map[string]string{
+		clusterCRNameLabel: clusterCRName,
+	})
+
+	var secretList corev1.SecretList
+	err := r.Client.List(context.TODO(), &secretList, selector)
+	if err != nil {
+		return err
+	}
+
+	if len(secretList.Items) != 1 {
+		return errors.Errorf("unexpected numer of secrets found for cluster CR `%s`", clusterCRName)
+	}
+
+	return r.Client.Delete(context.TODO(), &secretList.Items[0])
 }
 
 func (r *GardenerClusterController) ResultWithoutRequeue() ctrl.Result {
