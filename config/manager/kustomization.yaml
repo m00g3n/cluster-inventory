@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: europe-docker.pkg.dev/kyma-project/dev/infrastructure-manager
-  newTag: PR-37
+  newTag: PR-42

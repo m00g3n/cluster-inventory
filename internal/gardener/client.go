@@ -2,9 +2,10 @@ package gardener
 
 import (
 	"fmt"
+	"os"
+
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	"k8s.io/client-go/tools/clientcmd"
-	"os"
 )
 
 func NewClientFromFile(kubeconfigFilePath string) (*gardener_apis.CoreV1beta1Client, error) {
