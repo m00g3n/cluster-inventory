@@ -1,6 +1,7 @@
 ---
 name: Feature request
-description: Suggest an improvement to the project
+description: "Suggest an improvement to the project"
+title: "{your title}"
 labels: ["area/control-plane", "kind/feature"]
 projects: ["kyma-project/24"]
 ---
