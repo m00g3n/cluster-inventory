@@ -2,10 +2,10 @@ package gardener
 
 import (
 	"context"
-	"github.com/pkg/errors"
 
 	authenticationv1alpha1 "github.com/gardener/gardener/pkg/apis/authentication/v1alpha1"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/pkg/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gardenerClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
