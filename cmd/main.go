@@ -50,6 +50,8 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
+const defaultExpirationTimeInHours = 7 * 12
+
 func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
@@ -64,8 +66,8 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&gardenerKubeconfigPath, "gardener-kubeconfig-path", "/gardener/kubeconfig/kubeconfig", "Kubeconfig file for Gardener cluster")
-	flag.StringVar(&gardenerProjectName, "gardener-project-name", "gardener-project", "Name of the Gardener project")
-	flag.Int64Var(&expirationInHours, "expiration-in-hours", 12, "Dynamic kubeconfig expiration time in seconds")
+	flag.StringVar(&gardenerProjectName, "gardener-project-name", "frog-dev", "Name of the Gardener project")
+	flag.Int64Var(&expirationInHours, "expiration-in-hours", defaultExpirationTimeInHours, "Dynamic kubeconfig expiration time in seconds")
 	opts := zap.Options{
 		Development: true,
 	}
