@@ -7,7 +7,7 @@ rules:
 - apiGroups:
   - infrastructuremanager.kyma-project.io
   resources:
-  - gardenerclusters
+  - clusters
   verbs:
   - create
   - delete
@@ -19,13 +19,13 @@ rules:
 - apiGroups:
   - infrastructuremanager.kyma-project.io
   resources:
-  - gardenerclusters/finalizers
+  - clusters/finalizers
   verbs:
   - update
 - apiGroups:
   - infrastructuremanager.kyma-project.io
   resources:
-  - gardenerclusters/status
+  - clusters/status
   verbs:
   - get
   - patch
