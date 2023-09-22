@@ -158,8 +158,10 @@ func (r *GardenerClusterController) newSecret(cluster infrastructuremanagerv1.Ga
 	labels["operator.kyma-project.io/managed-by"] = "infrastructure-manager"
 	labels[clusterCRNameLabel] = cluster.Name
 
+	r.log.Info("Fetching kubeconfig from Gardener")
 	kubeconfig, err := r.KubeconfigProvider.Fetch(cluster.Spec.Shoot.Name)
 	if err != nil {
+		r.log.Error(err, "failed to fetch kubeconfig from Gardener")
 		return corev1.Secret{}, err
 	}
 
