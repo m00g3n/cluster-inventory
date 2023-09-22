@@ -97,8 +97,9 @@ func (r *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	if secret == nil {
-		r.log.Error(err, "Secret not found, and will be created")
+		r.log.Error(err, "Secret not found, and will be created!!!")
 
+		r.log.Info("Calling createSecret")
 		err = r.createSecret(ctx, cluster)
 
 		if err != nil {
