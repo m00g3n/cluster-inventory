@@ -67,17 +67,16 @@ make docker-build
   </details>
 </div>
 
-6. Prepare secret with Gardener credentials
+6. Deploy.
+
+```bash
+make deploy
+```
+7. Create secret with Gardener credentials
 
 ```bash
 export GARDENER_KUBECONFIG_PATH=<kubeconfig file for Gardener project> 
 make gardener-secret-deploy
-```
-
-7. Deploy.
-
-```bash
-make deploy
 ```
 
 ## Usage
