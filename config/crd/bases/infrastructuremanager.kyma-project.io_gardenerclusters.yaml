@@ -55,8 +55,17 @@ spec:
                 required:
                 - secret
                 type: object
+              shoot:
+                description: Shoot defines the name of the Shoot resource
+                properties:
+                  name:
+                    type: string
+                required:
+                - name
+                type: object
             required:
             - kubeconfig
+            - shoot
             type: object
           status:
             description: GardenerClusterStatus defines the observed state of GardenerCluster
