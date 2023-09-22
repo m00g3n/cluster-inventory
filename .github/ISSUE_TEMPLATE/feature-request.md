@@ -1,6 +1,8 @@
 ---
 name: Feature request
 about: Suggest an improvement to the project
+labels: ["area/control-plane", "kind/feature"]
+projects: ["kyma-project/24"]
 ---
 
 <!-- Thank you for your contribution. Before you submit the issue:

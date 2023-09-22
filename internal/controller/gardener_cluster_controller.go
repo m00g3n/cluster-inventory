@@ -98,7 +98,10 @@ func (r *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Requ
 		r.log.Error(err, "could not get the Secret for "+cluster.Spec.Shoot.Name)
 
 		if !k8serrors.IsNotFound(err) {
-			return r.ResultWithoutRequeue(), err
+			return ctrl.Result{
+				Requeue:      true,
+				RequeueAfter: defaultRequeuInSeconds,
+			}, err
 		}
 	}
 
@@ -179,7 +182,7 @@ func (r *GardenerClusterController) newSecret(cluster infrastructuremanagerv1.Ga
 	for key, val := range cluster.Labels {
 		labels[key] = val
 	}
-	labels["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
+	labels["operator.kyma-project.io/managed-by"] = "infrastructure-manager"
 	labels[clusterCRNameLabel] = cluster.Name
 
 	kubeconfig, err := r.KubeconfigProvider.Fetch(cluster.Spec.Shoot.Name)
