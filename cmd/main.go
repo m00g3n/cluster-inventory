@@ -52,7 +52,7 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-const defaultExpirationTime = 7 * 12 * time.Hour
+const defaultExpirationTime = 24 * time.Hour
 
 func main() {
 	var metricsAddr string
