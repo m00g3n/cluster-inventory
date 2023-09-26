@@ -19,8 +19,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"time"
-
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/pkg/errors"
@@ -31,6 +29,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"time"
 )
 
 const (
@@ -119,10 +119,13 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		if err != nil {
 			return controller.ResultWithoutRequeue(), err
 		}
-
 	}
 
 	cluster.UpdateState(imv1.ConditionReasonSecretCreated, imv1.ReadyState, "GardenCluster is ready")
+
+	err = controller.Client.Update(ctx, &cluster, &client.UpdateOptions{
+		FieldManager: "infrastructure-manager",
+	})
 	return ctrl.Result{}, nil
 }
 
@@ -213,5 +216,10 @@ func (controller *GardenerClusterController) newSecret(cluster imv1.GardenerClus
 func (controller *GardenerClusterController) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&imv1.GardenerCluster{}).
+		WithEventFilter(predicate.Or(
+			predicate.GenerationChangedPredicate{},
+			predicate.LabelChangedPredicate{},
+			predicate.AnnotationChangedPredicate{},
+		)).
 		Complete(controller)
 }
