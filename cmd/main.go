@@ -19,15 +19,15 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/pkg/errors"
 	"os"
 	"time"
 
+	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/controller"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -155,9 +155,8 @@ func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, 
 	dynamicKubeconfigAPI := gardenerClient.SubResource("adminkubeconfig")
 
 	err = v1beta1.AddToScheme(gardenerClient.Scheme())
-
 	if err != nil {
-		errors.Wrap(err, "Failed ")
+		return gardener.KubeconfigProvider{}, errors.Wrap(err, "failed to register Gardener schema")
 	}
 
 	return gardener.NewKubeconfigProvider(shootClient,
