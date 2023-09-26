@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -73,20 +73,20 @@ type KubeconfigProvider interface {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
-func (r *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) { //nolint:revive
-	r.log.Info("Starting reconciliation loop")
+func (controller *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) { //nolint:revive
+	controller.log.Info("Starting reconciliation loop")
 
-	var cluster infrastructuremanagerv1.GardenerCluster
+	var cluster imv1.GardenerCluster
 
-	err := r.Client.Get(ctx, req.NamespacedName, &cluster)
+	err := controller.Client.Get(ctx, req.NamespacedName, &cluster)
 	if err != nil {
-		cluster.UpdateState(infrastructuremanagerv1.ErrorState, infrastructuremanagerv1.ConditionReasonGardenClusterNotRetrieved, "Couldn't retrieve the Garden Cluster CR")
+		cluster.UpdateState(imv1.ErrorState, imv1.ConditionReasonGardenClusterNotRetrieved, "Couldn't retrieve the Garden Cluster CR")
 
 		if k8serrors.IsNotFound(err) {
-			cluster.UpdateState(infrastructuremanagerv1.DeletingState, infrastructuremanagerv1.ConditionReasonGardenClusterNotFound, "CR not found, secret will be deleted")
-			err = r.deleteSecret(req.NamespacedName.Name)
+			cluster.UpdateState(imv1.DeletingState, imv1.ConditionReasonGardenClusterNotFound, "CR not found, secret will be deleted")
+			err = controller.deleteSecret(req.NamespacedName.Name)
 			if err != nil {
-				r.log.Error(err, "failed to delete secret")
+				controller.log.Error(err, "failed to delete secret")
 			}
 		}
 
@@ -96,10 +96,10 @@ func (r *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Requ
 		}, err
 	}
 
-	secret, err := r.getSecret(cluster.Spec.Shoot.Name)
+	secret, err := controller.getSecret(cluster.Spec.Shoot.Name)
 	if err != nil {
-		r.log.Error(err, "could not get the Secret for "+cluster.Spec.Shoot.Name)
-		cluster.UpdateState(infrastructuremanagerv1.ErrorState, infrastructuremanagerv1.ConditionReasonSecretNotFound, "Secret not found, and will be created")
+		controller.log.Error(err, "could not get the Secret for "+cluster.Spec.Shoot.Name)
+		cluster.UpdateState(imv1.ErrorState, imv1.ConditionReasonSecretNotFound, "Secret not found, and will be created")
 
 		if !k8serrors.IsNotFound(err) {
 
@@ -111,28 +111,28 @@ func (r *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	if secret == nil {
-		r.log.Error(err, "Secret not found, and will be created")
-		cluster.UpdateState(infrastructuremanagerv1.ErrorState, infrastructuremanagerv1.ConditionReasonSecretNotFound, "Secret not found, and will be created")
+		controller.log.Error(err, "Secret not found, and will be created")
+		cluster.UpdateState(imv1.ErrorState, imv1.ConditionReasonSecretNotFound, "Secret not found, and will be created")
 
-		err = r.createSecret(ctx, cluster)
+		err = controller.createSecret(ctx, cluster)
 
 		if err != nil {
-			return r.ResultWithoutRequeue(), err
+			return controller.ResultWithoutRequeue(), err
 		}
 
 	}
 
-	cluster.UpdateState(infrastructuremanagerv1.ConditionReasonSecretCreated, infrastructuremanagerv1.ReadyState, "GardenCluster is ready")
+	cluster.UpdateState(imv1.ConditionReasonSecretCreated, imv1.ReadyState, "GardenCluster is ready")
 	return ctrl.Result{}, nil
 }
 
-func (r *GardenerClusterController) deleteSecret(clusterCRName string) error {
+func (controller *GardenerClusterController) deleteSecret(clusterCRName string) error {
 	selector := client.MatchingLabels(map[string]string{
 		clusterCRNameLabel: clusterCRName,
 	})
 
 	var secretList corev1.SecretList
-	err := r.Client.List(context.TODO(), &secretList, selector)
+	err := controller.Client.List(context.TODO(), &secretList, selector)
 	if err != nil {
 		return err
 	}
@@ -141,23 +141,23 @@ func (r *GardenerClusterController) deleteSecret(clusterCRName string) error {
 		return errors.Errorf("unexpected numer of secrets found for cluster CR `%s`", clusterCRName)
 	}
 
-	return r.Client.Delete(context.TODO(), &secretList.Items[0])
+	return controller.Client.Delete(context.TODO(), &secretList.Items[0])
 }
 
-func (r *GardenerClusterController) ResultWithoutRequeue() ctrl.Result {
+func (controller *GardenerClusterController) ResultWithoutRequeue() ctrl.Result {
 	return ctrl.Result{
 		Requeue: false,
 	}
 }
 
-func (r *GardenerClusterController) getSecret(shootName string) (*corev1.Secret, error) {
+func (controller *GardenerClusterController) getSecret(shootName string) (*corev1.Secret, error) {
 	var secretList corev1.SecretList
 
 	shootNameSelector := client.MatchingLabels(map[string]string{
 		"kyma-project.io/shoot-name": shootName,
 	})
 
-	err := r.Client.List(context.Background(), &secretList, shootNameSelector)
+	err := controller.Client.List(context.Background(), &secretList, shootNameSelector)
 	if err != nil {
 		return nil, err
 	}
@@ -175,16 +175,16 @@ func (r *GardenerClusterController) getSecret(shootName string) (*corev1.Secret,
 	return &secretList.Items[0], nil
 }
 
-func (r *GardenerClusterController) createSecret(ctx context.Context, cluster infrastructuremanagerv1.GardenerCluster) error {
-	secret, err := r.newSecret(cluster)
+func (controller *GardenerClusterController) createSecret(ctx context.Context, cluster imv1.GardenerCluster) error {
+	secret, err := controller.newSecret(cluster)
 	if err != nil {
 		return err
 	}
 
-	return r.Client.Create(ctx, &secret)
+	return controller.Client.Create(ctx, &secret)
 }
 
-func (r *GardenerClusterController) newSecret(cluster infrastructuremanagerv1.GardenerCluster) (corev1.Secret, error) {
+func (controller *GardenerClusterController) newSecret(cluster imv1.GardenerCluster) (corev1.Secret, error) {
 	labels := map[string]string{}
 
 	for key, val := range cluster.Labels {
@@ -193,7 +193,7 @@ func (r *GardenerClusterController) newSecret(cluster infrastructuremanagerv1.Ga
 	labels["operator.kyma-project.io/managed-by"] = "infrastructure-manager"
 	labels[clusterCRNameLabel] = cluster.Name
 
-	kubeconfig, err := r.KubeconfigProvider.Fetch(cluster.Spec.Shoot.Name)
+	kubeconfig, err := controller.KubeconfigProvider.Fetch(cluster.Spec.Shoot.Name)
 	if err != nil {
 		return corev1.Secret{}, err
 	}
@@ -210,8 +210,8 @@ func (r *GardenerClusterController) newSecret(cluster infrastructuremanagerv1.Ga
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *GardenerClusterController) SetupWithManager(mgr ctrl.Manager) error {
+func (controller *GardenerClusterController) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&infrastructuremanagerv1.GardenerCluster{}).
-		Complete(r)
+		For(&imv1.GardenerCluster{}).
+		Complete(controller)
 }
