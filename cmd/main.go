@@ -52,7 +52,7 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-const defaultExpirationTimeInHours = 7 * 12
+const defaultExpirationTimeInHours = 7 * 12 * time.Hour
 
 func main() {
 	var metricsAddr string
@@ -60,7 +60,7 @@ func main() {
 	var probeAddr string
 	var gardenerKubeconfigPath string
 	var gardenerProjectName string
-	var expirationInHours int64
+	var expirationInHours time.Duration
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -69,7 +69,7 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&gardenerKubeconfigPath, "gardener-kubeconfig-path", "/gardener/kubeconfig/kubeconfig", "Kubeconfig file for Gardener cluster")
 	flag.StringVar(&gardenerProjectName, "gardener-project-name", "gardener-project", "Name of the Gardener project")
-	flag.Int64Var(&expirationInHours, "expiration-in-hours", defaultExpirationTimeInHours, "Dynamic kubeconfig expiration time in seconds")
+	flag.DurationVar(&expirationInHours, "", defaultExpirationTimeInHours, "Dynamic kubeconfig expiration time in hours")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -105,7 +105,7 @@ func main() {
 	}
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", gardenerProjectName)
-	expirationInSeconds := int64(time.Duration(expirationInHours).Seconds())
+	expirationInSeconds := int64(expirationInHours.Seconds())
 	kubeconfigProvider, err := setupKubernetesKubeconfigProvider(gardenerKubeconfigPath, gardenerNamespace, expirationInSeconds)
 
 	if err != nil {
