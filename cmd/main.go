@@ -19,6 +19,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/pkg/errors"
 	"os"
 	"time"
 
@@ -151,6 +153,12 @@ func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, 
 
 	shootClient := gardenerClientSet.Shoots(namespace)
 	dynamicKubeconfigAPI := gardenerClient.SubResource("adminkubeconfig")
+
+	err = v1beta1.AddToScheme(gardenerClient.Scheme())
+
+	if err != nil {
+		errors.Wrap(err, "Failed ")
+	}
 
 	return gardener.NewKubeconfigProvider(shootClient,
 		dynamicKubeconfigAPI,
