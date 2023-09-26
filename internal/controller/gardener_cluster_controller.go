@@ -61,7 +61,7 @@ type KubeconfigProvider interface {
 }
 
 //+kubebuilder:rbac:groups=infrastructuremanager.kyma-project.io,resources=gardenerclusters,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;create;update;delete
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;delete
 //+kubebuilder:rbac:groups=infrastructuremanager.kyma-project.io,resources=gardenerclusters/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -73,21 +73,18 @@ type KubeconfigProvider interface {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (r *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) { //nolint:revive
-	r.log.Info("Starting reconciliation loop")
+	r.log.Info(fmt.Sprintf("Starting reconciliation loop for GardenerCluster resource: %v", req.NamespacedName))
 
 	var cluster infrastructuremanagerv1.GardenerCluster
 
 	err := r.Client.Get(ctx, req.NamespacedName, &cluster)
 
 	if err != nil {
-		r.log.Error(err, "could not get the CR for "+req.NamespacedName.Name)
 		return r.ResultWithoutRequeue(), err
 	}
 
 	secret, err := r.getSecret(cluster.Spec.Shoot.Name)
 	if err != nil {
-		r.log.Error(err, "could not get the Secret for "+cluster.Spec.Shoot.Name)
-
 		if !k8serrors.IsNotFound(err) {
 			return ctrl.Result{
 				Requeue:      true,
@@ -97,9 +94,6 @@ func (r *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	if secret == nil {
-		r.log.Error(err, "Secret not found, and will be created!!!")
-
-		r.log.Info("Calling createSecret")
 		err = r.createSecret(ctx, cluster)
 		if err != nil {
 			return r.ResultWithoutRequeue(), err
@@ -141,27 +135,16 @@ func (r *GardenerClusterController) getSecret(shootName string) (*corev1.Secret,
 }
 
 func (r *GardenerClusterController) createSecret(ctx context.Context, cluster infrastructuremanagerv1.GardenerCluster) error {
-	r.log.Info("Preparing new secret")
 	secret, err := r.newSecret(cluster)
 	if err != nil {
-		r.log.Error(err, "failed to prepare secret")
 		return err
 	}
 
-	r.log.Info("Creating new secret")
-
-	err = r.Client.Create(ctx, &secret)
-	if err != nil {
-		r.log.Error(err, "failed to create secret")
-	}
-
-	return err
+	return r.Client.Create(ctx, &secret)
 }
 
 func (r *GardenerClusterController) newSecret(cluster infrastructuremanagerv1.GardenerCluster) (corev1.Secret, error) {
 	labels := map[string]string{}
-
-	r.log.Info("Creating new secret")
 
 	for key, val := range cluster.Labels {
 		labels[key] = val
@@ -169,10 +152,8 @@ func (r *GardenerClusterController) newSecret(cluster infrastructuremanagerv1.Ga
 	labels["operator.kyma-project.io/managed-by"] = "infrastructure-manager"
 	labels[clusterCRNameLabel] = cluster.Name
 
-	r.log.Info("Fetching kubeconfig from Gardener")
 	kubeconfig, err := r.KubeconfigProvider.Fetch(cluster.Spec.Shoot.Name)
 	if err != nil {
-		r.log.Error(err, "failed to fetch kubeconfig from Gardener")
 		return corev1.Secret{}, err
 	}
 
