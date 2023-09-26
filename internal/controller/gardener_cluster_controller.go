@@ -101,7 +101,6 @@ func (r *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Requ
 
 		r.log.Info("Calling createSecret")
 		err = r.createSecret(ctx, cluster)
-
 		if err != nil {
 			return r.ResultWithoutRequeue(), err
 		}
@@ -142,14 +141,21 @@ func (r *GardenerClusterController) getSecret(shootName string) (*corev1.Secret,
 }
 
 func (r *GardenerClusterController) createSecret(ctx context.Context, cluster infrastructuremanagerv1.GardenerCluster) error {
-	r.log.Info("About to create new secret")
+	r.log.Info("Preparing new secret")
 	secret, err := r.newSecret(cluster)
 	if err != nil {
-		r.log.Error(err, "failed to create secret")
+		r.log.Error(err, "failed to prepare secret")
 		return err
 	}
 
-	return r.Client.Create(ctx, &secret)
+	r.log.Info("Creating new secret")
+
+	err = r.Client.Create(ctx, &secret)
+	if err != nil {
+		r.log.Error(err, "failed to create secret")
+	}
+
+	return err
 }
 
 func (r *GardenerClusterController) newSecret(cluster infrastructuremanagerv1.GardenerCluster) (corev1.Secret, error) {
