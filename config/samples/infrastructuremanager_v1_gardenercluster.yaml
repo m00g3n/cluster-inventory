@@ -4,11 +4,11 @@ metadata:
   labels:
     kyma-project.io/instance-id: instance-id
     kyma-project.io/runtime-id: runtime-id
-    kyma-project.io/broker-plan-id: plan-id
-    kyma-project.io/broker-plan-name: plan-name
+    kyma-project.io/broker-plan-id: plan-id2
+    kyma-project.io/broker-plan-name: plan-name2
     kyma-project.io/global-account-id: global-account-i
-    kyma-project.io/subaccount-id: subAccount-id
-    kyma-project.io/shoot-name: shoot-name
+    kyma-project.io/subaccount-id: subAccount-id2
+    kyma-project.io/shoot-name: shoot-name2
     kyma-project.io/region: region
     operator.kyma-project.io/kyma-name: kymaName
   name: runtime-id

@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"time"
@@ -84,6 +85,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 
 		if k8serrors.IsNotFound(err) {
 			cluster.UpdateState(imv1.DeletingState, imv1.ConditionReasonGardenClusterNotFound, "CR not found, secret will be deleted")
+
 			err = controller.deleteSecret(req.NamespacedName.Name)
 			if err != nil {
 				controller.log.Error(err, "failed to delete secret")
@@ -93,20 +95,20 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		return ctrl.Result{
 			Requeue:      true,
 			RequeueAfter: defaultRequeuInSeconds,
-		}, err
+		}, controller.persistChange(ctx, cluster)
 	}
 
 	secret, err := controller.getSecret(cluster.Spec.Shoot.Name)
 	if err != nil {
 		controller.log.Error(err, "could not get the Secret for "+cluster.Spec.Shoot.Name)
-		cluster.UpdateState(imv1.ErrorState, imv1.ConditionReasonSecretNotFound, "Secret not found, and will be created")
 
 		if !k8serrors.IsNotFound(err) {
+			cluster.UpdateState(imv1.ErrorState, imv1.ConditionReasonSecretNotFound, "Secret not found")
 
 			return ctrl.Result{
 				Requeue:      true,
 				RequeueAfter: defaultRequeuInSeconds,
-			}, err
+			}, controller.persistChange(ctx, cluster)
 		}
 	}
 
@@ -117,16 +119,20 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		err = controller.createSecret(ctx, cluster)
 
 		if err != nil {
-			return controller.ResultWithoutRequeue(), err
+			cluster.UpdateState(imv1.ReadyState, imv1.ConditionReasonSecretCreated, "Secret has been created")
+			return controller.ResultWithoutRequeue(), controller.persistChange(ctx, cluster)
 		}
 	}
 
 	cluster.UpdateState(imv1.ConditionReasonSecretCreated, imv1.ReadyState, "GardenCluster is ready")
 
-	err = controller.Client.Update(ctx, &cluster, &client.UpdateOptions{
+	return ctrl.Result{}, controller.persistChange(ctx, cluster)
+}
+
+func (controller *GardenerClusterController) persistChange(ctx context.Context, cluster imv1.GardenerCluster) error {
+	return controller.Client.Update(ctx, &cluster, &client.UpdateOptions{
 		FieldManager: "infrastructure-manager",
 	})
-	return ctrl.Result{}, nil
 }
 
 func (controller *GardenerClusterController) deleteSecret(clusterCRName string) error {
@@ -214,12 +220,17 @@ func (controller *GardenerClusterController) newSecret(cluster imv1.GardenerClus
 
 // SetupWithManager sets up the controller with the Manager.
 func (controller *GardenerClusterController) SetupWithManager(mgr ctrl.Manager) error {
+	omitStatusChanged := predicate.Or(
+		predicate.GenerationChangedPredicate{},
+		predicate.LabelChangedPredicate{},
+		predicate.AnnotationChangedPredicate{},
+	)
+
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&imv1.GardenerCluster{}).
-		WithEventFilter(predicate.Or(
-			predicate.GenerationChangedPredicate{},
-			predicate.LabelChangedPredicate{},
-			predicate.AnnotationChangedPredicate{},
+		For(&imv1.GardenerCluster{}, builder.WithPredicates(
+			predicate.And(
+				predicate.ResourceVersionChangedPredicate{},
+				omitStatusChanged),
 		)).
 		Complete(controller)
 }
