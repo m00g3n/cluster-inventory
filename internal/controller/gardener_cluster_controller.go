@@ -93,7 +93,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 			}
 		}
 
-		return controller.resultWithRequeue(), controller.persistChange(ctx, &cluster)
+		return controller.resultWithRequeue(), controller.persistStatusChange(ctx, &cluster)
 	}
 
 	secret, err := controller.getSecret(cluster.Spec.Shoot.Name)
@@ -103,7 +103,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		if !k8serrors.IsNotFound(err) {
 			cluster.UpdateState(imv1.ErrorState, imv1.ConditionReasonSecretNotFound, "Secret not found")
 
-			return controller.resultWithRequeue(), controller.persistChange(ctx, &cluster)
+			return controller.resultWithRequeue(), controller.persistStatusChange(ctx, &cluster)
 		}
 	}
 
@@ -115,13 +115,13 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 
 		if err != nil {
 			cluster.UpdateState(imv1.ReadyState, imv1.ConditionReasonSecretCreated, "Secret has been created")
-			return controller.resultWithoutRequeue(), controller.persistChange(ctx, &cluster)
+			return controller.resultWithoutRequeue(), controller.persistStatusChange(ctx, &cluster)
 		}
 	}
 
 	cluster.UpdateState(imv1.ConditionReasonSecretCreated, imv1.ReadyState, "GardenCluster is ready")
 
-	return controller.resultWithRequeue(), controller.persistChange(ctx, &cluster)
+	return controller.resultWithRequeue(), controller.persistStatusChange(ctx, &cluster)
 }
 
 func (controller *GardenerClusterController) resultWithRequeue() ctrl.Result {
@@ -137,7 +137,7 @@ func (controller *GardenerClusterController) resultWithoutRequeue() ctrl.Result 
 	}
 }
 
-func (controller *GardenerClusterController) persistChange(ctx context.Context, cluster *imv1.GardenerCluster) error {
+func (controller *GardenerClusterController) persistStatusChange(ctx context.Context, cluster *imv1.GardenerCluster) error {
 	err := controller.Client.Status().Update(ctx, cluster)
 	return err
 }
