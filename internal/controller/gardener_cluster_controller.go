@@ -19,6 +19,8 @@ package controller
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/pkg/errors"
@@ -31,7 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"time"
 )
 
 const (
@@ -95,7 +96,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		return ctrl.Result{
 			Requeue:      true,
 			RequeueAfter: defaultRequeuInSeconds,
-		}, controller.persistChange(ctx, cluster)
+		}, controller.persistChange(ctx, &cluster)
 	}
 
 	secret, err := controller.getSecret(cluster.Spec.Shoot.Name)
@@ -108,7 +109,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 			return ctrl.Result{
 				Requeue:      true,
 				RequeueAfter: defaultRequeuInSeconds,
-			}, controller.persistChange(ctx, cluster)
+			}, controller.persistChange(ctx, &cluster)
 		}
 	}
 
@@ -120,19 +121,18 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 
 		if err != nil {
 			cluster.UpdateState(imv1.ReadyState, imv1.ConditionReasonSecretCreated, "Secret has been created")
-			return controller.ResultWithoutRequeue(), controller.persistChange(ctx, cluster)
+			return controller.ResultWithoutRequeue(), controller.persistChange(ctx, &cluster)
 		}
 	}
 
 	cluster.UpdateState(imv1.ConditionReasonSecretCreated, imv1.ReadyState, "GardenCluster is ready")
 
-	return ctrl.Result{}, controller.persistChange(ctx, cluster)
+	return ctrl.Result{}, controller.persistChange(ctx, &cluster)
 }
 
-func (controller *GardenerClusterController) persistChange(ctx context.Context, cluster imv1.GardenerCluster) error {
-	return controller.Client.Update(ctx, &cluster, &client.UpdateOptions{
-		FieldManager: "infrastructure-manager",
-	})
+func (controller *GardenerClusterController) persistChange(ctx context.Context, cluster *imv1.GardenerCluster) error {
+	err := controller.Client.Update(ctx, cluster)
+	return err
 }
 
 func (controller *GardenerClusterController) deleteSecret(clusterCRName string) error {
