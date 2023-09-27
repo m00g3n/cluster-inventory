@@ -93,10 +93,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 			}
 		}
 
-		return ctrl.Result{
-			Requeue:      true,
-			RequeueAfter: defaultRequeuInSeconds,
-		}, controller.persistChange(ctx, &cluster)
+		return controller.resultWithRequeue(), controller.persistChange(ctx, &cluster)
 	}
 
 	secret, err := controller.getSecret(cluster.Spec.Shoot.Name)
@@ -106,10 +103,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		if !k8serrors.IsNotFound(err) {
 			cluster.UpdateState(imv1.ErrorState, imv1.ConditionReasonSecretNotFound, "Secret not found")
 
-			return ctrl.Result{
-				Requeue:      true,
-				RequeueAfter: defaultRequeuInSeconds,
-			}, controller.persistChange(ctx, &cluster)
+			return controller.resultWithRequeue(), controller.persistChange(ctx, &cluster)
 		}
 	}
 
@@ -121,17 +115,30 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 
 		if err != nil {
 			cluster.UpdateState(imv1.ReadyState, imv1.ConditionReasonSecretCreated, "Secret has been created")
-			return controller.ResultWithoutRequeue(), controller.persistChange(ctx, &cluster)
+			return controller.resultWithoutRequeue(), controller.persistChange(ctx, &cluster)
 		}
 	}
 
 	cluster.UpdateState(imv1.ConditionReasonSecretCreated, imv1.ReadyState, "GardenCluster is ready")
 
-	return ctrl.Result{}, controller.persistChange(ctx, &cluster)
+	return controller.resultWithRequeue(), controller.persistChange(ctx, &cluster)
+}
+
+func (controller *GardenerClusterController) resultWithRequeue() ctrl.Result {
+	return ctrl.Result{
+		Requeue:      true,
+		RequeueAfter: defaultRequeuInSeconds,
+	}
+}
+
+func (controller *GardenerClusterController) resultWithoutRequeue() ctrl.Result {
+	return ctrl.Result{
+		Requeue: false,
+	}
 }
 
 func (controller *GardenerClusterController) persistChange(ctx context.Context, cluster *imv1.GardenerCluster) error {
-	err := controller.Client.Update(ctx, cluster)
+	err := controller.Client.Status().Update(ctx, cluster)
 	return err
 }
 
@@ -151,12 +158,6 @@ func (controller *GardenerClusterController) deleteSecret(clusterCRName string) 
 	}
 
 	return controller.Client.Delete(context.TODO(), &secretList.Items[0])
-}
-
-func (controller *GardenerClusterController) ResultWithoutRequeue() ctrl.Result {
-	return ctrl.Result{
-		Requeue: false,
-	}
 }
 
 func (controller *GardenerClusterController) getSecret(shootName string) (*corev1.Secret, error) {
