@@ -82,44 +82,43 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 
 	err := controller.Client.Get(ctx, req.NamespacedName, &cluster)
 	if err != nil {
-		cluster.UpdateState(imv1.ErrorState, imv1.ConditionReasonGardenClusterNotRetrieved, "Couldn't retrieve the Garden Cluster CR")
-
 		if k8serrors.IsNotFound(err) {
-			cluster.UpdateState(imv1.DeletingState, imv1.ConditionReasonGardenClusterNotFound, "CR not found, secret will be deleted")
-
 			err = controller.deleteSecret(req.NamespacedName.Name)
 			if err != nil {
 				controller.log.Error(err, "failed to delete secret")
 			}
 		}
 
-		return controller.resultWithRequeue(), controller.persistStatusChange(ctx, &cluster)
+		return controller.resultWithoutRequeue(), err
 	}
+
+	cluster.UpdateConditionForProcessingState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigReadingSecret, metav1.ConditionTrue)
 
 	secret, err := controller.getSecret(cluster.Spec.Shoot.Name)
 	if err != nil {
-		controller.log.Error(err, "could not get the Secret for "+cluster.Spec.Shoot.Name)
-
 		if !k8serrors.IsNotFound(err) {
-			cluster.UpdateState(imv1.ErrorState, imv1.ConditionReasonSecretNotFound, "Secret not found")
-
-			return controller.resultWithRequeue(), controller.persistStatusChange(ctx, &cluster)
+			controller.log.Error(err, "failed to get the Secret for "+cluster.Spec.Shoot.Name)
+			cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToCheckSecret, metav1.ConditionTrue, err)
+			if err := controller.persistStatusChange(ctx, &cluster); err != nil {
+				controller.log.Error(err, "Failed to set state for GardenerCluster", req.NamespacedName)
+			}
+			return controller.resultWithoutRequeue(), err
 		}
 	}
 
 	if secret == nil {
-		controller.log.Error(err, "Secret not found, and will be created")
-		cluster.UpdateState(imv1.ErrorState, imv1.ConditionReasonSecretNotFound, "Secret not found, and will be created")
-
 		err = controller.createSecret(ctx, cluster)
 
 		if err != nil {
-			cluster.UpdateState(imv1.ReadyState, imv1.ConditionReasonSecretCreated, "Secret has been created")
-			return controller.resultWithoutRequeue(), controller.persistStatusChange(ctx, &cluster)
+			cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToCreateSecret, metav1.ConditionTrue, err)
+			if err := controller.persistStatusChange(ctx, &cluster); err != nil {
+				controller.log.Error(err, "Failed to set state for GardenerCluster", req.NamespacedName)
+			}
+			return controller.resultWithoutRequeue(), err
 		}
 	}
 
-	cluster.UpdateState(imv1.ConditionReasonSecretCreated, imv1.ReadyState, "GardenCluster is ready")
+	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretReady, metav1.ConditionTrue)
 
 	return controller.resultWithRequeue(), controller.persistStatusChange(ctx, &cluster)
 }
@@ -138,8 +137,7 @@ func (controller *GardenerClusterController) resultWithoutRequeue() ctrl.Result 
 }
 
 func (controller *GardenerClusterController) persistStatusChange(ctx context.Context, cluster *imv1.GardenerCluster) error {
-	err := controller.Client.Status().Update(ctx, cluster)
-	return err
+	return controller.Client.Status().Update(ctx, cluster)
 }
 
 func (controller *GardenerClusterController) deleteSecret(clusterCRName string) error {

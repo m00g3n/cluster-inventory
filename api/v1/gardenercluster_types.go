@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -71,22 +72,21 @@ const (
 	ReadyState      State = "Ready"
 	ProcessingState State = "Processing"
 	ErrorState      State = "Error"
-	DeletingState   State = "Deleting"
 )
 
 type ConditionReason string
 
 const (
-	ConditionReasonSecretCreated             State = "SecretCreated"
-	ConditionReasonSecretNotFound            State = "SecretNotFound"
-	ConditionReasonGardenClusterNotRetrieved State = "GardenClusterNotRetrieved"
-	ConditionReasonGardenClusterNotFound     State = "GardenClusterNotFound"
+	ConditionReasonKubeconfigReadingSecret ConditionReason = "KubeconfigReadingSecret"
+	ConditionReasonKubeconfigSecretReady   ConditionReason = "KubeconfigSecretReady"
+	ConditionReasonFailedToCheckSecret     ConditionReason = "FailedToCheckSecret"
+	ConditionReasonFailedToCreateSecret    ConditionReason = "FailedToCreateSecret"
 )
 
 type ConditionType string
 
 const (
-	ConditionTypeUnknown State = "Unknown"
+	ConditionTypeKubeconfigManagement ConditionType = "KubeconfigManagement"
 )
 
 // GardenerClusterStatus defines the observed state of GardenerCluster
@@ -102,17 +102,78 @@ type GardenerClusterStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-func (cluster *GardenerCluster) UpdateState(r State, s State, msg string) {
-	cluster.Status.State = s
+func (cluster *GardenerCluster) UpdateConditionForProcessingState(conditionType ConditionType, reason ConditionReason, conditionStatus metav1.ConditionStatus) {
+	cluster.Status.State = ProcessingState
+
 	condition := metav1.Condition{
-		Type:               string(ConditionTypeUnknown),
-		Status:             "True",
+		Type:               string(conditionType),
+		Status:             conditionStatus,
 		LastTransitionTime: metav1.Now(),
-		Reason:             string(r),
-		Message:            msg,
+		Reason:             string(reason),
+		Message:            getMessage(reason),
 	}
 	meta.SetStatusCondition(&cluster.Status.Conditions, condition)
 }
+
+func (cluster *GardenerCluster) UpdateConditionForReadyState(conditionType ConditionType, reason ConditionReason, conditionStatus metav1.ConditionStatus) {
+	cluster.Status.State = ReadyState
+
+	condition := metav1.Condition{
+		Type:               string(conditionType),
+		Status:             conditionStatus,
+		LastTransitionTime: metav1.Now(),
+		Reason:             string(reason),
+		Message:            getMessage(reason),
+	}
+	meta.SetStatusCondition(&cluster.Status.Conditions, condition)
+}
+
+func (cluster *GardenerCluster) UpdateConditionForErrorState(conditionType ConditionType, reason ConditionReason, conditionStatus metav1.ConditionStatus, error error) {
+	cluster.Status.State = ErrorState
+
+	condition := metav1.Condition{
+		Type:               string(conditionType),
+		Status:             conditionStatus,
+		LastTransitionTime: metav1.Now(),
+		Reason:             string(reason),
+		Message:            fmt.Sprintf("%s Error: %s", getMessage(reason), error.Error()),
+	}
+	meta.SetStatusCondition(&cluster.Status.Conditions, condition)
+}
+
+func getMessage(reason ConditionReason) string {
+	switch reason {
+	case ConditionReasonKubeconfigSecretReady:
+		return "Secret created successfully."
+	case ConditionReasonFailedToCheckSecret:
+		return "Failed to get secret."
+	default:
+		return "Unknown condition"
+	}
+}
+
+//
+//conditions:
+//- lastTransitionTime: "2023-04-17T17:57:36Z"
+//lastUpdateTime: "2023-08-28T08:41:32Z"
+//message: ReplicaSet "faas-app-f6f5cc65b" has successfully progressed.
+//reason: NewReplicaSetAvailable
+//status: "True"
+//type: Progressing
+//- lastTransitionTime: "2023-10-05T23:16:21Z"
+//lastUpdateTime: "2023-10-05T23:16:21Z"
+//message: Deployment has minimum availability.
+//reason: MinimumReplicasAvailable
+//status: "True"
+//func (kyma *Kyma) UpdateCondition(conditionType KymaConditionType, status metav1.ConditionStatus) {
+//	meta.SetStatusCondition(&kyma.Status.Conditions, metav1.Condition{
+//		Type:               string(conditionType),
+//		Status:             status,
+//		Reason:             string(ConditionReason),
+//		Message:            GenerateMessage(conditionType, status),
+//		ObservedGeneration: kyma.GetGeneration(),
+//	})
+//}
 
 func init() {
 	SchemeBuilder.Register(&GardenerCluster{}, &GardenerClusterList{})
