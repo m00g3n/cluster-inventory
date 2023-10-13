@@ -99,8 +99,10 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		if !k8serrors.IsNotFound(err) {
 			controller.log.Error(err, "failed to get the Secret for "+cluster.Spec.Shoot.Name)
 			cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToCheckSecret, metav1.ConditionTrue, err)
-			if err := controller.persistStatusChange(ctx, &cluster); err != nil {
-				controller.log.Error(err, "Failed to set state for GardenerCluster", req.NamespacedName)
+			{
+				if err := controller.persistStatusChange(ctx, &cluster); err != nil {
+					controller.log.Error(err, "Failed to set state for GardenerCluster", req.NamespacedName)
+				}
 			}
 			return controller.resultWithoutRequeue(), err
 		}
@@ -111,8 +113,10 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 
 		if err != nil {
 			cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToCreateSecret, metav1.ConditionTrue, err)
-			if err := controller.persistStatusChange(ctx, &cluster); err != nil {
-				controller.log.Error(err, "Failed to set state for GardenerCluster", req.NamespacedName)
+			{
+				if err := controller.persistStatusChange(ctx, &cluster); err != nil {
+					controller.log.Error(err, "Failed to set state for GardenerCluster", req.NamespacedName)
+				}
 			}
 			return controller.resultWithoutRequeue(), err
 		}
