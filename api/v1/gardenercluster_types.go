@@ -152,29 +152,6 @@ func getMessage(reason ConditionReason) string {
 	}
 }
 
-//
-//conditions:
-//- lastTransitionTime: "2023-04-17T17:57:36Z"
-//lastUpdateTime: "2023-08-28T08:41:32Z"
-//message: ReplicaSet "faas-app-f6f5cc65b" has successfully progressed.
-//reason: NewReplicaSetAvailable
-//status: "True"
-//type: Progressing
-//- lastTransitionTime: "2023-10-05T23:16:21Z"
-//lastUpdateTime: "2023-10-05T23:16:21Z"
-//message: Deployment has minimum availability.
-//reason: MinimumReplicasAvailable
-//status: "True"
-//func (kyma *Kyma) UpdateCondition(conditionType KymaConditionType, status metav1.ConditionStatus) {
-//	meta.SetStatusCondition(&kyma.Status.Conditions, metav1.Condition{
-//		Type:               string(conditionType),
-//		Status:             status,
-//		Reason:             string(ConditionReason),
-//		Message:            GenerateMessage(conditionType, status),
-//		ObservedGeneration: kyma.GetGeneration(),
-//	})
-//}
-
 func init() {
 	SchemeBuilder.Register(&GardenerCluster{}, &GardenerClusterList{})
 }

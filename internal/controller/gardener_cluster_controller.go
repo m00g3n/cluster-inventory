@@ -76,7 +76,7 @@ type KubeconfigProvider interface {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (controller *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) { //nolint:revive
-	r.log.Info(fmt.Sprintf("Starting reconciliation loop for GardenerCluster resource: %v", req.NamespacedName))
+	controller.log.Info(fmt.Sprintf("Starting reconciliation loop for GardenerCluster resource: %v", req.NamespacedName))
 
 	var cluster imv1.GardenerCluster
 
