@@ -32,13 +32,15 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 const (
-	lastKubeconfigSyncAnnotation = "operator.kyma-project.io/last-sync"
-	clusterCRNameLabel           = "operator.kyma-project.io/cluster-name"
-	defaultRequeuInSeconds       = 60 * 1000
+	lastKubeconfigSyncAnnotation      = "operator.kyma-project.io/last-sync"
+	forceKubeconfigRotationAnnotation = "operator.kyma-project.io/force-kubeconfig-rotation"
+	clusterCRNameLabel                = "operator.kyma-project.io/cluster-name"
+	// The ratio determines what is the minimal time that needs to pass to rotate certificate.
+	minimalRotationTimeRatio = 0.6
+	defaultRequeuInSeconds   = 60 * 1000
 )
 
 // GardenerClusterController reconciles a GardenerCluster object
@@ -47,14 +49,18 @@ type GardenerClusterController struct {
 	Scheme             *runtime.Scheme
 	KubeconfigProvider KubeconfigProvider
 	log                logr.Logger
+	requeueAfter       time.Duration
 }
 
-func NewGardenerClusterController(mgr ctrl.Manager, kubeconfigProvider KubeconfigProvider, logger logr.Logger) *GardenerClusterController {
+func NewGardenerClusterController(mgr ctrl.Manager, kubeconfigProvider KubeconfigProvider, logger logr.Logger, kubeconfigExpirationTime time.Duration) *GardenerClusterController {
+	requeueTimeInMinutes := int64(minimalRotationTimeRatio * kubeconfigExpirationTime.Minutes())
+
 	return &GardenerClusterController{
 		Client:             mgr.GetClient(),
 		Scheme:             mgr.GetScheme(),
 		KubeconfigProvider: kubeconfigProvider,
 		log:                logger,
+		requeueAfter:       time.Duration(requeueTimeInMinutes) * time.Minute,
 	}
 }
 
@@ -66,6 +72,7 @@ type KubeconfigProvider interface {
 //+kubebuilder:rbac:groups=infrastructuremanager.kyma-project.io,resources=gardenerclusters,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;delete
 //+kubebuilder:rbac:groups=infrastructuremanager.kyma-project.io,resources=gardenerclusters/finalizers,verbs=update
+//+kubebuilder:rbac:groups=infrastructuremanager.kyma-project.io,resources=gardenerclusters/status,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -94,28 +101,12 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 
 	cluster.UpdateConditionForProcessingState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigReadingSecret, metav1.ConditionTrue)
 
-	secret, err := controller.getSecret(cluster.Spec.Shoot.Name)
+	err = controller.createOrRotateSecret(ctx, cluster)
 	if err != nil {
-		if !k8serrors.IsNotFound(err) {
-			controller.log.Error(err, "failed to get the Secret for "+cluster.Spec.Shoot.Name)
-			cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToCheckSecret, metav1.ConditionTrue, err)
-			if controller.persistStatusChange(ctx, &cluster) != nil {
-				controller.log.Error(err, "Failed to set state for GardenerCluster", req.NamespacedName)
-			}
-			return controller.resultWithoutRequeue(), err
+		if controller.persistStatusChange(ctx, &cluster) != nil {
+			controller.log.Error(err, "Failed to set state for GardenerCluster", req.NamespacedName)
 		}
-	}
-
-	if secret == nil {
-		err = controller.createSecret(ctx, cluster)
-
-		if err != nil {
-			cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToCreateSecret, metav1.ConditionTrue, err)
-			if controller.persistStatusChange(ctx, &cluster) != nil {
-				controller.log.Error(err, "Failed to set state for GardenerCluster", req.NamespacedName)
-			}
-			return controller.resultWithoutRequeue(), err
-		}
+		return controller.resultWithoutRequeue(), err
 	}
 
 	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretReady, metav1.ConditionTrue)
@@ -126,7 +117,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 func (controller *GardenerClusterController) resultWithRequeue() ctrl.Result {
 	return ctrl.Result{
 		Requeue:      true,
-		RequeueAfter: defaultRequeuInSeconds,
+		RequeueAfter: controller.requeueAfter,
 	}
 }
 
@@ -183,16 +174,46 @@ func (controller *GardenerClusterController) getSecret(shootName string) (*corev
 	return &secretList.Items[0], nil
 }
 
-func (controller *GardenerClusterController) createSecret(ctx context.Context, cluster imv1.GardenerCluster) error {
-	secret, err := controller.newSecret(cluster)
+func (controller *GardenerClusterController) createOrRotateSecret(ctx context.Context, cluster imv1.GardenerCluster) error {
+	kubeconfig, err := controller.KubeconfigProvider.Fetch(cluster.Spec.Shoot.Name)
 	if err != nil {
+		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetKubeconfig, metav1.ConditionTrue, err)
 		return err
 	}
 
-	return controller.Client.Create(ctx, &secret)
+	lastSyncTime := time.Now()
+	newSecret := controller.newSecret(cluster, kubeconfig, lastSyncTime)
+
+	err = controller.Client.Create(ctx, &newSecret)
+	if err != nil {
+		if k8serrors.IsAlreadyExists(err) {
+			existingSecret, err := controller.getSecret(cluster.Spec.Shoot.Name)
+			if err != nil {
+				cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetSecret, metav1.ConditionTrue, err)
+				return err
+			}
+
+			existingSecret.Data[cluster.Spec.Kubeconfig.Secret.Key] = []byte(kubeconfig)
+			existingSecret.GetAnnotations()[lastKubeconfigSyncAnnotation] = lastSyncTime.UTC().String()
+
+			err = controller.Client.Update(ctx, existingSecret)
+			if err != nil {
+				cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToUpdateSecret, metav1.ConditionTrue, err)
+				return err
+			}
+
+			return nil
+		}
+
+		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToCreateSecret, metav1.ConditionTrue, err)
+
+		return err
+	}
+
+	return nil
 }
 
-func (controller *GardenerClusterController) newSecret(cluster imv1.GardenerCluster) (corev1.Secret, error) {
+func (controller *GardenerClusterController) newSecret(cluster imv1.GardenerCluster, kubeconfig string, lastSyncTime time.Time) corev1.Secret {
 	labels := map[string]string{}
 
 	for key, val := range cluster.Labels {
@@ -201,35 +222,22 @@ func (controller *GardenerClusterController) newSecret(cluster imv1.GardenerClus
 	labels["operator.kyma-project.io/managed-by"] = "infrastructure-manager"
 	labels[clusterCRNameLabel] = cluster.Name
 
-	kubeconfig, err := controller.KubeconfigProvider.Fetch(cluster.Spec.Shoot.Name)
-	if err != nil {
-		return corev1.Secret{}, err
-	}
-
 	return corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        cluster.Spec.Kubeconfig.Secret.Name,
 			Namespace:   cluster.Spec.Kubeconfig.Secret.Namespace,
 			Labels:      labels,
-			Annotations: map[string]string{lastKubeconfigSyncAnnotation: time.Now().UTC().String()},
+			Annotations: map[string]string{lastKubeconfigSyncAnnotation: lastSyncTime.UTC().String()},
 		},
 		StringData: map[string]string{cluster.Spec.Kubeconfig.Secret.Key: kubeconfig},
-	}, nil
+	}
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (controller *GardenerClusterController) SetupWithManager(mgr ctrl.Manager) error {
-	omitStatusChanged := predicate.Or(
-		predicate.GenerationChangedPredicate{},
-		predicate.LabelChangedPredicate{},
-		predicate.AnnotationChangedPredicate{},
-	)
-
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&imv1.GardenerCluster{}, builder.WithPredicates(
-			predicate.And(
-				predicate.ResourceVersionChangedPredicate{},
-				omitStatusChanged),
+			newRotationNotNeededPredicate(controller.requeueAfter),
 		)).
 		Complete(controller)
 }

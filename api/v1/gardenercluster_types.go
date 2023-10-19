@@ -80,8 +80,10 @@ type ConditionReason string
 const (
 	ConditionReasonKubeconfigReadingSecret ConditionReason = "KubeconfigReadingSecret"
 	ConditionReasonKubeconfigSecretReady   ConditionReason = "KubeconfigSecretReady"
-	ConditionReasonFailedToCheckSecret     ConditionReason = "FailedToCheckSecret"
+	ConditionReasonFailedToGetSecret       ConditionReason = "FailedToCheckSecret"
 	ConditionReasonFailedToCreateSecret    ConditionReason = "FailedToCreateSecret"
+	ConditionReasonFailedToUpdateSecret    ConditionReason = "FailedToUpdateSecret"
+	ConditionReasonFailedToGetKubeconfig   ConditionReason = "FailedToGetKubeconfig"
 )
 
 type ConditionType string
@@ -146,7 +148,7 @@ func getMessage(reason ConditionReason) string {
 	switch reason {
 	case ConditionReasonKubeconfigSecretReady:
 		return "Secret created successfully."
-	case ConditionReasonFailedToCheckSecret:
+	case ConditionReasonFailedToGetSecret:
 		return "Failed to get secret."
 	default:
 		return "Unknown condition"

@@ -114,7 +114,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (controller.NewGardenerClusterController(mgr, kubeconfigProvider, logger)).SetupWithManager(mgr); err != nil {
+	if err = (controller.NewGardenerClusterController(mgr, kubeconfigProvider, logger, expirationTime)).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GardenerCluster")
 		os.Exit(1)
 	}

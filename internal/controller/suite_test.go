@@ -20,6 +20,7 @@ import (
 	"context"
 	"path/filepath"
 	"testing"
+	"time"
 
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/mocks"
@@ -76,7 +77,7 @@ var _ = BeforeSuite(func() {
 	kubeconfigProviderMock := &mocks.KubeconfigProvider{}
 	setupKubeconfigProviderMock(kubeconfigProviderMock)
 
-	controller := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger)
+	controller := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger, 24*time.Hour)
 	Expect(controller).NotTo(BeNil())
 
 	err = controller.SetupWithManager(mgr)
