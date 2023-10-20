@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/types"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -106,25 +107,22 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	if err != nil {
 		controller.log.Error(err, "Failed to create, or rotate secret")
 		if controller.persistStatusChange(ctx, &cluster) != nil {
-			controller.log.Error(err, "Failed to set state for GardenerCluster", req.NamespacedName)
+			controller.log.Error(err, "Failed to set state for GardenerCluster")
 		}
 		return controller.resultWithoutRequeue(), err
 	}
 
 	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretReady, metav1.ConditionTrue)
-	annotations := cluster.GetAnnotations()
-	if annotations == nil {
-		annotations = map[string]string{}
-	}
-
-	annotations[lastKubeconfigSyncAnnotation] = lastSyncTime.UTC().Format(time.RFC3339)
-	cluster.SetAnnotations(annotations)
-
-	controller.log.Info(fmt.Sprintf("Annotations: %v", cluster.Annotations))
 
 	err = controller.persistStatusChange(ctx, &cluster)
 	if err != nil {
-		controller.log.Error(err, "Failed to set state for GardenerCluster", req.NamespacedName)
+		controller.log.Error(err, "Failed to set state for GardenerCluster")
+		return controller.resultWithoutRequeue(), err
+	}
+
+	err = controller.persistLastSyncTime(ctx, &cluster, lastSyncTime)
+	if err != nil {
+		controller.log.Error(err, "Failed to set state for GardenerCluster")
 		return controller.resultWithoutRequeue(), err
 	}
 
@@ -146,6 +144,27 @@ func (controller *GardenerClusterController) resultWithoutRequeue() ctrl.Result 
 
 func (controller *GardenerClusterController) persistStatusChange(ctx context.Context, cluster *imv1.GardenerCluster) error {
 	return controller.Client.Status().Update(ctx, cluster)
+}
+
+func (controller *GardenerClusterController) persistLastSyncTime(ctx context.Context, cluster *imv1.GardenerCluster, lastSyncTime time.Time) error {
+	var clusterToUpgrade imv1.GardenerCluster
+
+	gardenerClusterKey := types.NamespacedName{Name: cluster.Name, Namespace: cluster.Namespace}
+
+	err := controller.Client.Get(ctx, gardenerClusterKey, &clusterToUpgrade)
+	if err != nil {
+		return err
+	}
+	annotations := clusterToUpgrade.GetAnnotations()
+	if annotations == nil {
+		annotations = map[string]string{}
+	}
+
+	annotations[lastKubeconfigSyncAnnotation] = lastSyncTime.UTC().Format(time.RFC3339)
+
+	clusterToUpgrade.SetAnnotations(annotations)
+
+	return controller.Client.Update(ctx, &clusterToUpgrade)
 }
 
 func (controller *GardenerClusterController) deleteSecret(clusterCRName string) error {
