@@ -18,7 +18,6 @@ package controller
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"path/filepath"
 	"testing"
 	"time"
@@ -27,6 +26,7 @@ import (
 	"github.com/kyma-project/infrastructure-manager/internal/controller/mocks"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
