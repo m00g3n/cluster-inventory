@@ -100,6 +100,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 
 	cluster.UpdateConditionForProcessingState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigReadingSecret, metav1.ConditionTrue)
 
+	controller.log.Info("About to create, or rotate secret")
 	lastSyncTime := time.Now()
 	err = controller.createOrRotateSecret(ctx, &cluster, lastSyncTime)
 	if err != nil {
@@ -119,8 +120,9 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	annotations[lastKubeconfigSyncAnnotation] = lastSyncTime.UTC().Format(time.RFC3339)
 	cluster.SetAnnotations(annotations)
 
-	err = controller.persistStatusChange(ctx, &cluster)
+	controller.log.Info(fmt.Sprintf("Annotations: %v", cluster.Annotations))
 
+	err = controller.persistStatusChange(ctx, &cluster)
 	if err != nil {
 		controller.log.Error(err, "Failed to set state for GardenerCluster", req.NamespacedName)
 		return controller.resultWithoutRequeue(), err
@@ -192,12 +194,15 @@ func (controller *GardenerClusterController) getSecret(shootName string) (*corev
 func (controller *GardenerClusterController) createOrRotateSecret(ctx context.Context, cluster *imv1.GardenerCluster, lastSyncTime time.Time) error {
 	kubeconfig, err := controller.KubeconfigProvider.Fetch(cluster.Spec.Shoot.Name)
 	if err != nil {
+		controller.log.Error(err, "Failed to get kubecofnig")
 		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetKubeconfig, metav1.ConditionTrue, err)
 		return err
 	}
 
+	controller.log.Info("Getting secret")
 	existingSecret, err := controller.getSecret(cluster.Spec.Shoot.Name)
 	if err != nil && !k8serrors.IsNotFound(err) {
+		controller.log.Error(err, "Failed to get kubeconfig secret")
 		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetSecret, metav1.ConditionTrue, err)
 		return err
 	}
@@ -210,9 +215,11 @@ func (controller *GardenerClusterController) createOrRotateSecret(ctx context.Co
 }
 
 func (controller *GardenerClusterController) createNewSecret(ctx context.Context, kubeconfig string, cluster *imv1.GardenerCluster, lastSyncTime time.Time) error {
+	controller.log.Info("Creating a new kubeconfig secret")
 	newSecret := controller.newSecret(*cluster, kubeconfig, lastSyncTime)
 	err := controller.Client.Create(ctx, &newSecret)
 	if err != nil {
+		controller.log.Error(err, "Failed to create secret")
 		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetSecret, metav1.ConditionTrue, err)
 	}
 
@@ -220,6 +227,7 @@ func (controller *GardenerClusterController) createNewSecret(ctx context.Context
 }
 
 func (controller *GardenerClusterController) updateExistingSecret(ctx context.Context, kubeconfig string, cluster *imv1.GardenerCluster, existingSecret *corev1.Secret, lastSyncTime time.Time) error {
+	controller.log.Info("Updating the kubeconfig secret")
 	existingSecret.Data[cluster.Spec.Kubeconfig.Secret.Key] = []byte(kubeconfig)
 	annotations := existingSecret.GetAnnotations()
 	if annotations == nil {
@@ -231,6 +239,7 @@ func (controller *GardenerClusterController) updateExistingSecret(ctx context.Co
 
 	err := controller.Client.Update(ctx, existingSecret)
 	if err != nil {
+		controller.log.Error(err, "Failed to update secret")
 		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToUpdateSecret, metav1.ConditionTrue, err)
 	}
 
