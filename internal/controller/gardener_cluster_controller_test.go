@@ -2,25 +2,25 @@ package controller
 
 import (
 	"context"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"time"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 var _ = Describe("Gardener Cluster controller", func() {
 	Context("Secret with kubeconfig doesn't exist", func() {
-		kymaName := "kymaname1"
-		secretName := "secret-name1"
-		shootName := "shootName1"
-		namespace := "default"
+		It("Should create secret, and set Ready status on CR", func() {
+			kymaName := "kymaname1"
+			secretName := "secret-name1"
+			shootName := "shootName1"
+			namespace := "default"
 
-		It("Create secret", func() {
 			By("Create GardenerCluster CR")
 
 			gardenerClusterCR := fixGardenerClusterCR(kymaName, namespace, shootName, secretName)
@@ -28,10 +28,10 @@ var _ = Describe("Gardener Cluster controller", func() {
 
 			By("Wait for secret creation")
 			var kubeconfigSecret corev1.Secret
-			key := types.NamespacedName{Name: secretName, Namespace: namespace}
+			secretKey := types.NamespacedName{Name: secretName, Namespace: namespace}
 
 			Eventually(func() bool {
-				return k8sClient.Get(context.Background(), key, &kubeconfigSecret) == nil
+				return k8sClient.Get(context.Background(), secretKey, &kubeconfigSecret) == nil
 			}, time.Second*30, time.Second*3).Should(BeTrue())
 
 			gardenerClusterKey := types.NamespacedName{Name: gardenerClusterCR.Name, Namespace: gardenerClusterCR.Namespace}
@@ -45,23 +45,61 @@ var _ = Describe("Gardener Cluster controller", func() {
 				return newGardenerCluster.Status.State == imv1.ReadyState
 			}, time.Second*30, time.Second*3).Should(BeTrue())
 
-			err := k8sClient.Get(context.Background(), key, &kubeconfigSecret)
+			err := k8sClient.Get(context.Background(), secretKey, &kubeconfigSecret)
 			Expect(err).To(BeNil())
-			expectedSecret := fixNewSecret(secretName, namespace, kymaName, shootName, "kubeconfig1")
+			expectedSecret := fixNewSecret(secretName, namespace, kymaName, shootName, "kubeconfig1", "")
 			Expect(kubeconfigSecret.Labels).To(Equal(expectedSecret.Labels))
 			Expect(kubeconfigSecret.Data).To(Equal(expectedSecret.Data))
 			Expect(kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]).To(Not(BeEmpty()))
+		})
 
-			err = k8sClient.Get(context.Background(), gardenerClusterKey, &newGardenerCluster)
-			Expect(err).To(BeNil())
+		It("Should delete secret", func() {
+			kymaName := "kymaname5"
+			secretName := "secret-name5"
+			shootName := "shootName5"
+			namespace := "default"
+
+			By("Create GardenerCluster CR")
+
+			gardenerClusterCR := fixGardenerClusterCR(kymaName, namespace, shootName, secretName)
+			Expect(k8sClient.Create(context.Background(), &gardenerClusterCR)).To(Succeed())
+
+			By("Wait for secret creation")
+			var kubeconfigSecret corev1.Secret
+			secretKey := types.NamespacedName{Name: secretName, Namespace: namespace}
+
+			Eventually(func() bool {
+				return k8sClient.Get(context.Background(), secretKey, &kubeconfigSecret) == nil
+			}, time.Second*30, time.Second*3).Should(BeTrue())
 
 			By("Delete Cluster CR")
 			Expect(k8sClient.Delete(context.Background(), &gardenerClusterCR)).To(Succeed())
 
 			By("Wait for secret deletion")
 			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), key, &kubeconfigSecret)
+				err := k8sClient.Get(context.Background(), secretKey, &kubeconfigSecret)
 				return err != nil && k8serrors.IsNotFound(err)
+			}, time.Second*30, time.Second*3).Should(BeTrue())
+		})
+
+		It("Should set Error status on CR if failed to fetch kubeconfig", func() {
+			kymaName := "kymaname6"
+			secretName := "secret-name6"
+			shootName := "shootName6"
+			namespace := "default"
+
+			gardenerClusterCR := fixGardenerClusterCR(kymaName, namespace, shootName, secretName)
+			Expect(k8sClient.Create(context.Background(), &gardenerClusterCR)).To(Succeed())
+
+			gardenerClusterKey := types.NamespacedName{Name: gardenerClusterCR.Name, Namespace: gardenerClusterCR.Namespace}
+			var newGardenerCluster imv1.GardenerCluster
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), gardenerClusterKey, &newGardenerCluster)
+				if err != nil {
+					return false
+				}
+
+				return newGardenerCluster.Status.State == imv1.ErrorState
 			}, time.Second*30, time.Second*3).Should(BeTrue())
 		})
 	})
@@ -69,9 +107,11 @@ var _ = Describe("Gardener Cluster controller", func() {
 	Context("Secret with kubeconfig exists", func() {
 		namespace := "default"
 
-		DescribeTable("Create secret when needed", func(gardenerClusterCR imv1.GardenerCluster, secret corev1.Secret, previousTimestamp, expectedKubeconfig string) {
+		DescribeTable("Should update secret", func(gardenerClusterCR imv1.GardenerCluster, secret corev1.Secret, expectedKubeconfig string) {
 			By("Create kubeconfig secret")
 			Expect(k8sClient.Create(context.Background(), &secret)).To(Succeed())
+
+			previousTimestamp := secret.Annotations[lastKubeconfigSyncAnnotation]
 
 			By("Create Cluster CR")
 			Expect(k8sClient.Create(context.Background(), &gardenerClusterCR)).To(Succeed())
@@ -80,7 +120,6 @@ var _ = Describe("Gardener Cluster controller", func() {
 			secretKey := types.NamespacedName{Name: secret.Name, Namespace: namespace}
 
 			Eventually(func() bool {
-
 				err := k8sClient.Get(context.Background(), secretKey, &kubeconfigSecret)
 				if err != nil {
 					return false
@@ -109,33 +148,57 @@ var _ = Describe("Gardener Cluster controller", func() {
 			err := k8sClient.Get(context.Background(), secretKey, &kubeconfigSecret)
 			Expect(err).To(BeNil())
 			Expect(string(kubeconfigSecret.Data["config"])).To(Equal(expectedKubeconfig))
-
-			err = k8sClient.Get(context.Background(), gardenerClusterKey, &newGardenerCluster)
-			Expect(err).To(BeNil())
 		},
 			Entry("Rotate kubeconfig when rotation time passed",
 				fixGardenerClusterCR("kymaname2", namespace, "shootName2", "secret-name2"),
-				fixNewSecret("secret-name2", namespace, "kymaname2", "shootName2", "kubeconfig2"),
-				"2023-10-09T23:00:00Z",
+				fixNewSecret("secret-name2", namespace, "kymaname2", "shootName2", "kubeconfig2", "2023-10-09T23:00:00Z"),
 				"kubeconfig2"),
 			Entry("Rotate dynamic kubeconfig",
 				fixGardenerClusterCRWithForceRotationAnnotation("kymaname3", namespace, "shootName3", "secret-name3"),
-				fixNewSecret("secret-name3", namespace, "kymaname3", "shootName3", "kubeconfig3"),
-				time.Now().UTC().Format(time.RFC3339),
+				fixNewSecret("secret-name3", namespace, "kymaname3", "shootName3", "kubeconfig3", time.Now().UTC().Format(time.RFC3339)),
 				"kubeconfig3"),
 		)
 
-		Describe("Skip rotation", func() {
+		It("Should skip rotation", func() {
+			By("Create kubeconfig secret")
+			secret := fixNewSecret("secret-name4", namespace, "kymaname4", "shootName4", "kubeconfig4", time.Now().UTC().Format(time.RFC3339))
+			Expect(k8sClient.Create(context.Background(), &secret)).To(Succeed())
 
+			previousTimestamp := secret.Annotations[lastKubeconfigSyncAnnotation]
+
+			By("Create Cluster CR")
+			gardenerClusterCR := fixGardenerClusterCRWithForceRotationAnnotation("kymaname4", namespace, "shootName4", "secret-name4")
+			Expect(k8sClient.Create(context.Background(), &gardenerClusterCR)).To(Succeed())
+
+			var kubeconfigSecret corev1.Secret
+			secretKey := types.NamespacedName{Name: secret.Name, Namespace: namespace}
+
+			Consistently(func() bool {
+				err := k8sClient.Get(context.Background(), secretKey, &kubeconfigSecret)
+				if err != nil {
+					return false
+				}
+
+				timestampAnnotation := kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]
+
+				return timestampAnnotation == previousTimestamp
+			}, time.Second*30, time.Second*3).Should(BeTrue())
 		})
 	})
 })
 
-func fixNewSecret(name, namespace, kymaName, shootName, data string) corev1.Secret {
+func fixNewSecret(name, namespace, kymaName, shootName, data string, lastSyncTime string) corev1.Secret {
 	labels := fixSecretLabels(kymaName, shootName)
+	annotations := map[string]string{lastKubeconfigSyncAnnotation: lastSyncTime}
 
 	builder := newTestSecret(name, namespace)
-	return builder.WithLabels(labels).WithData(data).ToSecret()
+	return builder.WithLabels(labels).WithAnnotations(annotations).WithData(data).ToSecret()
+}
+
+func (sb *TestSecret) WithAnnotations(annotations map[string]string) *TestSecret {
+	sb.secret.Annotations = annotations
+
+	return sb
 }
 
 func (sb *TestSecret) WithLabels(labels map[string]string) *TestSecret {
@@ -170,7 +233,7 @@ type TestSecret struct {
 }
 
 func fixSecretLabels(kymaName, shootName string) map[string]string {
-	labels := fixClusterInventoryLabels(kymaName, shootName)
+	labels := fixGardenerClusterLabels(kymaName, shootName)
 	labels["operator.kyma-project.io/managed-by"] = "infrastructure-manager"
 	labels["operator.kyma-project.io/cluster-name"] = kymaName
 	return labels
@@ -178,14 +241,14 @@ func fixSecretLabels(kymaName, shootName string) map[string]string {
 
 func fixGardenerClusterCR(kymaName, namespace, shootName, secretName string) imv1.GardenerCluster {
 	return newTestGardenerClusterCR(kymaName, namespace, shootName, secretName).
-		WithLabels(fixClusterInventoryLabels(kymaName, shootName)).ToCluster()
+		WithLabels(fixGardenerClusterLabels(kymaName, shootName)).ToCluster()
 }
 
 func fixGardenerClusterCRWithForceRotationAnnotation(kymaName, namespace, shootName, secretName string) imv1.GardenerCluster {
 	annotations := map[string]string{forceKubeconfigRotationAnnotation: "true"}
 
 	return newTestGardenerClusterCR(kymaName, namespace, shootName, secretName).
-		WithLabels(fixClusterInventoryLabels(kymaName, shootName)).
+		WithLabels(fixGardenerClusterLabels(kymaName, shootName)).
 		WithAnnotations(annotations).
 		ToCluster()
 }
@@ -233,7 +296,7 @@ type TestGardenerClusterCR struct {
 	gardenerCluster imv1.GardenerCluster
 }
 
-func fixClusterInventoryLabels(kymaName, shootName string) map[string]string {
+func fixGardenerClusterLabels(kymaName, shootName string) map[string]string {
 	labels := map[string]string{}
 
 	labels["kyma-project.io/instance-id"] = "instanceID"

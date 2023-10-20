@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"path/filepath"
 	"testing"
 	"time"
@@ -102,6 +103,9 @@ func setupKubeconfigProviderMock(kpMock *mocks.KubeconfigProvider) {
 	kpMock.On("Fetch", "shootName1").Return("kubeconfig1", nil)
 	kpMock.On("Fetch", "shootName2").Return("kubeconfig2", nil)
 	kpMock.On("Fetch", "shootName3").Return("kubeconfig3", nil)
+	kpMock.On("Fetch", "shootName4").Return("kubeconfig4", nil)
+	kpMock.On("Fetch", "shootName5").Return("kubeconfig5", nil)
+	kpMock.On("Fetch", "shootName6").Return("", errors.New("failed to get kubeconfig"))
 }
 
 var _ = AfterSuite(func() {

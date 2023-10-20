@@ -115,7 +115,10 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 			return controller.resultWithoutRequeue(), statusErr
 		}
 
-		return controller.resultWithoutRequeue(), controller.removeForceRotationAnnotationIfNeeded(ctx, &cluster)
+		err = controller.removeForceRotationAnnotationIfNeeded(ctx, &cluster)
+		if err != nil {
+			return controller.resultWithoutRequeue(), err
+		}
 	}
 
 	return controller.resultWithRequeue(), nil
@@ -191,6 +194,7 @@ func (controller *GardenerClusterController) createOrRotateSecret(ctx context.Co
 	}
 
 	if !secretNeedsToBeRotated(cluster, existingSecret, controller.rotationPeriod) {
+		controller.log.Info("Secret rotation skipped")
 		return false, nil
 	}
 
@@ -231,7 +235,7 @@ func secretRotationTimePassed(secret *corev1.Secret, rotationPeriod time.Duratio
 		return true
 	}
 	now := time.Now()
-	alreadyValidFor := lastSyncTime.Sub(now)
+	alreadyValidFor := now.Sub(lastSyncTime)
 
 	return alreadyValidFor.Minutes() >= rotationPeriod.Minutes()
 }
