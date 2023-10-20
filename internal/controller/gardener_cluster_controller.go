@@ -40,7 +40,6 @@ const (
 	clusterCRNameLabel                = "operator.kyma-project.io/cluster-name"
 	// The ratio determines what is the minimal time that needs to pass to rotate certificate.
 	minimalRotationTimeRatio = 0.6
-	defaultRequeuInSeconds   = 60 * 1000
 )
 
 // GardenerClusterController reconciles a GardenerCluster object
@@ -101,7 +100,8 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 
 	cluster.UpdateConditionForProcessingState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigReadingSecret, metav1.ConditionTrue)
 
-	err = controller.createOrRotateSecret(ctx, cluster)
+	lastSyncTime := time.Now()
+	err = controller.createOrRotateSecret(ctx, cluster, lastSyncTime)
 	if err != nil {
 		if controller.persistStatusChange(ctx, &cluster) != nil {
 			controller.log.Error(err, "Failed to set state for GardenerCluster", req.NamespacedName)
@@ -110,6 +110,12 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	}
 
 	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretReady, metav1.ConditionTrue)
+	annotations := cluster.GetAnnotations()
+	if annotations == nil {
+		annotations = map[string]string{}
+	}
+	annotations[lastKubeconfigSyncAnnotation] = lastSyncTime.UTC().Format(time.RFC3339)
+	cluster.SetAnnotations(annotations)
 
 	return controller.resultWithRequeue(), controller.persistStatusChange(ctx, &cluster)
 }
@@ -174,14 +180,13 @@ func (controller *GardenerClusterController) getSecret(shootName string) (*corev
 	return &secretList.Items[0], nil
 }
 
-func (controller *GardenerClusterController) createOrRotateSecret(ctx context.Context, cluster imv1.GardenerCluster) error {
+func (controller *GardenerClusterController) createOrRotateSecret(ctx context.Context, cluster imv1.GardenerCluster, lastSyncTime time.Time) error {
 	kubeconfig, err := controller.KubeconfigProvider.Fetch(cluster.Spec.Shoot.Name)
 	if err != nil {
 		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetKubeconfig, metav1.ConditionTrue, err)
 		return err
 	}
 
-	lastSyncTime := time.Now()
 	newSecret := controller.newSecret(cluster, kubeconfig, lastSyncTime)
 
 	err = controller.Client.Create(ctx, &newSecret)
@@ -194,7 +199,13 @@ func (controller *GardenerClusterController) createOrRotateSecret(ctx context.Co
 			}
 
 			existingSecret.Data[cluster.Spec.Kubeconfig.Secret.Key] = []byte(kubeconfig)
-			existingSecret.GetAnnotations()[lastKubeconfigSyncAnnotation] = lastSyncTime.UTC().String()
+			annotations := existingSecret.GetAnnotations()
+			if annotations == nil {
+				annotations = map[string]string{}
+			}
+
+			annotations[lastKubeconfigSyncAnnotation] = lastSyncTime.UTC().Format(time.RFC3339)
+			existingSecret.SetAnnotations(annotations)
 
 			err = controller.Client.Update(ctx, existingSecret)
 			if err != nil {
@@ -227,7 +238,7 @@ func (controller *GardenerClusterController) newSecret(cluster imv1.GardenerClus
 			Name:        cluster.Spec.Kubeconfig.Secret.Name,
 			Namespace:   cluster.Spec.Kubeconfig.Secret.Namespace,
 			Labels:      labels,
-			Annotations: map[string]string{lastKubeconfigSyncAnnotation: lastSyncTime.UTC().String()},
+			Annotations: map[string]string{lastKubeconfigSyncAnnotation: lastSyncTime.UTC().Format(time.RFC3339)},
 		},
 		StringData: map[string]string{cluster.Spec.Kubeconfig.Secret.Key: kubeconfig},
 	}
