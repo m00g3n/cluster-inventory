@@ -112,15 +112,15 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		return controller.resultWithoutRequeue(), err
 	}
 
-	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretReady, metav1.ConditionTrue)
-
-	err = controller.persistStatusChange(ctx, &cluster)
+	err = controller.persistLastSyncTime(ctx, &cluster, lastSyncTime)
 	if err != nil {
 		controller.log.Error(err, "Failed to set state for GardenerCluster")
 		return controller.resultWithoutRequeue(), err
 	}
 
-	err = controller.persistLastSyncTime(ctx, &cluster, lastSyncTime)
+	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretReady, metav1.ConditionTrue)
+
+	err = controller.persistStatusChange(ctx, &cluster)
 	if err != nil {
 		controller.log.Error(err, "Failed to set state for GardenerCluster")
 		return controller.resultWithoutRequeue(), err
@@ -147,24 +147,22 @@ func (controller *GardenerClusterController) persistStatusChange(ctx context.Con
 }
 
 func (controller *GardenerClusterController) persistLastSyncTime(ctx context.Context, cluster *imv1.GardenerCluster, lastSyncTime time.Time) error {
-	var clusterToUpgrade imv1.GardenerCluster
-
 	gardenerClusterKey := types.NamespacedName{Name: cluster.Name, Namespace: cluster.Namespace}
 
-	err := controller.Client.Get(ctx, gardenerClusterKey, &clusterToUpgrade)
+	err := controller.Client.Get(ctx, gardenerClusterKey, cluster)
 	if err != nil {
 		return err
 	}
-	annotations := clusterToUpgrade.GetAnnotations()
+	annotations := cluster.GetAnnotations()
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
 
 	annotations[lastKubeconfigSyncAnnotation] = lastSyncTime.UTC().Format(time.RFC3339)
 
-	clusterToUpgrade.SetAnnotations(annotations)
+	cluster.SetAnnotations(annotations)
 
-	return controller.Client.Update(ctx, &clusterToUpgrade)
+	return controller.Client.Update(ctx, cluster)
 }
 
 func (controller *GardenerClusterController) deleteSecret(clusterCRName string) error {
