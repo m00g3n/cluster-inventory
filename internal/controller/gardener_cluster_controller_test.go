@@ -54,8 +54,8 @@ var _ = Describe("Gardener Cluster controller", func() {
 
 			err = k8sClient.Get(context.Background(), gardenerClusterKey, &newGardenerCluster)
 			Expect(err).To(BeNil())
-			//_, err = parseLastSyncTime(newGardenerCluster.GetAnnotations()[lastKubeconfigSyncAnnotation])
-			//Expect(err).To(BeNil())
+			// _, err = parseLastSyncTime(newGardenerCluster.GetAnnotations()[lastKubeconfigSyncAnnotation])
+			// Expect(err).To(BeNil())
 
 			By("Delete Cluster CR")
 			Expect(k8sClient.Delete(context.Background(), &gardenerClusterCR)).To(Succeed())
@@ -123,7 +123,7 @@ var _ = Describe("Gardener Cluster controller", func() {
 				fixNewSecret("secret-name2", namespace, "kymaname2", "shootName2", "kubeconfig2"),
 				"2023-10-09T23:00:00Z",
 				"kubeconfig2"),
-			//Entry("Rotate dynamic kubeconfig",
+			// Entry("Rotate dynamic kubeconfig",
 			//	fixClusterInventoryCR("cluster3", "default", "kymaName3", "shootName3", "dynamic-kubeconfig-secret"),
 			//	fixSecretWithDynamicKubeconfig("dynamic-kubeconfig-secret", namespace, "kymaName3", "shootName3", "kubeconfig3", "2006-01-02T15:04:05Z07:00"),
 			//	"2022-11-10 23:00:00 +0000",

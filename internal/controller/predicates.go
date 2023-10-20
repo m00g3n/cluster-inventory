@@ -1,10 +1,11 @@
 package controller
 
 import (
+	"time"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"time"
 )
 
 func newRotationNotNeededPredicate(rotationPeriod time.Duration) predicate.Predicate {
