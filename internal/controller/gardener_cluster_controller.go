@@ -103,6 +103,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	lastSyncTime := time.Now()
 	err = controller.createOrRotateSecret(ctx, cluster, lastSyncTime)
 	if err != nil {
+		controller.log.Error(err, "Failed to create, or rotate secret", err)
 		if controller.persistStatusChange(ctx, &cluster) != nil {
 			controller.log.Error(err, "Failed to set state for GardenerCluster", req.NamespacedName)
 		}
@@ -114,10 +115,18 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
+
 	annotations[lastKubeconfigSyncAnnotation] = lastSyncTime.UTC().Format(time.RFC3339)
 	cluster.SetAnnotations(annotations)
 
-	return controller.resultWithRequeue(), controller.persistStatusChange(ctx, &cluster)
+	controller.log.Info("Setting lastKubeconfigSyncAnnotation annotation", annotations[lastKubeconfigSyncAnnotation])
+
+	if err := controller.persistStatusChange(ctx, &cluster); err != nil {
+		controller.log.Error(err, "Failed to set state for GardenerCluster", req.NamespacedName)
+		return controller.resultWithoutRequeue(), err
+	}
+
+	return controller.resultWithRequeue(), nil
 }
 
 func (controller *GardenerClusterController) resultWithRequeue() ctrl.Result {

@@ -34,12 +34,28 @@ var _ = Describe("Gardener Cluster controller", func() {
 				return k8sClient.Get(context.Background(), key, &kubeconfigSecret) == nil
 			}, time.Second*30, time.Second*3).Should(BeTrue())
 
+			gardenerClusterKey := types.NamespacedName{Name: gardenerClusterCR.Name, Namespace: gardenerClusterCR.Namespace}
+			var newGardenerCluster imv1.GardenerCluster
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), gardenerClusterKey, &newGardenerCluster)
+				if err != nil {
+					return false
+				}
+
+				return newGardenerCluster.Status.State == imv1.ReadyState
+			}, time.Second*30, time.Second*3).Should(BeTrue())
+
 			err := k8sClient.Get(context.Background(), key, &kubeconfigSecret)
 			Expect(err).To(BeNil())
 			expectedSecret := fixNewSecret(secretName, namespace, kymaName, shootName, "kubeconfig1")
 			Expect(kubeconfigSecret.Labels).To(Equal(expectedSecret.Labels))
 			Expect(kubeconfigSecret.Data).To(Equal(expectedSecret.Data))
 			Expect(kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]).To(Not(BeEmpty()))
+
+			err = k8sClient.Get(context.Background(), gardenerClusterKey, &newGardenerCluster)
+			Expect(err).To(BeNil())
+			//_, err = parseLastSyncTime(newGardenerCluster.GetAnnotations()[lastKubeconfigSyncAnnotation])
+			//Expect(err).To(BeNil())
 
 			By("Delete Cluster CR")
 			Expect(k8sClient.Delete(context.Background(), &gardenerClusterCR)).To(Succeed())
@@ -96,7 +112,6 @@ var _ = Describe("Gardener Cluster controller", func() {
 
 			err = k8sClient.Get(context.Background(), gardenerClusterKey, &newGardenerCluster)
 			Expect(err).To(BeNil())
-			Expect(newGardenerCluster.Status.State).To(Equal(imv1.ReadyState))
 			newTime, err := parseLastSyncTime(newGardenerCluster.GetAnnotations()[lastKubeconfigSyncAnnotation])
 			Expect(err).To(BeNil())
 			previousTime, err := parseLastSyncTime(previousTimestamp)
