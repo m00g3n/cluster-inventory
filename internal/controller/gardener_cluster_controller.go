@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -113,6 +114,8 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 			}
 			return controller.resultWithoutRequeue(), statusErr
 		}
+
+		return controller.resultWithoutRequeue(), controller.removeForceRotationAnnotationIfNeeded(ctx, &cluster)
 	}
 
 	return controller.resultWithRequeue(), nil
@@ -280,6 +283,35 @@ func (controller *GardenerClusterController) updateExistingSecret(ctx context.Co
 	}
 
 	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretReady, metav1.ConditionTrue)
+
+	return nil
+}
+
+func (controller *GardenerClusterController) removeForceRotationAnnotationIfNeeded(ctx context.Context, cluster *imv1.GardenerCluster) error {
+	annotations := cluster.GetAnnotations()
+	if annotations == nil {
+		return nil
+	}
+
+	_, found := annotations[forceKubeconfigRotationAnnotation]
+	if found {
+		key := types.NamespacedName{
+			Name:      cluster.Name,
+			Namespace: cluster.Namespace,
+		}
+		var clusterToUpdate imv1.GardenerCluster
+
+		err := controller.Client.Get(ctx, key, &clusterToUpdate)
+		if err != nil {
+			return err
+		}
+
+		annotations := clusterToUpdate.GetAnnotations()
+		delete(annotations, forceKubeconfigRotationAnnotation)
+		clusterToUpdate.SetAnnotations(annotations)
+
+		return controller.Client.Update(ctx, &clusterToUpdate)
+	}
 
 	return nil
 }

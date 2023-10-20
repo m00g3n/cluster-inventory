@@ -86,10 +86,9 @@ var _ = Describe("Gardener Cluster controller", func() {
 					return false
 				}
 
-				_, forceAnnotationFound := kubeconfigSecret.Annotations[forceKubeconfigRotationAnnotation]
 				timestampAnnotation := kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]
 
-				return !forceAnnotationFound && timestampAnnotation != previousTimestamp
+				return timestampAnnotation != previousTimestamp
 			}, time.Second*30, time.Second*3).Should(BeTrue())
 
 			gardenerClusterKey := types.NamespacedName{Name: gardenerClusterCR.Name, Namespace: gardenerClusterCR.Namespace}
@@ -101,7 +100,10 @@ var _ = Describe("Gardener Cluster controller", func() {
 					return false
 				}
 
-				return newGardenerCluster.Status.State == imv1.ReadyState
+				readyState := newGardenerCluster.Status.State == imv1.ReadyState
+				_, forceRotationAnnotationFound := newGardenerCluster.GetAnnotations()[forceKubeconfigRotationAnnotation]
+
+				return readyState && !forceRotationAnnotationFound
 			}, time.Second*30, time.Second*3).Should(BeTrue())
 
 			err := k8sClient.Get(context.Background(), secretKey, &kubeconfigSecret)
@@ -110,22 +112,17 @@ var _ = Describe("Gardener Cluster controller", func() {
 
 			err = k8sClient.Get(context.Background(), gardenerClusterKey, &newGardenerCluster)
 			Expect(err).To(BeNil())
-			newTime, err := parseLastSyncTime(newGardenerCluster.GetAnnotations()[lastKubeconfigSyncAnnotation])
-			Expect(err).To(BeNil())
-			previousTime, err := parseLastSyncTime(previousTimestamp)
-			Expect(err).To(BeNil())
-			Expect(newTime.Compare(previousTime)).To(Equal(1))
 		},
 			Entry("Rotate kubeconfig when rotation time passed",
-				fixGardenerClusterCRWithLastSyncTime("kymaname2", namespace, "shootName2", "secret-name2", time.Date(2023, 10, 19, 0, 0, 0, 0, time.FixedZone("UTC", 0))),
+				fixGardenerClusterCR("kymaname2", namespace, "shootName2", "secret-name2"),
 				fixNewSecret("secret-name2", namespace, "kymaname2", "shootName2", "kubeconfig2"),
 				"2023-10-09T23:00:00Z",
 				"kubeconfig2"),
-			// Entry("Rotate dynamic kubeconfig",
-			//	fixClusterInventoryCR("cluster3", "default", "kymaName3", "shootName3", "dynamic-kubeconfig-secret"),
-			//	fixSecretWithDynamicKubeconfig("dynamic-kubeconfig-secret", namespace, "kymaName3", "shootName3", "kubeconfig3", "2006-01-02T15:04:05Z07:00"),
-			//	"2022-11-10 23:00:00 +0000",
-			//	"kubeconfig3"),
+			Entry("Rotate dynamic kubeconfig",
+				fixGardenerClusterCRWithForceRotationAnnotation("kymaname3", namespace, "shootName3", "secret-name3"),
+				fixNewSecret("secret-name3", namespace, "kymaname3", "shootName3", "kubeconfig3"),
+				time.Now().UTC().Format(time.RFC3339),
+				"kubeconfig3"),
 		)
 
 		Describe("Skip rotation", func() {
@@ -133,15 +130,6 @@ var _ = Describe("Gardener Cluster controller", func() {
 		})
 	})
 })
-
-func parseLastSyncTime(lastSyncTimeString string) (time.Time, error) {
-	lastSyncTime, err := time.Parse(time.RFC3339, lastSyncTimeString)
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	return lastSyncTime, nil
-}
 
 func fixNewSecret(name, namespace, kymaName, shootName, data string) corev1.Secret {
 	labels := fixSecretLabels(kymaName, shootName)
@@ -193,10 +181,12 @@ func fixGardenerClusterCR(kymaName, namespace, shootName, secretName string) imv
 		WithLabels(fixClusterInventoryLabels(kymaName, shootName)).ToCluster()
 }
 
-func fixGardenerClusterCRWithLastSyncTime(kymaName, namespace, shootName, secretName string, lastSyncTime time.Time) imv1.GardenerCluster {
+func fixGardenerClusterCRWithForceRotationAnnotation(kymaName, namespace, shootName, secretName string) imv1.GardenerCluster {
+	annotations := map[string]string{forceKubeconfigRotationAnnotation: "true"}
+
 	return newTestGardenerClusterCR(kymaName, namespace, shootName, secretName).
 		WithLabels(fixClusterInventoryLabels(kymaName, shootName)).
-		WithAnnotations(fixClusterInventoryAnnotations(&lastSyncTime, false)).
+		WithAnnotations(annotations).
 		ToCluster()
 }
 
@@ -257,18 +247,4 @@ func fixClusterInventoryLabels(kymaName, shootName string) map[string]string {
 	labels["operator.kyma-project.io/kyma-name"] = kymaName
 
 	return labels
-}
-
-func fixClusterInventoryAnnotations(lastSyncTime *time.Time, forceRotation bool) map[string]string {
-	annotations := map[string]string{}
-
-	if lastSyncTime != nil {
-		annotations[lastKubeconfigSyncAnnotation] = lastSyncTime.UTC().Format(time.RFC3339)
-	}
-
-	if forceRotation {
-		annotations[forceKubeconfigRotationAnnotation] = "true"
-	}
-
-	return annotations
 }
