@@ -54,9 +54,9 @@ var _ = Describe("Gardener Cluster controller", func() {
 		})
 
 		It("Should delete secret", func() {
-			kymaName := "kymaname5"
-			secretName := "secret-name5"
-			shootName := "shootName5"
+			kymaName := "kymaname2"
+			secretName := "secret-name2"
+			shootName := "shootName2"
 			namespace := "default"
 
 			By("Create GardenerCluster CR")
@@ -83,9 +83,9 @@ var _ = Describe("Gardener Cluster controller", func() {
 		})
 
 		It("Should set Error status on CR if failed to fetch kubeconfig", func() {
-			kymaName := "kymaname6"
-			secretName := "secret-name6"
-			shootName := "shootName6"
+			kymaName := "kymaname3"
+			secretName := "secret-name3"
+			shootName := "shootName3"
 			namespace := "default"
 
 			gardenerClusterCR := fixGardenerClusterCR(kymaName, namespace, shootName, secretName)
@@ -150,24 +150,24 @@ var _ = Describe("Gardener Cluster controller", func() {
 			Expect(string(kubeconfigSecret.Data["config"])).To(Equal(expectedKubeconfig))
 		},
 			Entry("Rotate kubeconfig when rotation time passed",
-				fixGardenerClusterCR("kymaname2", namespace, "shootName2", "secret-name2"),
-				fixNewSecret("secret-name2", namespace, "kymaname2", "shootName2", "kubeconfig2", "2023-10-09T23:00:00Z"),
-				"kubeconfig2"),
+				fixGardenerClusterCR("kymaname4", namespace, "shootName4", "secret-name4"),
+				fixNewSecret("secret-name4", namespace, "kymaname4", "shootName4", "kubeconfig4", "2023-10-09T23:00:00Z"),
+				"kubeconfig4"),
 			Entry("Rotate dynamic kubeconfig",
-				fixGardenerClusterCRWithForceRotationAnnotation("kymaname3", namespace, "shootName3", "secret-name3"),
-				fixNewSecret("secret-name3", namespace, "kymaname3", "shootName3", "kubeconfig3", time.Now().UTC().Format(time.RFC3339)),
-				"kubeconfig3"),
+				fixGardenerClusterCRWithForceRotationAnnotation("kymaname5", namespace, "shootName5", "secret-name5"),
+				fixNewSecret("secret-name5", namespace, "kymaname5", "shootName5", "kubeconfig5", time.Now().UTC().Format(time.RFC3339)),
+				"kubeconfig5"),
 		)
 
 		It("Should skip rotation", func() {
 			By("Create kubeconfig secret")
-			secret := fixNewSecret("secret-name4", namespace, "kymaname4", "shootName4", "kubeconfig4", time.Now().UTC().Format(time.RFC3339))
+			secret := fixNewSecret("secret-name6", namespace, "kymaname6", "shootName6", "kubeconfig6", time.Now().UTC().Format(time.RFC3339))
 			Expect(k8sClient.Create(context.Background(), &secret)).To(Succeed())
 
 			previousTimestamp := secret.Annotations[lastKubeconfigSyncAnnotation]
 
 			By("Create Cluster CR")
-			gardenerClusterCR := fixGardenerClusterCRWithForceRotationAnnotation("kymaname4", namespace, "shootName4", "secret-name4")
+			gardenerClusterCR := fixGardenerClusterCRWithForceRotationAnnotation("kymaname6", namespace, "shootName6", "secret-name6")
 			Expect(k8sClient.Create(context.Background(), &gardenerClusterCR)).To(Succeed())
 
 			var kubeconfigSecret corev1.Secret
