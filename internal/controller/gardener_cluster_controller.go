@@ -187,7 +187,7 @@ func (controller *GardenerClusterController) createOrRotateSecret(ctx context.Co
 		return true, err
 	}
 
-	if !secretNeedsToBeRotated(existingSecret, controller.rotationPeriod) {
+	if !secretNeedsToBeRotated(cluster, existingSecret, controller.rotationPeriod) {
 		return false, nil
 	}
 
@@ -205,10 +205,15 @@ func (controller *GardenerClusterController) createOrRotateSecret(ctx context.Co
 	return true, controller.createNewSecret(ctx, kubeconfig, cluster, lastSyncTime)
 }
 
-func secretNeedsToBeRotated(secret *corev1.Secret, rotationPeriod time.Duration) bool {
+func secretNeedsToBeRotated(cluster *imv1.GardenerCluster, secret *corev1.Secret, rotationPeriod time.Duration) bool {
+	return secretRotationTimePassed(secret, rotationPeriod) || secretRotationForced(cluster)
+}
+
+func secretRotationTimePassed(secret *corev1.Secret, rotationPeriod time.Duration) bool {
 	if secret == nil {
 		return true
 	}
+
 	annotations := secret.GetAnnotations()
 
 	_, found := annotations[lastKubeconfigSyncAnnotation]
@@ -226,6 +231,17 @@ func secretNeedsToBeRotated(secret *corev1.Secret, rotationPeriod time.Duration)
 	alreadyValidFor := lastSyncTime.Sub(now)
 
 	return alreadyValidFor.Minutes() >= rotationPeriod.Minutes()
+}
+
+func secretRotationForced(cluster *imv1.GardenerCluster) bool {
+	annotations := cluster.GetAnnotations()
+	if annotations == nil {
+		return false
+	}
+
+	_, found := annotations[forceKubeconfigRotationAnnotation]
+
+	return found
 }
 
 func (controller *GardenerClusterController) createNewSecret(ctx context.Context, kubeconfig string, cluster *imv1.GardenerCluster, lastSyncTime time.Time) error {
