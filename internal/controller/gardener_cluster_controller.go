@@ -83,7 +83,7 @@ type KubeconfigProvider interface {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (controller *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) { //nolint:revive
-	controller.log.Info(fmt.Sprintf("Starting reconciliation loop for GardenerCluster resource: %v", req.NamespacedName))
+	controller.log.Info("Starting reconciliation.", loggingContext(req))
 
 	var cluster imv1.GardenerCluster
 
@@ -91,15 +91,15 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			err = controller.deleteKubeconfigSecret(req.NamespacedName.Name)
-			if err != nil {
-				controller.log.Error(err, "failed to delete secret")
-			}
+		}
+
+		if err == nil {
+			controller.log.Info("Secret has been deleted.", loggingContext(req)...)
 		}
 
 		return controller.resultWithoutRequeue(), err
 	}
 
-	controller.log.Info("About to create, or rotate secret")
 	lastSyncTime := time.Now()
 	kubeconfigRotated, err := controller.createOrRotateKubeconfigSecret(ctx, &cluster, lastSyncTime)
 	if err != nil {
@@ -121,6 +121,14 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	}
 
 	return controller.resultWithRequeue(), nil
+}
+
+func loggingContextFromCluster(cluster *imv1.GardenerCluster) []interface{} {
+	return []interface{}{"name", cluster.Name, "namespace", cluster.Namespace}
+}
+
+func loggingContext(req ctrl.Request) []interface{} {
+	return []interface{}{"name", req.Name, "namespace", req.Namespace}
 }
 
 func (controller *GardenerClusterController) resultWithRequeue() ctrl.Result {
@@ -187,22 +195,19 @@ func (controller *GardenerClusterController) getSecret(shootName string) (*corev
 }
 
 func (controller *GardenerClusterController) createOrRotateKubeconfigSecret(ctx context.Context, cluster *imv1.GardenerCluster, lastSyncTime time.Time) (bool, error) {
-	controller.log.Info("Getting secret")
 	existingSecret, err := controller.getSecret(cluster.Spec.Shoot.Name)
 	if err != nil && !k8serrors.IsNotFound(err) {
-		controller.log.Error(err, "Failed to get kubeconfig secret")
 		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetSecret, metav1.ConditionTrue, err)
 		return true, err
 	}
 
 	if !secretNeedsToBeRotated(cluster, existingSecret, controller.rotationPeriod) {
-		controller.log.Info("Secret rotation skipped")
+		controller.log.Info("Secret does not need to be rotated yet.", loggingContextFromCluster(cluster)...)
 		return false, nil
 	}
 
 	kubeconfig, err := controller.KubeconfigProvider.Fetch(cluster.Spec.Shoot.Name)
 	if err != nil {
-		controller.log.Error(err, "Failed to get kubeconfig")
 		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetKubeconfig, metav1.ConditionTrue, err)
 		return true, err
 	}
@@ -265,6 +270,7 @@ func (controller *GardenerClusterController) createNewSecret(ctx context.Context
 	}
 
 	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretReady, metav1.ConditionTrue)
+	controller.log.Info("New secret with kubeconfig has been created.", loggingContextFromCluster(cluster)...)
 
 	return nil
 }
@@ -289,6 +295,7 @@ func (controller *GardenerClusterController) updateExistingSecret(ctx context.Co
 	}
 
 	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretReady, metav1.ConditionTrue)
+	controller.log.Info("Secret with kubeconfig has been updated.", loggingContextFromCluster(cluster)...)
 
 	return nil
 }
