@@ -90,7 +90,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	err := controller.Client.Get(ctx, req.NamespacedName, &cluster)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			err = controller.deleteSecret(req.NamespacedName.Name)
+			err = controller.deleteKubeconfigSecret(req.NamespacedName.Name)
 			if err != nil {
 				controller.log.Error(err, "failed to delete secret")
 			}
@@ -99,26 +99,25 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		return controller.resultWithoutRequeue(), err
 	}
 
-	cluster.UpdateConditionForProcessingState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigReadingSecret, metav1.ConditionTrue)
-
 	controller.log.Info("About to create, or rotate secret")
 	lastSyncTime := time.Now()
-	updateStatus, err := controller.createOrRotateSecret(ctx, &cluster, lastSyncTime)
+	kubeconfigRotated, err := controller.createOrRotateKubeconfigSecret(ctx, &cluster, lastSyncTime)
+	if err != nil {
+		_ = controller.persistStatusChange(ctx, &cluster)
 
-	if updateStatus {
-		statusErr := controller.persistStatusChange(ctx, &cluster)
-		if statusErr != nil {
-			controller.log.Error(err, "Failed to set state for GardenerCluster")
-			if err != nil {
-				return controller.resultWithoutRequeue(), err
-			}
-			return controller.resultWithoutRequeue(), statusErr
-		}
+		return controller.resultWithoutRequeue(), err
+	}
 
-		err = controller.removeForceRotationAnnotationIfNeeded(ctx, &cluster)
+	if kubeconfigRotated {
+		err = controller.persistStatusChange(ctx, &cluster)
 		if err != nil {
 			return controller.resultWithoutRequeue(), err
 		}
+	}
+
+	err = controller.removeForceRotationAnnotation(ctx, &cluster)
+	if err != nil {
+		return controller.resultWithoutRequeue(), err
 	}
 
 	return controller.resultWithRequeue(), nil
@@ -132,16 +131,19 @@ func (controller *GardenerClusterController) resultWithRequeue() ctrl.Result {
 }
 
 func (controller *GardenerClusterController) resultWithoutRequeue() ctrl.Result {
-	return ctrl.Result{
-		Requeue: false,
-	}
+	return ctrl.Result{}
 }
 
 func (controller *GardenerClusterController) persistStatusChange(ctx context.Context, cluster *imv1.GardenerCluster) error {
-	return controller.Client.Status().Update(ctx, cluster)
+	statusErr := controller.Client.Status().Update(ctx, cluster)
+	if statusErr != nil {
+		controller.log.Error(statusErr, "Failed to set state for GardenerCluster")
+	}
+
+	return statusErr
 }
 
-func (controller *GardenerClusterController) deleteSecret(clusterCRName string) error {
+func (controller *GardenerClusterController) deleteKubeconfigSecret(clusterCRName string) error {
 	selector := client.MatchingLabels(map[string]string{
 		clusterCRNameLabel: clusterCRName,
 	})
@@ -184,7 +186,7 @@ func (controller *GardenerClusterController) getSecret(shootName string) (*corev
 	return &secretList.Items[0], nil
 }
 
-func (controller *GardenerClusterController) createOrRotateSecret(ctx context.Context, cluster *imv1.GardenerCluster, lastSyncTime time.Time) (bool, error) {
+func (controller *GardenerClusterController) createOrRotateKubeconfigSecret(ctx context.Context, cluster *imv1.GardenerCluster, lastSyncTime time.Time) (bool, error) {
 	controller.log.Info("Getting secret")
 	existingSecret, err := controller.getSecret(cluster.Spec.Shoot.Name)
 	if err != nil && !k8serrors.IsNotFound(err) {
@@ -257,7 +259,7 @@ func (controller *GardenerClusterController) createNewSecret(ctx context.Context
 	err := controller.Client.Create(ctx, &newSecret)
 	if err != nil {
 		controller.log.Error(err, "Failed to create secret")
-		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetSecret, metav1.ConditionTrue, err)
+		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToCreateSecret, metav1.ConditionTrue, err)
 
 		return err
 	}
@@ -291,14 +293,10 @@ func (controller *GardenerClusterController) updateExistingSecret(ctx context.Co
 	return nil
 }
 
-func (controller *GardenerClusterController) removeForceRotationAnnotationIfNeeded(ctx context.Context, cluster *imv1.GardenerCluster) error {
-	annotations := cluster.GetAnnotations()
-	if annotations == nil {
-		return nil
-	}
+func (controller *GardenerClusterController) removeForceRotationAnnotation(ctx context.Context, cluster *imv1.GardenerCluster) error {
+	secretRotationForced := secretRotationForced(cluster)
 
-	_, found := annotations[forceKubeconfigRotationAnnotation]
-	if found {
+	if secretRotationForced {
 		key := types.NamespacedName{
 			Name:      cluster.Name,
 			Namespace: cluster.Namespace,

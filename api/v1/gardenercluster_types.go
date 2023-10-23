@@ -70,20 +70,18 @@ type Secret struct {
 type State string
 
 const (
-	ReadyState      State = "Ready"
-	ProcessingState State = "Processing"
-	ErrorState      State = "Error"
+	ReadyState State = "Ready"
+	ErrorState State = "Error"
 )
 
 type ConditionReason string
 
 const (
-	ConditionReasonKubeconfigReadingSecret ConditionReason = "KubeconfigReadingSecret"
-	ConditionReasonKubeconfigSecretReady   ConditionReason = "KubeconfigSecretReady"
-	ConditionReasonFailedToGetSecret       ConditionReason = "FailedToCheckSecret"
-	ConditionReasonFailedToCreateSecret    ConditionReason = "FailedToCreateSecret"
-	ConditionReasonFailedToUpdateSecret    ConditionReason = "FailedToUpdateSecret"
-	ConditionReasonFailedToGetKubeconfig   ConditionReason = "FailedToGetKubeconfig"
+	ConditionReasonKubeconfigSecretReady ConditionReason = "KubeconfigSecretReady"
+	ConditionReasonFailedToGetSecret     ConditionReason = "FailedToCheckSecret"
+	ConditionReasonFailedToCreateSecret  ConditionReason = "ConditionReasonFailedToCreateSecret"
+	ConditionReasonFailedToUpdateSecret  ConditionReason = "FailedToUpdateSecret"
+	ConditionReasonFailedToGetKubeconfig ConditionReason = "FailedToGetKubeconfig"
 )
 
 type ConditionType string
@@ -103,19 +101,6 @@ type GardenerClusterStatus struct {
 	// +listType=map
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-
-func (cluster *GardenerCluster) UpdateConditionForProcessingState(conditionType ConditionType, reason ConditionReason, conditionStatus metav1.ConditionStatus) {
-	cluster.Status.State = ProcessingState
-
-	condition := metav1.Condition{
-		Type:               string(conditionType),
-		Status:             conditionStatus,
-		LastTransitionTime: metav1.Now(),
-		Reason:             string(reason),
-		Message:            getMessage(reason),
-	}
-	meta.SetStatusCondition(&cluster.Status.Conditions, condition)
 }
 
 func (cluster *GardenerCluster) UpdateConditionForReadyState(conditionType ConditionType, reason ConditionReason, conditionStatus metav1.ConditionStatus) {
