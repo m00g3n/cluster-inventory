@@ -83,7 +83,7 @@ type KubeconfigProvider interface {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (controller *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) { //nolint:revive
-	controller.log.Info("Starting reconciliation.", loggingContext(req))
+	controller.log.Info("Starting reconciliation.", loggingContext(req)...)
 
 	var cluster imv1.GardenerCluster
 
@@ -123,12 +123,12 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	return controller.resultWithRequeue(), nil
 }
 
-func loggingContextFromCluster(cluster *imv1.GardenerCluster) []interface{} {
-	return []interface{}{"name", cluster.Name, "namespace", cluster.Namespace}
+func loggingContextFromCluster(cluster *imv1.GardenerCluster) []any {
+	return []any{"name", cluster.Name, "namespace", cluster.Namespace}
 }
 
-func loggingContext(req ctrl.Request) []interface{} {
-	return []interface{}{"name", req.Name, "namespace", req.Namespace}
+func loggingContext(req ctrl.Request) []any {
+	return []any{"name", req.Name, "namespace", req.Namespace}
 }
 
 func (controller *GardenerClusterController) resultWithRequeue() ctrl.Result {
