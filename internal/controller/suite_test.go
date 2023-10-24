@@ -47,6 +47,8 @@ var (
 	cancelSuiteCtx context.CancelFunc   //nolint:gochecknoglobals
 )
 
+const TestKubeconfigValidityTime = 24 * time.Hour
+
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
 
@@ -78,7 +80,7 @@ var _ = BeforeSuite(func() {
 	kubeconfigProviderMock := &mocks.KubeconfigProvider{}
 	setupKubeconfigProviderMock(kubeconfigProviderMock)
 
-	controller := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger, 24*time.Hour)
+	controller := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger, TestKubeconfigValidityTime)
 	Expect(controller).NotTo(BeNil())
 
 	err = controller.SetupWithManager(mgr)

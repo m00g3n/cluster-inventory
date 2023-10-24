@@ -50,7 +50,9 @@ var _ = Describe("Gardener Cluster controller", func() {
 			expectedSecret := fixNewSecret(secretName, namespace, kymaName, shootName, "kubeconfig1", "")
 			Expect(kubeconfigSecret.Labels).To(Equal(expectedSecret.Labels))
 			Expect(kubeconfigSecret.Data).To(Equal(expectedSecret.Data))
-			Expect(kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]).To(Not(BeEmpty()))
+			lastSyncTime := kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]
+			Expect(lastSyncTime).ToNot(BeEmpty())
+
 		})
 
 		It("Should delete secret", func() {
@@ -148,6 +150,9 @@ var _ = Describe("Gardener Cluster controller", func() {
 			err := k8sClient.Get(context.Background(), secretKey, &kubeconfigSecret)
 			Expect(err).To(BeNil())
 			Expect(string(kubeconfigSecret.Data["config"])).To(Equal(expectedKubeconfig))
+			lastSyncTime := kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]
+			Expect(lastSyncTime).ToNot(BeEmpty())
+
 		},
 			Entry("Rotate kubeconfig when rotation time passed",
 				fixGardenerClusterCR("kymaname4", namespace, "shootName4", "secret-name4"),

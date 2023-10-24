@@ -77,11 +77,12 @@ const (
 type ConditionReason string
 
 const (
-	ConditionReasonKubeconfigSecretReady ConditionReason = "KubeconfigSecretReady"
-	ConditionReasonFailedToGetSecret     ConditionReason = "FailedToCheckSecret"
-	ConditionReasonFailedToCreateSecret  ConditionReason = "ConditionReasonFailedToCreateSecret"
-	ConditionReasonFailedToUpdateSecret  ConditionReason = "FailedToUpdateSecret"
-	ConditionReasonFailedToGetKubeconfig ConditionReason = "FailedToGetKubeconfig"
+	ConditionReasonKubeconfigSecretCreated ConditionReason = "KubeconfigSecretCreated"
+	ConditionReasonKubeconfigSecretRotated ConditionReason = "KubeconfigSecretRotated"
+	ConditionReasonFailedToGetSecret       ConditionReason = "FailedToCheckSecret"
+	ConditionReasonFailedToCreateSecret    ConditionReason = "ConditionReasonFailedToCreateSecret"
+	ConditionReasonFailedToUpdateSecret    ConditionReason = "FailedToUpdateSecret"
+	ConditionReasonFailedToGetKubeconfig   ConditionReason = "FailedToGetKubeconfig"
 )
 
 type ConditionType string
@@ -113,6 +114,7 @@ func (cluster *GardenerCluster) UpdateConditionForReadyState(conditionType Condi
 		Reason:             string(reason),
 		Message:            getMessage(reason),
 	}
+	meta.RemoveStatusCondition(&cluster.Status.Conditions, condition.Type)
 	meta.SetStatusCondition(&cluster.Status.Conditions, condition)
 }
 
@@ -126,12 +128,13 @@ func (cluster *GardenerCluster) UpdateConditionForErrorState(conditionType Condi
 		Reason:             string(reason),
 		Message:            fmt.Sprintf("%s Error: %s", getMessage(reason), error.Error()),
 	}
+	meta.RemoveStatusCondition(&cluster.Status.Conditions, condition.Type)
 	meta.SetStatusCondition(&cluster.Status.Conditions, condition)
 }
 
 func getMessage(reason ConditionReason) string {
 	switch reason {
-	case ConditionReasonKubeconfigSecretReady:
+	case ConditionReasonKubeconfigSecretCreated:
 		return "Secret created successfully."
 	case ConditionReasonFailedToGetSecret:
 		return "Failed to get secret."

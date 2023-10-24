@@ -39,8 +39,6 @@ const (
 	lastKubeconfigSyncAnnotation      = "operator.kyma-project.io/last-sync"
 	forceKubeconfigRotationAnnotation = "operator.kyma-project.io/force-kubeconfig-rotation"
 	clusterCRNameLabel                = "operator.kyma-project.io/cluster-name"
-	// The ratio determines what is the minimal time that needs to pass to rotate certificate.
-	minimalRotationTimeRatio = 0.6
 )
 
 // GardenerClusterController reconciles a GardenerCluster object
@@ -52,15 +50,13 @@ type GardenerClusterController struct {
 	rotationPeriod     time.Duration
 }
 
-func NewGardenerClusterController(mgr ctrl.Manager, kubeconfigProvider KubeconfigProvider, logger logr.Logger, kubeconfigExpirationTime time.Duration) *GardenerClusterController {
-	rotationPeriodInMinutes := int64(minimalRotationTimeRatio * kubeconfigExpirationTime.Minutes())
-
+func NewGardenerClusterController(mgr ctrl.Manager, kubeconfigProvider KubeconfigProvider, logger logr.Logger, rotationPeriod time.Duration) *GardenerClusterController {
 	return &GardenerClusterController{
 		Client:             mgr.GetClient(),
 		Scheme:             mgr.GetScheme(),
 		KubeconfigProvider: kubeconfigProvider,
 		log:                logger,
-		rotationPeriod:     time.Duration(rotationPeriodInMinutes) * time.Minute,
+		rotationPeriod:     rotationPeriod,
 	}
 }
 
@@ -273,7 +269,7 @@ func (controller *GardenerClusterController) createNewSecret(ctx context.Context
 		return err
 	}
 
-	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretReady, metav1.ConditionTrue)
+	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretCreated, metav1.ConditionTrue)
 
 	message := fmt.Sprintf("Secret %s has been created in %s namespace.", newSecret.Name, newSecret.Namespace)
 	controller.log.Info(message, loggingContextFromCluster(cluster)...)
@@ -298,7 +294,7 @@ func (controller *GardenerClusterController) updateExistingSecret(ctx context.Co
 		return err
 	}
 
-	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretReady, metav1.ConditionTrue)
+	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretRotated, metav1.ConditionTrue)
 
 	message := fmt.Sprintf("Secret %s has been updated in %s namespace.", existingSecret.Name, existingSecret.Namespace)
 	controller.log.Info(message, loggingContextFromCluster(cluster)...)
