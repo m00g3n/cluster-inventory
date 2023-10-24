@@ -124,11 +124,11 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 }
 
 func loggingContextFromCluster(cluster *imv1.GardenerCluster) []any {
-	return []any{"name", cluster.Name, "namespace", cluster.Namespace}
+	return []any{"GardenerCluster", cluster.Name, "namespace", cluster.Namespace}
 }
 
 func loggingContext(req ctrl.Request) []any {
-	return []any{"name", req.Name, "namespace", req.Namespace}
+	return []any{"GardenerCluster", req.Name, "namespace", req.Namespace}
 }
 
 func (controller *GardenerClusterController) resultWithRequeue() ctrl.Result {
@@ -202,7 +202,8 @@ func (controller *GardenerClusterController) createOrRotateKubeconfigSecret(ctx 
 	}
 
 	if !secretNeedsToBeRotated(cluster, existingSecret, controller.rotationPeriod) {
-		controller.log.Info("Secret does not need to be rotated yet.", loggingContextFromCluster(cluster)...)
+		message := fmt.Sprintf("Secret %s in namespace %s does not need to be rotated yet.", existingSecret.Name, existingSecret.Namespace)
+		controller.log.Info(message, loggingContextFromCluster(cluster)...)
 		return false, nil
 	}
 
@@ -259,24 +260,23 @@ func secretRotationForced(cluster *imv1.GardenerCluster) bool {
 }
 
 func (controller *GardenerClusterController) createNewSecret(ctx context.Context, kubeconfig string, cluster *imv1.GardenerCluster, lastSyncTime time.Time) error {
-	controller.log.Info("Creating a new kubeconfig secret")
 	newSecret := controller.newSecret(*cluster, kubeconfig, lastSyncTime)
 	err := controller.Client.Create(ctx, &newSecret)
 	if err != nil {
-		controller.log.Error(err, "Failed to create secret")
 		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToCreateSecret, metav1.ConditionTrue, err)
 
 		return err
 	}
 
 	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretReady, metav1.ConditionTrue)
-	controller.log.Info("New secret with kubeconfig has been created.", loggingContextFromCluster(cluster)...)
+
+	message := fmt.Sprintf("Secret %s has been created in %s namespace.", newSecret.Name, newSecret.Namespace)
+	controller.log.Info(message, loggingContextFromCluster(cluster)...)
 
 	return nil
 }
 
 func (controller *GardenerClusterController) updateExistingSecret(ctx context.Context, kubeconfig string, cluster *imv1.GardenerCluster, existingSecret *corev1.Secret, lastSyncTime time.Time) error {
-	controller.log.Info("Updating the kubeconfig secret")
 	existingSecret.Data[cluster.Spec.Kubeconfig.Secret.Key] = []byte(kubeconfig)
 	annotations := existingSecret.GetAnnotations()
 	if annotations == nil {
@@ -288,14 +288,15 @@ func (controller *GardenerClusterController) updateExistingSecret(ctx context.Co
 
 	err := controller.Client.Update(ctx, existingSecret)
 	if err != nil {
-		controller.log.Error(err, "Failed to update secret")
 		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToUpdateSecret, metav1.ConditionTrue, err)
 
 		return err
 	}
 
 	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretReady, metav1.ConditionTrue)
-	controller.log.Info("Secret with kubeconfig has been updated.", loggingContextFromCluster(cluster)...)
+
+	message := fmt.Sprintf("Secret %s has been updated in %s namespace.", existingSecret.Name, existingSecret.Namespace)
+	controller.log.Info(message, loggingContextFromCluster(cluster)...)
 
 	return nil
 }
