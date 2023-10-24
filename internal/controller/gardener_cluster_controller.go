@@ -202,9 +202,14 @@ func (controller *GardenerClusterController) createOrRotateKubeconfigSecret(ctx 
 	}
 
 	if !secretNeedsToBeRotated(cluster, existingSecret, controller.rotationPeriod) {
-		message := fmt.Sprintf("Secret %s in namespace %s does not need to be rotated yet.", existingSecret.Name, existingSecret.Namespace)
+		message := fmt.Sprintf("Secret %s in namespace %s does not need to be rotated yet.", cluster.Spec.Kubeconfig.Secret.Name, cluster.Spec.Kubeconfig.Secret.Namespace)
 		controller.log.Info(message, loggingContextFromCluster(cluster)...)
 		return false, nil
+	}
+
+	if secretRotationForced(cluster) {
+		message := fmt.Sprintf("Rotation of secret %s in namespace %s forced.", cluster.Spec.Kubeconfig.Secret.Name, cluster.Spec.Kubeconfig.Secret.Namespace)
+		controller.log.Info(message, loggingContextFromCluster(cluster)...)
 	}
 
 	kubeconfig, err := controller.KubeconfigProvider.Fetch(cluster.Spec.Shoot.Name)
