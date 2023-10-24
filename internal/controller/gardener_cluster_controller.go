@@ -124,11 +124,11 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 }
 
 func loggingContextFromCluster(cluster *imv1.GardenerCluster) []any {
-	return []any{"GardenerCluster", cluster.Name, "namespace", cluster.Namespace}
+	return []any{"GardenerCluster", cluster.Name, "Namespace", cluster.Namespace}
 }
 
 func loggingContext(req ctrl.Request) []any {
-	return []any{"GardenerCluster", req.Name, "namespace", req.Namespace}
+	return []any{"GardenerCluster", req.Name, "Namespace", req.Namespace}
 }
 
 func (controller *GardenerClusterController) resultWithRequeue() ctrl.Result {
