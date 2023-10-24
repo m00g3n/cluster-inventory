@@ -239,6 +239,8 @@ func secretNeedsToBeRotated(cluster *imv1.GardenerCluster, secret *corev1.Secret
 }
 
 func secretRotationTimePassed(secret *corev1.Secret, rotationPeriod time.Duration) bool {
+	const rotationPeriodRatio = 0.95
+
 	if secret == nil {
 		return true
 	}
@@ -259,7 +261,7 @@ func secretRotationTimePassed(secret *corev1.Secret, rotationPeriod time.Duratio
 	now := time.Now()
 	alreadyValidFor := now.Sub(lastSyncTime)
 
-	return alreadyValidFor.Minutes() >= rotationPeriod.Minutes()
+	return alreadyValidFor.Minutes() >= rotationPeriodRatio*rotationPeriod.Minutes()
 }
 
 func secretRotationForced(cluster *imv1.GardenerCluster) bool {
