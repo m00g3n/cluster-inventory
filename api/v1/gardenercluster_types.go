@@ -136,8 +136,17 @@ func getMessage(reason ConditionReason) string {
 	switch reason {
 	case ConditionReasonKubeconfigSecretCreated:
 		return "Secret created successfully."
+	case ConditionReasonKubeconfigSecretRotated:
+		return "Secret rotated successfully."
+	case ConditionReasonFailedToCreateSecret:
+		return "Failed to create secret."
+	case ConditionReasonFailedToUpdateSecret:
+		return "Failed to rotate secret."
 	case ConditionReasonFailedToGetSecret:
 		return "Failed to get secret."
+	case ConditionReasonFailedToGetKubeconfig:
+		return "Failed to get kubeconfig."
+
 	default:
 		return "Unknown condition"
 	}
