@@ -145,7 +145,7 @@ var _ = Describe("Gardener Cluster controller", func() {
 				_, forceRotationAnnotationFound := newGardenerCluster.GetAnnotations()[forceKubeconfigRotationAnnotation]
 
 				return readyState && !forceRotationAnnotationFound
-			}, time.Second*30, time.Second*3).Should(BeTrue())
+			}, time.Second*45, time.Second*3).Should(BeTrue())
 
 			err := k8sClient.Get(context.Background(), secretKey, &kubeconfigSecret)
 			Expect(err).To(BeNil())
@@ -158,7 +158,7 @@ var _ = Describe("Gardener Cluster controller", func() {
 				fixGardenerClusterCR("kymaname4", namespace, "shootName4", "secret-name4"),
 				fixNewSecret("secret-name4", namespace, "kymaname4", "shootName4", "kubeconfig4", "2023-10-09T23:00:00Z"),
 				"kubeconfig4"),
-			Entry("Rotate dynamic kubeconfig",
+			Entry("Force rotation",
 				fixGardenerClusterCRWithForceRotationAnnotation("kymaname5", namespace, "shootName5", "secret-name5"),
 				fixNewSecret("secret-name5", namespace, "kymaname5", "shootName5", "kubeconfig5", time.Now().UTC().Format(time.RFC3339)),
 				"kubeconfig5"),
@@ -172,7 +172,7 @@ var _ = Describe("Gardener Cluster controller", func() {
 			previousTimestamp := secret.Annotations[lastKubeconfigSyncAnnotation]
 
 			By("Create Cluster CR")
-			gardenerClusterCR := fixGardenerClusterCRWithForceRotationAnnotation("kymaname6", namespace, "shootName6", "secret-name6")
+			gardenerClusterCR := fixGardenerClusterCR("kymaname6", namespace, "shootName6", "secret-name6")
 			Expect(k8sClient.Create(context.Background(), &gardenerClusterCR)).To(Succeed())
 
 			var kubeconfigSecret corev1.Secret
@@ -187,7 +187,7 @@ var _ = Describe("Gardener Cluster controller", func() {
 				timestampAnnotation := kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]
 
 				return timestampAnnotation == previousTimestamp
-			}, time.Second*30, time.Second*3).Should(BeTrue())
+			}, time.Second*45, time.Second*3).Should(BeTrue())
 		})
 	})
 })

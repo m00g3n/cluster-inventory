@@ -104,16 +104,16 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		return controller.resultWithoutRequeue(), err
 	}
 
+	err = controller.removeForceRotationAnnotation(ctx, &cluster)
+	if err != nil {
+		return controller.resultWithoutRequeue(), err
+	}
+
 	if kubeconfigRotated {
 		err = controller.persistStatusChange(ctx, &cluster)
 		if err != nil {
 			return controller.resultWithoutRequeue(), err
 		}
-	}
-
-	err = controller.removeForceRotationAnnotation(ctx, &cluster)
-	if err != nil {
-		return controller.resultWithoutRequeue(), err
 	}
 
 	return controller.resultWithRequeue(), nil
@@ -139,7 +139,20 @@ func (controller *GardenerClusterController) resultWithoutRequeue() ctrl.Result 
 }
 
 func (controller *GardenerClusterController) persistStatusChange(ctx context.Context, cluster *imv1.GardenerCluster) error {
-	statusErr := controller.Client.Status().Update(ctx, cluster)
+	key := types.NamespacedName{
+		Name:      cluster.Name,
+		Namespace: cluster.Namespace,
+	}
+	var clusterToUpdate imv1.GardenerCluster
+
+	err := controller.Client.Get(ctx, key, &clusterToUpdate)
+	if err != nil {
+		return err
+	}
+
+	clusterToUpdate.Status = cluster.Status
+
+	statusErr := controller.Client.Status().Update(ctx, &clusterToUpdate)
 	if statusErr != nil {
 		controller.log.Error(statusErr, "Failed to set state for GardenerCluster")
 	}
