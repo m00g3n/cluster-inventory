@@ -40,6 +40,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
+// The ratio determines what is the minimal time that needs to pass to rotate certificate.
+const minimalRotationTimeRatio = 0.6
+
 var (
 	scheme   = runtime.NewScheme()        //nolint:gochecknoglobals
 	setupLog = ctrl.Log.WithName("setup") //nolint:gochecknoglobals
@@ -106,15 +109,15 @@ func main() {
 	}
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", gardenerProjectName)
-	expirationInSeconds := int64(expirationTime.Seconds())
-	kubeconfigProvider, err := setupKubernetesKubeconfigProvider(gardenerKubeconfigPath, gardenerNamespace, expirationInSeconds)
+	kubeconfigProvider, err := setupKubernetesKubeconfigProvider(gardenerKubeconfigPath, gardenerNamespace, expirationTime)
 
 	if err != nil {
 		setupLog.Error(err, "unable to initialize kubeconfig provider", "controller", "GardenerCluster")
 		os.Exit(1)
 	}
 
-	if err = (controller.NewGardenerClusterController(mgr, kubeconfigProvider, logger)).SetupWithManager(mgr); err != nil {
+	rotationPeriod := time.Duration(minimalRotationTimeRatio*expirationTime.Minutes()) * time.Minute
+	if err = (controller.NewGardenerClusterController(mgr, kubeconfigProvider, logger, rotationPeriod)).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GardenerCluster")
 		os.Exit(1)
 	}
@@ -129,14 +132,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	setupLog.Info("starting manager")
+	setupLog.Info("Starting Manager", "kubeconfigExpirationTime", expirationTime, "kubeconfigRotationPeriod", rotationPeriod)
+
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
 }
 
-func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, expirationInSeconds int64) (gardener.KubeconfigProvider, error) {
+func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, expirationTime time.Duration) (gardener.KubeconfigProvider, error) {
 	restConfig, err := gardener.NewRestConfigFromFile(kubeconfigPath)
 	if err != nil {
 		return gardener.KubeconfigProvider{}, err
@@ -163,5 +167,5 @@ func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, 
 	return gardener.NewKubeconfigProvider(shootClient,
 		dynamicKubeconfigAPI,
 		namespace,
-		expirationInSeconds), nil
+		int64(expirationTime.Seconds())), nil
 }

@@ -20,11 +20,13 @@ import (
 	"context"
 	"path/filepath"
 	"testing"
+	"time"
 
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/mocks"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -44,6 +46,8 @@ var (
 	suiteCtx       context.Context      //nolint:gochecknoglobals
 	cancelSuiteCtx context.CancelFunc   //nolint:gochecknoglobals
 )
+
+const TestKubeconfigValidityTime = 24 * time.Hour
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -76,7 +80,7 @@ var _ = BeforeSuite(func() {
 	kubeconfigProviderMock := &mocks.KubeconfigProvider{}
 	setupKubeconfigProviderMock(kubeconfigProviderMock)
 
-	controller := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger)
+	controller := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger, TestKubeconfigValidityTime)
 	Expect(controller).NotTo(BeNil())
 
 	err = controller.SetupWithManager(mgr)
@@ -100,7 +104,10 @@ var _ = BeforeSuite(func() {
 func setupKubeconfigProviderMock(kpMock *mocks.KubeconfigProvider) {
 	kpMock.On("Fetch", "shootName1").Return("kubeconfig1", nil)
 	kpMock.On("Fetch", "shootName2").Return("kubeconfig2", nil)
-	kpMock.On("Fetch", "shootName3").Return("kubeconfig3", nil)
+	kpMock.On("Fetch", "shootName3").Return("", errors.New("failed to get kubeconfig"))
+	kpMock.On("Fetch", "shootName6").Return("kubeconfig6", nil)
+	kpMock.On("Fetch", "shootName4").Return("kubeconfig4", nil)
+	kpMock.On("Fetch", "shootName5").Return("kubeconfig5", nil)
 }
 
 var _ = AfterSuite(func() {

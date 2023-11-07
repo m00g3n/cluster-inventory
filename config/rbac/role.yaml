@@ -33,3 +33,9 @@ rules:
   - gardenerclusters/finalizers
   verbs:
   - update
+- apiGroups:
+  - infrastructuremanager.kyma-project.io
+  resources:
+  - gardenerclusters/status
+  verbs:
+  - update

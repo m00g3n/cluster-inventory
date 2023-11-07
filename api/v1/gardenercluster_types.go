@@ -17,6 +17,9 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
+
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -67,10 +70,25 @@ type Secret struct {
 type State string
 
 const (
-	ReadyState      State = "Ready"
-	ProcessingState State = "Processing"
-	ErrorState      State = "Error"
-	DeletingState   State = "Deleting"
+	ReadyState State = "Ready"
+	ErrorState State = "Error"
+)
+
+type ConditionReason string
+
+const (
+	ConditionReasonKubeconfigSecretCreated ConditionReason = "KubeconfigSecretCreated"
+	ConditionReasonKubeconfigSecretRotated ConditionReason = "KubeconfigSecretRotated"
+	ConditionReasonFailedToGetSecret       ConditionReason = "FailedToCheckSecret"
+	ConditionReasonFailedToCreateSecret    ConditionReason = "ConditionReasonFailedToCreateSecret"
+	ConditionReasonFailedToUpdateSecret    ConditionReason = "FailedToUpdateSecret"
+	ConditionReasonFailedToGetKubeconfig   ConditionReason = "FailedToGetKubeconfig"
+)
+
+type ConditionType string
+
+const (
+	ConditionTypeKubeconfigManagement ConditionType = "KubeconfigManagement"
 )
 
 // GardenerClusterStatus defines the observed state of GardenerCluster
@@ -84,6 +102,54 @@ type GardenerClusterStatus struct {
 	// +listType=map
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+}
+
+func (cluster *GardenerCluster) UpdateConditionForReadyState(conditionType ConditionType, reason ConditionReason, conditionStatus metav1.ConditionStatus) {
+	cluster.Status.State = ReadyState
+
+	condition := metav1.Condition{
+		Type:               string(conditionType),
+		Status:             conditionStatus,
+		LastTransitionTime: metav1.Now(),
+		Reason:             string(reason),
+		Message:            getMessage(reason),
+	}
+	meta.RemoveStatusCondition(&cluster.Status.Conditions, condition.Type)
+	meta.SetStatusCondition(&cluster.Status.Conditions, condition)
+}
+
+func (cluster *GardenerCluster) UpdateConditionForErrorState(conditionType ConditionType, reason ConditionReason, conditionStatus metav1.ConditionStatus, error error) {
+	cluster.Status.State = ErrorState
+
+	condition := metav1.Condition{
+		Type:               string(conditionType),
+		Status:             conditionStatus,
+		LastTransitionTime: metav1.Now(),
+		Reason:             string(reason),
+		Message:            fmt.Sprintf("%s Error: %s", getMessage(reason), error.Error()),
+	}
+	meta.RemoveStatusCondition(&cluster.Status.Conditions, condition.Type)
+	meta.SetStatusCondition(&cluster.Status.Conditions, condition)
+}
+
+func getMessage(reason ConditionReason) string {
+	switch reason {
+	case ConditionReasonKubeconfigSecretCreated:
+		return "Secret created successfully."
+	case ConditionReasonKubeconfigSecretRotated:
+		return "Secret rotated successfully."
+	case ConditionReasonFailedToCreateSecret:
+		return "Failed to create secret."
+	case ConditionReasonFailedToUpdateSecret:
+		return "Failed to rotate secret."
+	case ConditionReasonFailedToGetSecret:
+		return "Failed to get secret."
+	case ConditionReasonFailedToGetKubeconfig:
+		return "Failed to get kubeconfig."
+
+	default:
+		return "Unknown condition"
+	}
 }
 
 func init() {
