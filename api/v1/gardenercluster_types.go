@@ -81,6 +81,7 @@ const (
 	ConditionReasonKubeconfigSecretRotated ConditionReason = "KubeconfigSecretRotated"
 	ConditionReasonFailedToGetSecret       ConditionReason = "FailedToCheckSecret"
 	ConditionReasonFailedToCreateSecret    ConditionReason = "ConditionReasonFailedToCreateSecret"
+	ConditionReasonFailedToDeleteSecret    ConditionReason = "ConditionReasonFailedToDeleteSecret"
 	ConditionReasonFailedToUpdateSecret    ConditionReason = "FailedToUpdateSecret"
 	ConditionReasonFailedToGetKubeconfig   ConditionReason = "FailedToGetKubeconfig"
 )
