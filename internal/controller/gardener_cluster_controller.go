@@ -104,7 +104,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	}
 
 	// there was a request to rotate the kubeconfig
-	if kubeconfigStatus == ksRevoked {
+	if kubeconfigStatus == ksRotated {
 		err = controller.removeForceRotationAnnotation(ctx, &cluster)
 		if err != nil {
 			return controller.resultWithoutRequeue(), err
@@ -211,7 +211,7 @@ const (
 	ksZero kubeconfigStatus = iota
 	ksCreated
 	ksModified
-	ksRevoked
+	ksRotated
 )
 
 func (controller *GardenerClusterController) handleKubeconfig(ctx context.Context, cluster *imv1.GardenerCluster, lastSyncTime time.Time) (kubeconfigStatus, error) {
@@ -237,7 +237,7 @@ func (controller *GardenerClusterController) handleKubeconfig(ctx context.Contex
 			return ksZero, err
 		}
 
-		return ksRevoked, nil
+		return ksRotated, nil
 	}
 
 	if !secretNeedsToBeRotated(cluster, existingSecret, controller.rotationPeriod) {
