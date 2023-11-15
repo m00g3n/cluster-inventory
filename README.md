@@ -4,17 +4,15 @@
 
 ## Overview
 
-This project **will be** responsible for managing [Kyma](https://kyma-project.io/#/) clusters infrastructure. Buil using [kubebuilder framework](https://github.com/kubernetes-sigs/kubebuilder)
-It's main responsibilities **will be**:
-- Provisioning and deprovisioning Kyma clusters
-- Generating dynamic kubeconfigs
+This project responsible for managing [Kyma](https://kyma-project.io/#/) clusters infrastructure. Built using [kubebuilder framework](https://github.com/kubernetes-sigs/kubebuilder)
+
+It's current responsibilities are:
+- Generating and rotating secrets containing dynamic kubeconfigs
 
 ## Prerequisites
 
-- Access to a k8s cluster.
-- [k3d](https://k3d.io) to get a local cluster for testing, or run against a remote cluster.
+- Access to a k8s cluster.You can use [k3d](https://k3d.io) to get a local cluster for testing, or run against a remote cluster.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
-- [kubebuilder](https://book.kubebuilder.io/)
 
 ## Installation
 
@@ -82,20 +80,16 @@ make gardener-secret-deploy
 ```
 
 ## Usage
-TODO:
+Infrastructure Manager is responsible for creation and rotation of secrets of clusters defined in `GardenerCluster` CRs. Sample CR is available [here](config/samples/infrastructuremanager_v1_gardenercluster.yaml).   
+
+### Time based rotation
+Secrets are totated based on the `kubeconfig-expiration-time`, see [the configuration section](docs/README.md#configuration).
+
+### Force rotation
+It's possible to force secret rotation before the time based rotation kicks in. In order to do that, add the `operator.kyma-project.io/force-kubeconfig-rotation: "true"` annotation to the `GardenCluster` Custom Resource.
+
 > Explain how to use the project. You can create multiple subsections (H3). Include the instructions or provide links to the related documentation.
 
-## Development
-
-> Add instructions on how to develop the project or example. It must be clear what to do and, for example, how to trigger the tests so that other contributors know how to make their pull requests acceptable. Include the instructions or provide links to related documentation.
-
-## Troubleshooting
-
-> List potential issues and provide tips on how to avoid or solve them. To structure the content, use the following sections:
->
-> - **Symptom**
-> - **Cause**
-> - **Remedy**
 
 ## Contributing
 <!--- mandatory section - do not change this! --->
