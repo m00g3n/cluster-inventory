@@ -1,6 +1,6 @@
 module-name: infrastructure-manager
 protecode:
-  - europe-docker.pkg.dev/kyma-project/prod/infrastructure-manager:v20230914-5174362c
+  - europe-docker.pkg.dev/kyma-project/prod/infrastructure-manager:latest
 whitesource:
   language: golang-mod
   subprojects: false
