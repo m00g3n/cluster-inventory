@@ -87,9 +87,6 @@ Secrets are rotated based on `kubeconfig-expiration-time`. See [Configuration](d
 ### Force rotation
 It's possible to force the Secret rotation before the time-based rotation kicks in. To do that, add the `operator.kyma-project.io/force-kubeconfig-rotation: "true"` annotation to the `GardenCluster` CR.
 
-> Explain how to use the project. You can create multiple subsections (H3). Include the instructions or provide links to the related documentation.
-
-
 ## Contributing
 <!--- mandatory section - do not change this! --->
 
