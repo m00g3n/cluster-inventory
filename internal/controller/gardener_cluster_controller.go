@@ -100,6 +100,11 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	kubeconfigStatus, err := controller.handleKubeconfig(ctx, &cluster, lastSyncTime)
 	if err != nil {
 		_ = controller.persistStatusChange(ctx, &cluster)
+		// if a claster was not found in gardener,
+		// CRD should not be rereconciled
+		if k8serrors.IsNotFound(err) {
+			err = nil
+		}
 		return controller.resultWithoutRequeue(), err
 	}
 
