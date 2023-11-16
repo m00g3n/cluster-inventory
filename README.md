@@ -4,14 +4,13 @@
 
 ## Overview
 
-This project responsible for managing [Kyma](https://kyma-project.io/#/) clusters infrastructure. Built using [kubebuilder framework](https://github.com/kubernetes-sigs/kubebuilder)
+This project manages the [Kyma](https://kyma-project.io/#/) cluster infrastructure. It's built using the [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) framework.
 
-It's current responsibilities are:
-- Generating and rotating secrets containing dynamic kubeconfigs
+It's currently responsible for generating and rotating Secrets containing dynamic kubeconfigs.
 
 ## Prerequisites
 
-- Access to a k8s cluster.You can use [k3d](https://k3d.io) to get a local cluster for testing, or run against a remote cluster.
+- Access to a k8s cluster. You can use [k3d](https://k3d.io) to get a local cluster for testing or run against a remote cluster.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
 
 ## Installation
@@ -80,13 +79,13 @@ make gardener-secret-deploy
 ```
 
 ## Usage
-Infrastructure Manager is responsible for creation and rotation of secrets of clusters defined in `GardenerCluster` CRs. Sample CR is available [here](config/samples/infrastructuremanager_v1_gardenercluster.yaml).   
+Infrastructure Manager is responsible for creating and rotating Secrets of clusters defined in the `GardenerCluster` custom resources (CRs). The sample CR is available [here](config/samples/infrastructuremanager_v1_gardenercluster.yaml).   
 
-### Time based rotation
-Secrets are totated based on the `kubeconfig-expiration-time`, see [the configuration section](docs/README.md#configuration).
+### Time-based rotation
+Secrets are rotated based on `kubeconfig-expiration-time`. See [Configuration](docs/README.md#configuration) for more details.
 
 ### Force rotation
-It's possible to force secret rotation before the time based rotation kicks in. In order to do that, add the `operator.kyma-project.io/force-kubeconfig-rotation: "true"` annotation to the `GardenCluster` Custom Resource.
+It's possible to force the Secret rotation before the time-based rotation kicks in. To do that, add the `operator.kyma-project.io/force-kubeconfig-rotation: "true"` annotation to the `GardenCluster` CR.
 
 > Explain how to use the project. You can create multiple subsections (H3). Include the instructions or provide links to the related documentation.
 
