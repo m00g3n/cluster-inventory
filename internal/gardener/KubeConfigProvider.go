@@ -38,8 +38,8 @@ func NewKubeconfigProvider(
 	}
 }
 
-func (kp KubeconfigProvider) Fetch(shootName string) (string, error) {
-	shoot, err := kp.shootClient.Get(context.Background(), shootName, v1.GetOptions{})
+func (kp KubeconfigProvider) Fetch(ctx context.Context, shootName string) (string, error) {
+	shoot, err := kp.shootClient.Get(ctx, shootName, v1.GetOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get shoot")
 	}
