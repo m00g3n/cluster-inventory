@@ -86,7 +86,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	err := controller.Get(ctx, req.NamespacedName, &cluster)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			err = controller.deleteKubeconfigSecret(req.Name)
+			err = controller.deleteKubeconfigSecret(ctx, req.Name)
 		}
 
 		if err == nil {
@@ -151,13 +151,13 @@ func (controller *GardenerClusterController) persistStatusChange(ctx context.Con
 	return err
 }
 
-func (controller *GardenerClusterController) deleteKubeconfigSecret(clusterCRName string) error {
+func (controller *GardenerClusterController) deleteKubeconfigSecret(ctx context.Context, clusterCRName string) error {
 	selector := client.MatchingLabels(map[string]string{
 		clusterCRNameLabel: clusterCRName,
 	})
 
 	var secretList corev1.SecretList
-	err := controller.Client.List(context.TODO(), &secretList, selector)
+	err := controller.Client.List(ctx, &secretList, selector)
 	if err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func (controller *GardenerClusterController) deleteKubeconfigSecret(clusterCRNam
 		return errors.Errorf("unexpected numer of secrets found for cluster CR `%s`", clusterCRName)
 	}
 
-	return controller.Client.Delete(context.TODO(), &secretList.Items[0])
+	return controller.Client.Delete(ctx, &secretList.Items[0])
 }
 
 func (controller *GardenerClusterController) getSecret(shootName string) (*corev1.Secret, error) {
