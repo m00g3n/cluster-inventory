@@ -123,12 +123,12 @@ func (cluster *GardenerCluster) UpdateConditionForReadyState(conditionType Condi
 	meta.SetStatusCondition(&cluster.Status.Conditions, condition)
 }
 
-func (cluster *GardenerCluster) UpdateConditionForErrorState(conditionType ConditionType, reason ConditionReason, conditionStatus metav1.ConditionStatus, error error) {
+func (cluster *GardenerCluster) UpdateConditionForErrorState(conditionType ConditionType, reason ConditionReason, error error) {
 	cluster.Status.State = ErrorState
 
 	condition := metav1.Condition{
 		Type:               string(conditionType),
-		Status:             conditionStatus,
+		Status:             metav1.ConditionFalse,
 		LastTransitionTime: metav1.Now(),
 		Reason:             string(reason),
 		Message:            fmt.Sprintf("%s Error: %s", getMessage(reason), error.Error()),
