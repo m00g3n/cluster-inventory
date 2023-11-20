@@ -14,7 +14,20 @@ spec:
     singular: gardenercluster
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .status.state
+      name: STATE
+      type: string
+    - jsonPath: .metadata.labels.kyma-project\.io/runtime-id
+      name: RUNTIME-ID
+      type: string
+    - jsonPath: .metadata.labels.kyma-project\.io/shoot-name
+      name: SHOOT-NAME
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
         description: GardenerCluster is the Schema for the clusters API
