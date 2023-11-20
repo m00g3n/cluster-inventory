@@ -27,6 +27,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
+	. "github.com/stretchr/testify/mock"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -45,6 +46,7 @@ var (
 	testEnv        *envtest.Environment //nolint:gochecknoglobals
 	suiteCtx       context.Context      //nolint:gochecknoglobals
 	cancelSuiteCtx context.CancelFunc   //nolint:gochecknoglobals
+	anyContext     = MatchedBy(func(ctx context.Context) bool { return true })
 )
 
 const TestKubeconfigValidityTime = 24 * time.Hour
@@ -102,12 +104,12 @@ var _ = BeforeSuite(func() {
 })
 
 func setupKubeconfigProviderMock(kpMock *mocks.KubeconfigProvider) {
-	kpMock.On("Fetch", "shootName1").Return("kubeconfig1", nil)
-	kpMock.On("Fetch", "shootName2").Return("kubeconfig2", nil)
-	kpMock.On("Fetch", "shootName3").Return("", errors.New("failed to get kubeconfig"))
-	kpMock.On("Fetch", "shootName6").Return("kubeconfig6", nil)
-	kpMock.On("Fetch", "shootName4").Return("kubeconfig4", nil)
-	kpMock.On("Fetch", "shootName5").Return("kubeconfig5", nil)
+	kpMock.On("Fetch", anyContext, "shootName1").Return("kubeconfig1", nil)
+	kpMock.On("Fetch", anyContext, "shootName2").Return("kubeconfig2", nil)
+	kpMock.On("Fetch", anyContext, "shootName3").Return("", errors.New("failed to get kubeconfig"))
+	kpMock.On("Fetch", anyContext, "shootName6").Return("kubeconfig6", nil)
+	kpMock.On("Fetch", anyContext, "shootName4").Return("kubeconfig4", nil)
+	kpMock.On("Fetch", anyContext, "shootName5").Return("kubeconfig5", nil)
 }
 
 var _ = AfterSuite(func() {

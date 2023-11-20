@@ -62,7 +62,7 @@ func NewGardenerClusterController(mgr ctrl.Manager, kubeconfigProvider Kubeconfi
 
 //go:generate mockery --name=KubeconfigProvider
 type KubeconfigProvider interface {
-	Fetch(shootName string) (string, error)
+	Fetch(ctx context.Context, shootName string) (string, error)
 }
 
 //+kubebuilder:rbac:groups=infrastructuremanager.kyma-project.io,resources=gardenerclusters,verbs=get;list;watch;create;update;patch;delete
@@ -226,7 +226,7 @@ func (controller *GardenerClusterController) handleKubeconfig(ctx context.Contex
 		return ksZero, err
 	}
 
-	kubeconfig, err := controller.KubeconfigProvider.Fetch(cluster.Spec.Shoot.Name)
+	kubeconfig, err := controller.KubeconfigProvider.Fetch(ctx, cluster.Spec.Shoot.Name)
 	if err != nil {
 		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetKubeconfig, metav1.ConditionTrue, err)
 		return ksZero, err
