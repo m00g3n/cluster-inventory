@@ -27,6 +27,8 @@ import (
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="STATE",type=string,JSONPath=`.status.state`
 //+kubebuilder:printcolumn:name="RUNTIME-ID",type=string,JSONPath=`.metadata.labels.kyma-project\.io/runtime-id`
+//+kubebuilder:printcolumn:name="SHOOT-NAME",type=string,JSONPath=`.metadata.labels.kyma-project\.io/shoot-name`
+//+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // GardenerCluster is the Schema for the clusters API
 type GardenerCluster struct {
