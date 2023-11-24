@@ -11,4 +11,7 @@ function create_secrets {
   cat /dev/stdin | jq -r --argjson t "$(<$_secret_template_path)" '.[] as $id | $t | .metadata.name=$id | .metadata.labels["kyma-project.io/runtime-id"]=$id'
 }
 
-generate_data $1 $2 | tee /tmp/input.json | create_secrets
+datetime_postfix=$(date -u +%Y-%m-%dT%H:%M:%S) 
+input_filename="/tmp/input_"$datetime_postfix".json"
+echo $input_filename 
+generate_data $1 $2 | tee $input_filename | create_secrets
