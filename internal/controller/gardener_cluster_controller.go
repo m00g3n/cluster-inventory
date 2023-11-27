@@ -144,7 +144,7 @@ func (controller *GardenerClusterController) resultWithoutRequeue() ctrl.Result 
 }
 
 func (controller *GardenerClusterController) persistStatusChange(ctx context.Context, cluster *imv1.GardenerCluster) error {
-	err := controller.Client.Status().Update(ctx, cluster)
+	err := controller.Status().Update(ctx, cluster)
 	if err != nil {
 		controller.log.Error(err, "status update failed")
 	}
@@ -157,16 +157,22 @@ func (controller *GardenerClusterController) deleteKubeconfigSecret(ctx context.
 	})
 
 	var secretList corev1.SecretList
-	err := controller.Client.List(ctx, &secretList, selector)
-	if err != nil {
+	err := controller.List(ctx, &secretList, selector)
+
+	if err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
 
-	if len(secretList.Items) != 1 {
+	// secret was already deleted, nothing to do
+	if len(secretList.Items) < 1 {
+		return nil
+	}
+
+	if len(secretList.Items) > 1 {
 		return errors.Errorf("unexpected numer of secrets found for cluster CR `%s`", clusterCRName)
 	}
 
-	return controller.Client.Delete(ctx, &secretList.Items[0])
+	return controller.Delete(ctx, &secretList.Items[0])
 }
 
 func (controller *GardenerClusterController) getSecret(shootName string) (*corev1.Secret, error) {
