@@ -5,8 +5,6 @@ The 'benchmark.sh' script creates secrets that can be used for benchmarking infr
 
 In order to use it, call `./hack/benchmark/benchmark.sh {number_of_secrets_to_generate) {path_to_secret_template)`
 
-Example usage `./hack/benchmark/benchmark.sh 10 ./hack/benchmark/secret.template.json`
-
 Script generates `/tmp/input_{currentdateandtime}.json` input file containing list of runtimeIDs of generated secrets:
 ``` json
 [
@@ -22,3 +20,5 @@ Script generates `/tmp/input_{currentdateandtime}.json` input file containing li
   "F107C364-5144-4F58-ACD0-2111CADF128B"
 ]
 ```
+
+Example usage that will generate 10 secrets and apply them using kubectl `./hack/benchmark/benchmark.sh 10 ./hack/benchmark/secret.template.json | kubectl apply -f -`
