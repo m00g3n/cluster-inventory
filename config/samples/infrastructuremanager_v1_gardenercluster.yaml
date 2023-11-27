@@ -2,22 +2,22 @@ apiVersion: infrastructuremanager.kyma-project.io/v1
 kind: GardenerCluster
 metadata:
   labels:
-    kyma-project.io/instance-id: instance-id
-    kyma-project.io/runtime-id: runtime-id
+    kyma-project.io/instance-id: md-test
+    kyma-project.io/runtime-id: non-existing-runtime-id
     kyma-project.io/broker-plan-id: plan-id
-    kyma-project.io/broker-plan-name: plan-name
-    kyma-project.io/global-account-id: global-account-id
-    kyma-project.io/subaccount-id: subAccount-id
-    kyma-project.io/shoot-name: shoot-name
-    kyma-project.io/region: region
+    kyma-project.io/broker-plan-name: aws
+    kyma-project.io/global-account-id: 461f6292-8085-41c8-af0c-e185f39b5e18
+    kyma-project.io/subaccount-id: 7d598f4b-580d-4d11-981a-2dcf766f9b2e
+    kyma-project.io/shoot-name: c-3acbdd1
+    kyma-project.io/region: eu-central-1
     operator.kyma-project.io/kyma-name: kymaName
-  name: runtime-id
+  name: c-3acbdd1
   namespace: kcp-system
 spec:
   shoot:
-    name: shoot-name
+    name: dummy-shoot
   kubeconfig:
     secret:
-      name: kubeconfig-runtime-id
+      name: kubeconfig-non-existing-runtime-id
       namespace: kcp-system
       key: "config"

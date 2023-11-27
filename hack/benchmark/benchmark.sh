@@ -13,5 +13,4 @@ function create_secrets {
 
 datetime_postfix=$(date -u +%Y-%m-%dT%H:%M:%S) 
 input_filename="/tmp/input_"$datetime_postfix".json"
-echo $input_filename 
 generate_data $1 $2 | tee $input_filename | create_secrets
