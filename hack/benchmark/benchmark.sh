@@ -4,7 +4,7 @@ _count=$1
 _secret_template_path=$2
 
 function generate_data {
-  jq -nR --arg _count $_count '[range(0;($_count|tonumber)) | input]' < <(while true; do uuidgen ; done)
+  jq -nR --arg _count $_count '[range(0;($_count|tonumber)) | input]' < <(while true; do uuidgen | awk '{print tolower($0)}' ; done)
 }
 
 function create_secrets {
