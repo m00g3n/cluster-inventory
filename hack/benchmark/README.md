@@ -1,11 +1,11 @@
 # Benchmark
-The 'benchmark.sh' script creates secrets that can be used for benchmarking infrastructure manager.
+The 'benchmark.sh' script creates secrets that can be used for benchmarking Infrastructure Manager.
 
 ## Usage
 
 In order to use it, call `./hack/benchmark/benchmark.sh {number_of_secrets_to_generate) {path_to_secret_template)`
 
-Script generates `/tmp/input_{currentdateandtime}.json` input file containing list of runtimeIDs of generated secrets:
+The script generates the `/tmp/input_{currentdateandtime}.json` input file containing a list of runtimeIDs of the generated secrets:
 ``` json
 [
   "AB65AB53-7B0A-481C-A472-349B4947D50D",
@@ -21,4 +21,4 @@ Script generates `/tmp/input_{currentdateandtime}.json` input file containing li
 ]
 ```
 
-Example usage that will generate 10 secrets and apply them using kubectl `./hack/benchmark/benchmark.sh 10 ./hack/benchmark/secret.template.json | kubectl apply -f -`
+The example usage that generates 10 secrets and applies them using kubectl `./hack/benchmark/benchmark.sh 10 ./hack/benchmark/secret.template.json | kubectl apply -f -`
