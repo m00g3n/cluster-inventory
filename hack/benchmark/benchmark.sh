@@ -4,7 +4,7 @@ _count=$1
 _secret_template_path=$2
 
 function generate_data {
-  jq -nR --arg _count $_count '[range(0;($_count|tonumber)) | input]' < <(while true; do uuidgen ; done)
+  jq -nR --arg _count $_count '[range(0;($_count|tonumber)) | input]' < <(while true; do uuidgen | awk '{print tolower($0)}' ; done)
 }
 
 function create_secrets {
@@ -13,5 +13,4 @@ function create_secrets {
 
 datetime_postfix=$(date -u +%Y-%m-%dT%H:%M:%S) 
 input_filename="/tmp/input_"$datetime_postfix".json"
-echo $input_filename 
 generate_data $1 $2 | tee $input_filename | create_secrets
