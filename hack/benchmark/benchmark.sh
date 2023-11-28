@@ -8,7 +8,7 @@ function generate_data {
 }
 
 function create_secrets {
-  cat /dev/stdin | jq -r --argjson t "$(<$_secret_template_path)" '.[] as $id | $t | .metadata.name=$id | .metadata.labels["kyma-project.io/runtime-id"]=$id'
+  cat /dev/stdin | jq -r --argjson t "$(<$_secret_template_path)" '.[] as $id | $t | .metadata.name="kubeconfig-"+$id | .metadata.labels["kyma-project.io/runtime-id"]=$id | .metadata.labels["kyma-project.io/shoot-name"]=$id'
 }
 
 datetime_postfix=$(date -u +%Y-%m-%dT%H:%M:%S) 
