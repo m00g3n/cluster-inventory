@@ -33,6 +33,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 const (
@@ -394,6 +395,10 @@ func (controller *GardenerClusterController) newSecret(cluster imv1.GardenerClus
 // SetupWithManager sets up the controller with the Manager.
 func (controller *GardenerClusterController) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&imv1.GardenerCluster{}, builder.WithPredicates()).
+		For(&imv1.GardenerCluster{}, builder.WithPredicates(predicate.Or(
+			predicate.LabelChangedPredicate{},
+			predicate.AnnotationChangedPredicate{},
+			predicate.GenerationChangedPredicate{}),
+		)).
 		Complete(controller)
 }

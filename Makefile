@@ -110,7 +110,7 @@ endif
 
 .PHONY: gardener-secret-deploy
 gardener-secret-deploy:
-	$(KUBECTL) create secret generic gardener-credentials --from-file kubeconfig=$(GARDENER_KUBECONFIG_PATH) -n kcp-system
+	$(KUBECTL) create secret generic gardener-credentials --from-file kubeconfig=$(GARDENER_KUBECONFIG_PATH) -n kcp-system --dry-run=client -o yaml | kubectl apply -f -
 
 .PHONY: install
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
