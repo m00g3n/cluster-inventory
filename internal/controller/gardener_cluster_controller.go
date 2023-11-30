@@ -119,7 +119,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 
 	if kubeconfigStatus == ksCreated || kubeconfigStatus == ksModified {
 		_ = controller.persistStatusChange(ctx, &cluster)
-		return controller.resultWithoutRequeue(), nil
+		return controller.resultWithRequeue(), nil
 	}
 
 	return controller.resultWithRequeue(), nil
