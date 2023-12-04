@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"github.com/go-logr/logr"
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/prometheus/client_golang/prometheus"
 	ctrlMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
@@ -38,6 +37,6 @@ func IncrementReconciliationLoopsStarted() {
 	playgroundTotalReconciliationLoopsStarted.Inc()
 }
 
-func SetGardenerClusterStates(cluster v1.GardenerCluster, log logr.Logger) {
+func SetGardenerClusterStates(cluster v1.GardenerCluster) {
 	metricGardenerClustersState.WithLabelValues(cluster.Spec.Shoot.Name, string(cluster.Status.State)).Set(1)
 }
