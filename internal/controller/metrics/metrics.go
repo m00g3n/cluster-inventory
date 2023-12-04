@@ -40,12 +40,7 @@ func IncrementReconciliationLoopsStarted() {
 	playground_totalReconciliationLoopsStarted.Inc()
 }
 
-func IncGardenerClusterStates(cluster v1.GardenerCluster, log logr.Logger) {
-	metricGardenerClustersState.WithLabelValues(cluster.Spec.Shoot.Name, string(cluster.Status.State)).Inc()
+func SetGardenerClusterStates(cluster v1.GardenerCluster, log logr.Logger) {
+	metricGardenerClustersState.WithLabelValues(cluster.Spec.Shoot.Name, string(cluster.Status.State)).Set(1)
 	log.Info("IncMetrics(): cluster.Spec.Shoot.Name: %s, cluster.Status.State: %s ", cluster.Spec.Shoot.Name, cluster.Status.State)
-}
-
-func DecGardenerClusterStates(cluster v1.GardenerCluster, log logr.Logger) {
-	metricGardenerClustersState.WithLabelValues(cluster.Spec.Shoot.Name, string(cluster.Status.State)).Dec()
-	log.Info("DecMetrics(): cluster.Spec.Shoot.Name: %s, cluster.Status.State: %s ", cluster.Spec.Shoot.Name, cluster.Status.State)
 }

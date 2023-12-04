@@ -138,7 +138,7 @@ func loggingContext(req ctrl.Request) []any {
 }
 
 func (controller *GardenerClusterController) resultWithRequeue(cluster *imv1.GardenerCluster) ctrl.Result {
-	metrics.IncGardenerClusterStates(*cluster, controller.log)
+	metrics.SetGardenerClusterStates(*cluster, controller.log)
 
 	return ctrl.Result{
 		Requeue:      true,
@@ -147,7 +147,7 @@ func (controller *GardenerClusterController) resultWithRequeue(cluster *imv1.Gar
 }
 
 func (controller *GardenerClusterController) resultWithoutRequeue(cluster *imv1.GardenerCluster) ctrl.Result {
-	metrics.DecGardenerClusterStates(*cluster, controller.log)
+	metrics.SetGardenerClusterStates(*cluster, controller.log)
 	return ctrl.Result{}
 }
 
