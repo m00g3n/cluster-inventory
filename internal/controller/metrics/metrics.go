@@ -8,23 +8,21 @@ import (
 )
 
 const (
-	shootName       = "shootName"
-	globalAccountId = "globalAccountId"
-	runtimeId       = "runtimeId"
-	state           = "state"
+	shootName = "shootName"
+	state     = "state"
 )
 
 var (
 
-	//TODO: test custom metric, remove when done with https://github.com/kyma-project/infrastructure-manager/issues/11 //nolint:all
-	playground_totalReconciliationLoopsStarted = prometheus.NewCounter(
+	//nolint:godox //TODO: test custom metric, remove when done with https://github.com/kyma-project/infrastructure-manager/issues/11
+	playgroundTotalReconciliationLoopsStarted = prometheus.NewCounter( //nolint:gochecknoglobals
 		prometheus.CounterOpts{
 			Name: "im_playground_reconciliation_loops_started_total",
 			Help: "Number of times reconciliation loop was started",
 		},
 	)
 
-	metricGardenerClustersState = prometheus.NewGaugeVec(
+	metricGardenerClustersState = prometheus.NewGaugeVec( //nolint:gochecknoglobals
 		prometheus.GaugeOpts{ //nolint:gochecknoglobals
 			Subsystem: "infrastructure_manager",
 			Name:      "im_gardener_clusters_state",
@@ -33,11 +31,11 @@ var (
 )
 
 func init() {
-	ctrlMetrics.Registry.MustRegister(playground_totalReconciliationLoopsStarted, metricGardenerClustersState)
+	ctrlMetrics.Registry.MustRegister(playgroundTotalReconciliationLoopsStarted, metricGardenerClustersState)
 }
 
 func IncrementReconciliationLoopsStarted() {
-	playground_totalReconciliationLoopsStarted.Inc()
+	playgroundTotalReconciliationLoopsStarted.Inc()
 }
 
 func SetGardenerClusterStates(cluster v1.GardenerCluster, log logr.Logger) {

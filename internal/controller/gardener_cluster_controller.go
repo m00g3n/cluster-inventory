@@ -145,7 +145,7 @@ func (controller *GardenerClusterController) resultWithRequeue(cluster *imv1.Gar
 	}
 }
 
-func (controller *GardenerClusterController) resultWithoutRequeue(cluster *imv1.GardenerCluster) ctrl.Result {
+func (controller *GardenerClusterController) resultWithoutRequeue(cluster *imv1.GardenerCluster) ctrl.Result { //nolint:unparam
 	metrics.SetGardenerClusterStates(*cluster, controller.log)
 	return ctrl.Result{}
 }
