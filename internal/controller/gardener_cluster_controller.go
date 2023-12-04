@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -79,9 +80,11 @@ type KubeconfigProvider interface {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (controller *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) { //nolint:revive
-	controller.log.Info("Starting reconciliation.", loggingContext(req)...)
+	controller.log.Info("Starting reconciliation. 16:51", loggingContext(req)...)
 
 	var cluster imv1.GardenerCluster
+
+	metrics.IncrementReconciliationLoopsStarted()
 
 	err := controller.Get(ctx, req.NamespacedName, &cluster)
 	if err != nil {
@@ -93,7 +96,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 			controller.log.Info("Secret has been deleted.", loggingContext(req)...)
 		}
 
-		return controller.resultWithoutRequeue(), err
+		return controller.resultWithoutRequeue(&cluster), err
 	}
 
 	lastSyncTime := time.Now()
@@ -105,25 +108,25 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		if k8serrors.IsNotFound(err) {
 			err = nil
 		}
-		return controller.resultWithoutRequeue(), err
+		return controller.resultWithoutRequeue(&cluster), err
 	}
 
 	// there was a request to rotate the kubeconfig
 	if kubeconfigStatus == ksRotated {
 		err = controller.removeForceRotationAnnotation(ctx, &cluster)
 		if err != nil {
-			return controller.resultWithoutRequeue(), err
+			return controller.resultWithoutRequeue(&cluster), err
 		}
 	}
 
 	if kubeconfigStatus == ksCreated || kubeconfigStatus == ksModified {
 		err = controller.persistStatusChange(ctx, &cluster)
 		if err != nil {
-			return controller.resultWithoutRequeue(), err
+			return controller.resultWithoutRequeue(nil), err
 		}
 	}
 
-	return controller.resultWithRequeue(), nil
+	return controller.resultWithRequeue(&cluster), nil
 }
 
 func loggingContextFromCluster(cluster *imv1.GardenerCluster) []any {
@@ -134,14 +137,17 @@ func loggingContext(req ctrl.Request) []any {
 	return []any{"GardenerCluster", req.Name, "Namespace", req.Namespace}
 }
 
-func (controller *GardenerClusterController) resultWithRequeue() ctrl.Result {
+func (controller *GardenerClusterController) resultWithRequeue(cluster *imv1.GardenerCluster) ctrl.Result {
+	metrics.IncGardenerClusterStates(*cluster, controller.log)
+
 	return ctrl.Result{
 		Requeue:      true,
 		RequeueAfter: controller.rotationPeriod,
 	}
 }
 
-func (controller *GardenerClusterController) resultWithoutRequeue() ctrl.Result {
+func (controller *GardenerClusterController) resultWithoutRequeue(cluster *imv1.GardenerCluster) ctrl.Result {
+	metrics.DecGardenerClusterStates(*cluster, controller.log)
 	return ctrl.Result{}
 }
 

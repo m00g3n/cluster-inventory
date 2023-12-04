@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"github.com/go-logr/logr"
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/prometheus/client_golang/prometheus"
 	ctrlMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
@@ -16,9 +17,9 @@ const (
 var (
 
 	//TODO: test custom metric, remove when done with https://github.com/kyma-project/infrastructure-manager/issues/11
-	totalReconciliationLoopsStarted = prometheus.NewCounter(
+	playground_totalReconciliationLoopsStarted = prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Name: "im_reconciliation_loops_started_total",
+			Name: "im_playground_reconciliation_loops_started_total",
 			Help: "Number of times reconciliation loop was started",
 		},
 	)
@@ -32,15 +33,19 @@ var (
 )
 
 func init() {
-	ctrlMetrics.Registry.MustRegister(totalReconciliationLoopsStarted, metricGardenerClustersState)
+	ctrlMetrics.Registry.MustRegister(playground_totalReconciliationLoopsStarted, metricGardenerClustersState)
 }
 
 func IncrementReconciliationLoopsStarted() {
-	totalReconciliationLoopsStarted.Inc()
+	playground_totalReconciliationLoopsStarted.Inc()
 }
 
-func SetGardenerClusterStates(cluster v1.GardenerCluster) {
-	// Increase a value using compact (but order-sensitive!) WithLabelValues().
-	//metricGardenerClustersState.WithLabelValues(cluster.Spec.Shoot.Name, "READY").Add(1)
-	metricGardenerClustersState.WithLabelValues(cluster.Spec.Shoot.Name, cluster.Spec.Shoot.Name).Add(1)
+func IncGardenerClusterStates(cluster v1.GardenerCluster, log logr.Logger) {
+	metricGardenerClustersState.WithLabelValues(cluster.Spec.Shoot.Name, string(cluster.Status.State)).Inc()
+	log.Info("IncMetrics(): cluster.Spec.Shoot.Name: %s, cluster.Status.State: %s ", cluster.Spec.Shoot.Name, cluster.Status.State)
+}
+
+func DecGardenerClusterStates(cluster v1.GardenerCluster, log logr.Logger) {
+	metricGardenerClustersState.WithLabelValues(cluster.Spec.Shoot.Name, string(cluster.Status.State)).Dec()
+	log.Info("DecMetrics(): cluster.Spec.Shoot.Name: %s, cluster.Status.State: %s ", cluster.Spec.Shoot.Name, cluster.Status.State)
 }
