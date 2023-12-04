@@ -34,6 +34,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 const (
@@ -89,7 +90,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	err := controller.Get(ctx, req.NamespacedName, &cluster)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			err = controller.deleteKubeconfigSecret(req.Name)
+			err = controller.deleteKubeconfigSecret(ctx, req.Name)
 		}
 
 		if err == nil {
@@ -120,10 +121,8 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	}
 
 	if kubeconfigStatus == ksCreated || kubeconfigStatus == ksModified {
-		err = controller.persistStatusChange(ctx, &cluster)
-		if err != nil {
-			return controller.resultWithoutRequeue(&cluster), err
-		}
+		_ = controller.persistStatusChange(ctx, &cluster)
+		return controller.resultWithoutRequeue(&cluster), nil
 	}
 
 	return controller.resultWithRequeue(&cluster), nil
@@ -152,43 +151,35 @@ func (controller *GardenerClusterController) resultWithoutRequeue(cluster *imv1.
 }
 
 func (controller *GardenerClusterController) persistStatusChange(ctx context.Context, cluster *imv1.GardenerCluster) error {
-	key := types.NamespacedName{
-		Name:      cluster.Name,
-		Namespace: cluster.Namespace,
-	}
-	var clusterToUpdate imv1.GardenerCluster
-
-	err := controller.Get(ctx, key, &clusterToUpdate)
+	err := controller.Status().Update(ctx, cluster)
 	if err != nil {
-		return err
+		controller.log.Error(err, "status update failed")
 	}
-
-	clusterToUpdate.Status = cluster.Status
-
-	statusErr := controller.Client.Status().Update(ctx, &clusterToUpdate)
-	if statusErr != nil {
-		controller.log.Error(statusErr, "Failed to set state for GardenerCluster")
-	}
-
-	return statusErr
+	return err
 }
 
-func (controller *GardenerClusterController) deleteKubeconfigSecret(clusterCRName string) error {
+func (controller *GardenerClusterController) deleteKubeconfigSecret(ctx context.Context, clusterCRName string) error {
 	selector := client.MatchingLabels(map[string]string{
 		clusterCRNameLabel: clusterCRName,
 	})
 
 	var secretList corev1.SecretList
-	err := controller.Client.List(context.TODO(), &secretList, selector)
-	if err != nil {
+	err := controller.List(ctx, &secretList, selector)
+
+	if err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
 
-	if len(secretList.Items) != 1 {
+	// secret was already deleted, nothing to do
+	if len(secretList.Items) < 1 {
+		return nil
+	}
+
+	if len(secretList.Items) > 1 {
 		return errors.Errorf("unexpected numer of secrets found for cluster CR `%s`", clusterCRName)
 	}
 
-	return controller.Client.Delete(context.TODO(), &secretList.Items[0])
+	return controller.Delete(ctx, &secretList.Items[0])
 }
 
 func (controller *GardenerClusterController) getSecret(shootName string) (*corev1.Secret, error) {
@@ -228,13 +219,13 @@ const (
 func (controller *GardenerClusterController) handleKubeconfig(ctx context.Context, cluster *imv1.GardenerCluster, lastSyncTime time.Time) (kubeconfigStatus, error) {
 	existingSecret, err := controller.getSecret(cluster.Spec.Shoot.Name)
 	if err != nil && !k8serrors.IsNotFound(err) {
-		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetSecret, metav1.ConditionTrue, err)
+		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetSecret, err)
 		return ksZero, err
 	}
 
 	kubeconfig, err := controller.KubeconfigProvider.Fetch(ctx, cluster.Spec.Shoot.Name)
 	if err != nil {
-		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetKubeconfig, metav1.ConditionTrue, err)
+		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetKubeconfig, err)
 		return ksZero, err
 	}
 
@@ -244,7 +235,7 @@ func (controller *GardenerClusterController) handleKubeconfig(ctx context.Contex
 
 		// delete secret containing kubeconfig to be rotated
 		if err := controller.removeKubeconfig(ctx, cluster, existingSecret); err != nil {
-			cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToDeleteSecret, metav1.ConditionTrue, err)
+			cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToDeleteSecret, err)
 			return ksZero, err
 		}
 
@@ -308,7 +299,7 @@ func (controller *GardenerClusterController) createNewSecret(ctx context.Context
 	newSecret := controller.newSecret(*cluster, kubeconfig, lastSyncTime)
 	err := controller.Create(ctx, &newSecret)
 	if err != nil {
-		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToCreateSecret, metav1.ConditionTrue, err)
+		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToCreateSecret, err)
 		return err
 	}
 
@@ -349,7 +340,7 @@ func (controller *GardenerClusterController) updateExistingSecret(ctx context.Co
 
 	err := controller.Update(ctx, existingSecret)
 	if err != nil {
-		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToUpdateSecret, metav1.ConditionTrue, err)
+		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToUpdateSecret, err)
 
 		return err
 	}
@@ -410,6 +401,10 @@ func (controller *GardenerClusterController) newSecret(cluster imv1.GardenerClus
 // SetupWithManager sets up the controller with the Manager.
 func (controller *GardenerClusterController) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&imv1.GardenerCluster{}, builder.WithPredicates()).
+		For(&imv1.GardenerCluster{}, builder.WithPredicates(predicate.Or(
+			predicate.LabelChangedPredicate{},
+			predicate.AnnotationChangedPredicate{},
+			predicate.GenerationChangedPredicate{}),
+		)).
 		Complete(controller)
 }

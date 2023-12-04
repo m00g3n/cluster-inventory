@@ -100,4 +100,4 @@ See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 ## Licensing
 <!--- mandatory section - do not change this! --->
 
-See the [LICENSE file](./LICENSE)
+See the [LICENSE file](./LICENSES/Apache-2.0.txt)
