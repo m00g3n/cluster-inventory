@@ -19,11 +19,11 @@ package controller
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"time"
 
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
