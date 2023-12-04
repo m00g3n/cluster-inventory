@@ -16,7 +16,7 @@ const (
 
 var (
 
-	//TODO: test custom metric, remove when done with https://github.com/kyma-project/infrastructure-manager/issues/11
+	//TODO: test custom metric, remove when done with https://github.com/kyma-project/infrastructure-manager/issues/11 //nolint:all
 	playground_totalReconciliationLoopsStarted = prometheus.NewCounter(
 		prometheus.CounterOpts{
 			Name: "im_playground_reconciliation_loops_started_total",
@@ -42,5 +42,4 @@ func IncrementReconciliationLoopsStarted() {
 
 func SetGardenerClusterStates(cluster v1.GardenerCluster, log logr.Logger) {
 	metricGardenerClustersState.WithLabelValues(cluster.Spec.Shoot.Name, string(cluster.Status.State)).Set(1)
-	log.Info("IncMetrics(): cluster.Spec.Shoot.Name: %s, cluster.Status.State: %s ", cluster.Spec.Shoot.Name, cluster.Status.State)
 }
