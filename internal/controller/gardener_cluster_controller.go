@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -84,6 +85,8 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 
 	var cluster imv1.GardenerCluster
 
+	metrics.IncrementReconciliationLoopsStarted()
+
 	err := controller.Get(ctx, req.NamespacedName, &cluster)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -94,7 +97,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 			controller.log.Info("Secret has been deleted.", loggingContext(req)...)
 		}
 
-		return controller.resultWithoutRequeue(), err
+		return controller.resultWithoutRequeue(&cluster), err
 	}
 
 	lastSyncTime := time.Now()
@@ -106,23 +109,23 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		if k8serrors.IsNotFound(err) {
 			err = nil
 		}
-		return controller.resultWithoutRequeue(), err
+		return controller.resultWithoutRequeue(&cluster), err
 	}
 
 	// there was a request to rotate the kubeconfig
 	if kubeconfigStatus == ksRotated {
 		err = controller.removeForceRotationAnnotation(ctx, &cluster)
 		if err != nil {
-			return controller.resultWithoutRequeue(), err
+			return controller.resultWithoutRequeue(&cluster), err
 		}
 	}
 
 	if kubeconfigStatus == ksCreated || kubeconfigStatus == ksModified {
 		_ = controller.persistStatusChange(ctx, &cluster)
-		return controller.resultWithRequeue(), nil
+		return controller.resultWithoutRequeue(&cluster), nil
 	}
 
-	return controller.resultWithRequeue(), nil
+	return controller.resultWithRequeue(&cluster), nil
 }
 
 func loggingContextFromCluster(cluster *imv1.GardenerCluster) []any {
@@ -133,14 +136,17 @@ func loggingContext(req ctrl.Request) []any {
 	return []any{"GardenerCluster", req.Name, "Namespace", req.Namespace}
 }
 
-func (controller *GardenerClusterController) resultWithRequeue() ctrl.Result {
+func (controller *GardenerClusterController) resultWithRequeue(cluster *imv1.GardenerCluster) ctrl.Result {
+	metrics.SetGardenerClusterStates(*cluster)
+
 	return ctrl.Result{
 		Requeue:      true,
 		RequeueAfter: controller.rotationPeriod,
 	}
 }
 
-func (controller *GardenerClusterController) resultWithoutRequeue() ctrl.Result {
+func (controller *GardenerClusterController) resultWithoutRequeue(cluster *imv1.GardenerCluster) ctrl.Result { //nolint:unparam
+	metrics.SetGardenerClusterStates(*cluster)
 	return ctrl.Result{}
 }
 
