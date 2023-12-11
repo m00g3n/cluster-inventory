@@ -120,9 +120,8 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		}
 	}
 
-	if kubeconfigStatus == ksCreated || kubeconfigStatus == ksModified {
-		_ = controller.persistStatusChange(ctx, &cluster)
-		return controller.resultWithoutRequeue(&cluster), nil
+	if err := controller.persistStatusChange(ctx, &cluster); err != nil {
+		return controller.resultWithoutRequeue(&cluster), err
 	}
 
 	return controller.resultWithRequeue(&cluster), nil
@@ -245,6 +244,7 @@ func (controller *GardenerClusterController) handleKubeconfig(ctx context.Contex
 	if !secretNeedsToBeRotated(cluster, existingSecret, controller.rotationPeriod) {
 		message := fmt.Sprintf("Secret %s in namespace %s does not need to be rotated yet.", cluster.Spec.Kubeconfig.Secret.Name, cluster.Spec.Kubeconfig.Secret.Namespace)
 		controller.log.Info(message, loggingContextFromCluster(cluster)...)
+		cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretCreated, metav1.ConditionTrue)
 		return ksZero, nil
 	}
 
