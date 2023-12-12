@@ -296,7 +296,6 @@ func nextRequeue(now, lastSyncTime time.Time, rotationPeriod time.Duration, modi
 }
 
 func secretRotationTimePassed(secret *corev1.Secret, rotationPeriod time.Duration) bool {
-
 	if secret == nil {
 		return true
 	}
