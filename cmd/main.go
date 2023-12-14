@@ -40,9 +40,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-// The ratio determines what is the minimal time that needs to pass to rotate certificate.
-const minimalRotationTimeRatio = 0.6
-
 var (
 	scheme   = runtime.NewScheme()        //nolint:gochecknoglobals
 	setupLog = ctrl.Log.WithName("setup") //nolint:gochecknoglobals
@@ -55,6 +52,7 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
+const defaultMinimalRotationTimeRatio = 0.6
 const defaultExpirationTime = 24 * time.Hour
 
 func main() {
@@ -63,6 +61,7 @@ func main() {
 	var probeAddr string
 	var gardenerKubeconfigPath string
 	var gardenerProjectName string
+	var minimalRotationTimeRatio float64
 	var expirationTime time.Duration
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -72,6 +71,7 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&gardenerKubeconfigPath, "gardener-kubeconfig-path", "/gardener/kubeconfig/kubeconfig", "Kubeconfig file for Gardener cluster")
 	flag.StringVar(&gardenerProjectName, "gardener-project-name", "gardener-project", "Name of the Gardener project")
+	flag.Float64Var(&minimalRotationTimeRatio, "minimal-rotation-time", defaultMinimalRotationTimeRatio, "The ratio determines what is the minimal time that needs to pass to rotate certificate.")
 	flag.DurationVar(&expirationTime, "kubeconfig-expiration-time", defaultExpirationTime, "Dynamic kubeconfig expiration time")
 
 	opts := zap.Options{

@@ -41,6 +41,8 @@ const (
 	lastKubeconfigSyncAnnotation      = "operator.kyma-project.io/last-sync"
 	forceKubeconfigRotationAnnotation = "operator.kyma-project.io/force-kubeconfig-rotation"
 	clusterCRNameLabel                = "operator.kyma-project.io/cluster-name"
+
+	rotationPeriodRatio = 0.95
 )
 
 // GardenerClusterController reconciles a GardenerCluster object
@@ -84,7 +86,6 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	controller.log.Info("Starting reconciliation.", loggingContext(req)...)
 
 	var cluster imv1.GardenerCluster
-
 	metrics.IncrementReconciliationLoopsStarted()
 
 	err := controller.Get(ctx, req.NamespacedName, &cluster)
@@ -100,8 +101,28 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		return controller.resultWithoutRequeue(&cluster), err
 	}
 
-	lastSyncTime := time.Now()
-	kubeconfigStatus, err := controller.handleKubeconfig(ctx, &cluster, lastSyncTime)
+	secret, err := controller.getSecret(cluster.Spec.Shoot.Name)
+	if err != nil && !k8serrors.IsNotFound(err) {
+		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetSecret, err)
+		_ = controller.persistStatusChange(ctx, &cluster)
+		return controller.resultWithoutRequeue(&cluster), err
+	}
+
+	var annotations map[string]string
+	if secret != nil {
+		annotations = secret.Annotations
+	}
+
+	_, lastSyncTime := findLastSyncTime(annotations)
+	now := time.Now().UTC()
+	requeueAfter := nextRequeue(now, lastSyncTime, controller.rotationPeriod, rotationPeriodRatio)
+
+	controller.log.WithValues(loggingContextFromCluster(&cluster)...).Info("rotation params",
+		"lastSync", lastSyncTime.Format("2006-01-02 15:04:05"),
+		"requeueAfter", requeueAfter.String(),
+	)
+
+	kubeconfigStatus, err := controller.handleKubeconfig(ctx, secret, &cluster, now)
 	if err != nil {
 		_ = controller.persistStatusChange(ctx, &cluster)
 		// if a claster was not found in gardener,
@@ -120,12 +141,11 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		}
 	}
 
-	if kubeconfigStatus == ksCreated || kubeconfigStatus == ksModified {
-		_ = controller.persistStatusChange(ctx, &cluster)
-		return controller.resultWithoutRequeue(&cluster), nil
+	if err := controller.persistStatusChange(ctx, &cluster); err != nil {
+		return controller.resultWithoutRequeue(&cluster), err
 	}
 
-	return controller.resultWithRequeue(&cluster), nil
+	return controller.resultWithRequeue(&cluster, requeueAfter), nil
 }
 
 func loggingContextFromCluster(cluster *imv1.GardenerCluster) []any {
@@ -136,16 +156,19 @@ func loggingContext(req ctrl.Request) []any {
 	return []any{"GardenerCluster", req.Name, "Namespace", req.Namespace}
 }
 
-func (controller *GardenerClusterController) resultWithRequeue(cluster *imv1.GardenerCluster) ctrl.Result {
+func (controller *GardenerClusterController) resultWithRequeue(cluster *imv1.GardenerCluster, requeueAfter time.Duration) ctrl.Result {
+	controller.log.Info("result with requeue", "RequeueAfter", requeueAfter.String())
+
 	metrics.SetGardenerClusterStates(*cluster)
 
 	return ctrl.Result{
 		Requeue:      true,
-		RequeueAfter: controller.rotationPeriod,
+		RequeueAfter: requeueAfter,
 	}
 }
 
 func (controller *GardenerClusterController) resultWithoutRequeue(cluster *imv1.GardenerCluster) ctrl.Result { //nolint:unparam
+	controller.log.Info("result without requeue")
 	metrics.SetGardenerClusterStates(*cluster)
 	return ctrl.Result{}
 }
@@ -216,13 +239,7 @@ const (
 	ksRotated
 )
 
-func (controller *GardenerClusterController) handleKubeconfig(ctx context.Context, cluster *imv1.GardenerCluster, lastSyncTime time.Time) (kubeconfigStatus, error) {
-	existingSecret, err := controller.getSecret(cluster.Spec.Shoot.Name)
-	if err != nil && !k8serrors.IsNotFound(err) {
-		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetSecret, err)
-		return ksZero, err
-	}
-
+func (controller *GardenerClusterController) handleKubeconfig(ctx context.Context, secret *corev1.Secret, cluster *imv1.GardenerCluster, now time.Time) (kubeconfigStatus, error) {
 	kubeconfig, err := controller.KubeconfigProvider.Fetch(ctx, cluster.Spec.Shoot.Name)
 	if err != nil {
 		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetKubeconfig, err)
@@ -234,7 +251,7 @@ func (controller *GardenerClusterController) handleKubeconfig(ctx context.Contex
 		controller.log.Info(message, loggingContextFromCluster(cluster)...)
 
 		// delete secret containing kubeconfig to be rotated
-		if err := controller.removeKubeconfig(ctx, cluster, existingSecret); err != nil {
+		if err := controller.removeKubeconfig(ctx, cluster, secret); err != nil {
 			cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToDeleteSecret, err)
 			return ksZero, err
 		}
@@ -242,26 +259,50 @@ func (controller *GardenerClusterController) handleKubeconfig(ctx context.Contex
 		return ksRotated, nil
 	}
 
-	if !secretNeedsToBeRotated(cluster, existingSecret, controller.rotationPeriod) {
+	if !secretNeedsToBeRotated(cluster, secret, controller.rotationPeriod) {
 		message := fmt.Sprintf("Secret %s in namespace %s does not need to be rotated yet.", cluster.Spec.Kubeconfig.Secret.Name, cluster.Spec.Kubeconfig.Secret.Namespace)
 		controller.log.Info(message, loggingContextFromCluster(cluster)...)
+		cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretCreated, metav1.ConditionTrue)
 		return ksZero, nil
 	}
 
-	if existingSecret != nil {
-		return ksModified, controller.updateExistingSecret(ctx, kubeconfig, cluster, existingSecret, lastSyncTime)
+	if secret != nil {
+		return ksModified, controller.updateExistingSecret(ctx, kubeconfig, cluster, secret, now)
 	}
 
-	return ksCreated, controller.createNewSecret(ctx, kubeconfig, cluster, lastSyncTime)
+	return ksCreated, controller.createNewSecret(ctx, kubeconfig, cluster, now)
 }
 
 func secretNeedsToBeRotated(cluster *imv1.GardenerCluster, secret *corev1.Secret, rotationPeriod time.Duration) bool {
 	return secretRotationTimePassed(secret, rotationPeriod) || secretRotationForced(cluster)
 }
 
-func secretRotationTimePassed(secret *corev1.Secret, rotationPeriod time.Duration) bool {
-	const rotationPeriodRatio = 0.95
+func findLastSyncTime(annotations map[string]string) (bool, time.Time) {
+	_, found := annotations[lastKubeconfigSyncAnnotation]
+	if !found {
+		return false, time.Time{}
+	}
 
+	lastSyncTimeString := annotations[lastKubeconfigSyncAnnotation]
+	lastSyncTime, err := time.Parse(time.RFC3339, lastSyncTimeString)
+	if err != nil {
+		return false, time.Time{}
+	}
+	return true, lastSyncTime
+}
+
+// nextRequeue - predicts duration for next requeue of GardenerCluster CR
+func nextRequeue(now, lastSyncTime time.Time, rotationPeriod time.Duration, modifier float64) time.Duration {
+	rotationPeriodWithModifier := modifier * rotationPeriod.Minutes()
+	minutesToRequeue := rotationPeriodWithModifier - now.Sub(lastSyncTime).Minutes()
+	if minutesToRequeue <= 0 {
+		return time.Duration(rotationPeriodWithModifier * float64(time.Minute))
+	}
+
+	return time.Duration(minutesToRequeue * float64(time.Minute))
+}
+
+func secretRotationTimePassed(secret *corev1.Secret, rotationPeriod time.Duration) bool {
 	if secret == nil {
 		return true
 	}
@@ -295,8 +336,8 @@ func secretRotationForced(cluster *imv1.GardenerCluster) bool {
 	return found
 }
 
-func (controller *GardenerClusterController) createNewSecret(ctx context.Context, kubeconfig string, cluster *imv1.GardenerCluster, lastSyncTime time.Time) error {
-	newSecret := controller.newSecret(*cluster, kubeconfig, lastSyncTime)
+func (controller *GardenerClusterController) createNewSecret(ctx context.Context, kubeconfig string, cluster *imv1.GardenerCluster, now time.Time) error {
+	newSecret := controller.newSecret(*cluster, kubeconfig, now)
 	err := controller.Create(ctx, &newSecret)
 	if err != nil {
 		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToCreateSecret, err)
@@ -378,13 +419,13 @@ func (controller *GardenerClusterController) removeForceRotationAnnotation(ctx c
 	return nil
 }
 
-func (controller *GardenerClusterController) newSecret(cluster imv1.GardenerCluster, kubeconfig string, lastSyncTime time.Time) corev1.Secret {
+func (controller *GardenerClusterController) newSecret(cluster imv1.GardenerCluster, kubeconfig string, now time.Time) corev1.Secret {
 	labels := map[string]string{}
 
 	for key, val := range cluster.Labels {
 		labels[key] = val
 	}
-	labels["operator.kyma-project.io/managed-by"] = "infrastructure-manager"
+	labels["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
 	labels[clusterCRNameLabel] = cluster.Name
 
 	return corev1.Secret{
@@ -392,7 +433,7 @@ func (controller *GardenerClusterController) newSecret(cluster imv1.GardenerClus
 			Name:        cluster.Spec.Kubeconfig.Secret.Name,
 			Namespace:   cluster.Spec.Kubeconfig.Secret.Namespace,
 			Labels:      labels,
-			Annotations: map[string]string{lastKubeconfigSyncAnnotation: lastSyncTime.UTC().Format(time.RFC3339)},
+			Annotations: map[string]string{lastKubeconfigSyncAnnotation: now.UTC().Format(time.RFC3339)},
 		},
 		StringData: map[string]string{cluster.Spec.Kubeconfig.Secret.Key: kubeconfig},
 	}
