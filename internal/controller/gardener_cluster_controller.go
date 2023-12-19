@@ -95,7 +95,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		}
 
 		if err == nil {
-			controller.log.Info("Secret has been deleted.", loggingContext(req)...)
+			controller.log.Info("The gardener cluster does not exist the coresponding secret has been deleted.", loggingContext(req)...)
 		}
 
 		return controller.resultWithoutRequeue(&cluster), err
@@ -259,7 +259,7 @@ func (controller *GardenerClusterController) handleKubeconfig(ctx context.Contex
 		return ksRotated, nil
 	}
 
-	if !secretNeedsToBeRotated(cluster, secret, controller.rotationPeriod) {
+	if !secretNeedsToBeRotated(cluster, secret, controller.rotationPeriod, now) {
 		message := fmt.Sprintf("Secret %s in namespace %s does not need to be rotated yet.", cluster.Spec.Kubeconfig.Secret.Name, cluster.Spec.Kubeconfig.Secret.Namespace)
 		controller.log.Info(message, loggingContextFromCluster(cluster)...)
 		cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretCreated, metav1.ConditionTrue)
@@ -273,57 +273,25 @@ func (controller *GardenerClusterController) handleKubeconfig(ctx context.Contex
 	return ksCreated, controller.createNewSecret(ctx, kubeconfig, cluster, now)
 }
 
-func secretNeedsToBeRotated(cluster *imv1.GardenerCluster, secret *corev1.Secret, rotationPeriod time.Duration) bool {
-	return secretRotationTimePassed(secret, rotationPeriod) || secretRotationForced(cluster)
+func secretNeedsToBeRotated(cluster *imv1.GardenerCluster, secret *corev1.Secret, rotationPeriod time.Duration, now time.Time) bool {
+	return secretRotationTimePassed(secret, rotationPeriod, now) || secretRotationForced(cluster)
 }
 
-func findLastSyncTime(annotations map[string]string) (bool, time.Time) {
-	_, found := annotations[lastKubeconfigSyncAnnotation]
-	if !found {
-		return false, time.Time{}
-	}
-
-	lastSyncTimeString := annotations[lastKubeconfigSyncAnnotation]
-	lastSyncTime, err := time.Parse(time.RFC3339, lastSyncTimeString)
-	if err != nil {
-		return false, time.Time{}
-	}
-	return true, lastSyncTime
-}
-
-// nextRequeue - predicts duration for next requeue of GardenerCluster CR
-func nextRequeue(now, lastSyncTime time.Time, rotationPeriod time.Duration, modifier float64) time.Duration {
-	rotationPeriodWithModifier := modifier * rotationPeriod.Minutes()
-	minutesToRequeue := rotationPeriodWithModifier - now.Sub(lastSyncTime).Minutes()
-	if minutesToRequeue <= 0 {
-		return time.Duration(rotationPeriodWithModifier * float64(time.Minute))
-	}
-
-	return time.Duration(minutesToRequeue * float64(time.Minute))
-}
-
-func secretRotationTimePassed(secret *corev1.Secret, rotationPeriod time.Duration) bool {
+func secretRotationTimePassed(secret *corev1.Secret, rotationPeriod time.Duration, now time.Time) bool {
 	if secret == nil {
 		return true
 	}
 
 	annotations := secret.GetAnnotations()
-
-	_, found := annotations[lastKubeconfigSyncAnnotation]
-
+	found, lastSyncTime := findLastSyncTime(annotations)
 	if !found {
 		return true
 	}
 
-	lastSyncTimeString := annotations[lastKubeconfigSyncAnnotation]
-	lastSyncTime, err := time.Parse(time.RFC3339, lastSyncTimeString)
-	if err != nil {
-		return true
-	}
-	now := time.Now()
-	alreadyValidFor := now.Sub(lastSyncTime)
+	minutesToRotate := now.Sub(lastSyncTime).Minutes()
+	minutesInRotationPeriod := rotationPeriodRatio * rotationPeriod.Minutes()
 
-	return alreadyValidFor.Minutes() >= rotationPeriodRatio*rotationPeriod.Minutes()
+	return minutesToRotate >= minutesInRotationPeriod
 }
 
 func secretRotationForced(cluster *imv1.GardenerCluster) bool {
@@ -413,7 +381,7 @@ func (controller *GardenerClusterController) removeForceRotationAnnotation(ctx c
 		delete(annotations, forceKubeconfigRotationAnnotation)
 		clusterToUpdate.SetAnnotations(annotations)
 
-		return controller.Client.Update(ctx, &clusterToUpdate)
+		return controller.Update(ctx, &clusterToUpdate)
 	}
 
 	return nil
