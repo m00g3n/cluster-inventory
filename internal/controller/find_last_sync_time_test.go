@@ -11,7 +11,7 @@ var _ = Describe("findLastSyncTime", func() {
 
 	DescribeTable("should return expected values when",
 		func(annotations map[string]string, expectedFound bool, expectedTime time.Time) {
-			found, lastSyncTime := findLastSyncTime(annotations)
+			lastSyncTime, found := findLastSyncTime(annotations)
 			Expect(found).To(Equal(expectedFound))
 			Expect(lastSyncTime).To(Equal(expectedTime))
 		},

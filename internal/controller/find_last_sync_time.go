@@ -4,17 +4,16 @@ import (
 	"time"
 )
 
-// TODO replace order
-func findLastSyncTime(annotations map[string]string) (bool, time.Time) {
+func findLastSyncTime(annotations map[string]string) (time.Time, bool) {
 	_, found := annotations[lastKubeconfigSyncAnnotation]
 	if !found {
-		return false, time.Time{}
+		return time.Time{}, false
 	}
 
 	lastSyncTimeString := annotations[lastKubeconfigSyncAnnotation]
 	lastSyncTime, err := time.Parse(time.RFC3339, lastSyncTimeString)
 	if err != nil {
-		return false, time.Time{}
+		return time.Time{}, false
 	}
-	return true, lastSyncTime
+	return lastSyncTime, true
 }

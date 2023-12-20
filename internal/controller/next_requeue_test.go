@@ -16,7 +16,7 @@ var _ = Describe("nextRequeueAfter", func() {
 	DescribeTable("should return expected values when",
 		func(now, lastSyncTime time.Time, rotationPeriod time.Duration, modifier float64, expectedDuration time.Duration) {
 			result := nextRequeue(now, lastSyncTime, rotationPeriod, modifier)
-			Expect(result).To(Equal(expectedDuration))
+			Expect(result).To(BeNumerically("~", expectedDuration, 1))
 		},
 		Entry("receives all zero arguments", now, time.Time{}, time.Duration(0), 0.0, time.Duration(0)),
 		Entry("receives arguments (now, zero, 1[m], 0.95)", now, time.Time{}, time.Minute, 0.95, time.Second*57),

@@ -113,7 +113,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		annotations = secret.Annotations
 	}
 
-	_, lastSyncTime := findLastSyncTime(annotations)
+	lastSyncTime, _ := findLastSyncTime(annotations)
 	now := time.Now().UTC()
 	requeueAfter := nextRequeue(now, lastSyncTime, controller.rotationPeriod, rotationPeriodRatio)
 
@@ -283,7 +283,7 @@ func secretRotationTimePassed(secret *corev1.Secret, rotationPeriod time.Duratio
 	}
 
 	annotations := secret.GetAnnotations()
-	found, lastSyncTime := findLastSyncTime(annotations)
+	lastSyncTime, found := findLastSyncTime(annotations)
 	if !found {
 		return true
 	}
