@@ -3,7 +3,7 @@ module github.com/kyma-project/infrastructure-manager
 go 1.21
 
 require (
-	github.com/gardener/gardener v1.85.0
+	github.com/gardener/gardener v1.86.0
 	github.com/go-logr/logr v1.3.0
 	github.com/onsi/ginkgo/v2 v2.13.2
 	github.com/onsi/gomega v1.30.0
