@@ -239,7 +239,7 @@ type TestSecret struct {
 
 func fixSecretLabels(kymaName, shootName string) map[string]string {
 	labels := fixGardenerClusterLabels(kymaName, shootName)
-	labels["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
+	labels["operator.kyma-project.io/managed-by"] = "infrastructure-manager"
 	labels["operator.kyma-project.io/cluster-name"] = kymaName
 	return labels
 }

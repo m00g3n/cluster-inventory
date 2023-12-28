@@ -393,7 +393,7 @@ func (controller *GardenerClusterController) newSecret(cluster imv1.GardenerClus
 	for key, val := range cluster.Labels {
 		labels[key] = val
 	}
-	labels["operator.kyma-project.io/managed-by"] = "lifecycle-manager"
+	labels["operator.kyma-project.io/managed-by"] = "infrastructure-manager"
 	labels[clusterCRNameLabel] = cluster.Name
 
 	return corev1.Secret{
