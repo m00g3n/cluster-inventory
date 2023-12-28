@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/created-by: infrastructure-manager
     app.kubernetes.io/part-of: infrastructure-manager
     app.kubernetes.io/managed-by: kustomize
-  name: controller-manager-metrics-monitor
+  name: infrastructure-manager-metrics-monitor
   namespace: system
 spec:
   endpoints:
