@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   labels:
     control-plane: infrastructure-manager
-    app.kubernetes.io/name: namespace
+    app.kubernetes.io/name: infrastructure-manager
     app.kubernetes.io/instance: system
     app.kubernetes.io/component: infrastructure-manager.kyma-project.io
     app.kubernetes.io/created-by: infrastructure-manager
@@ -18,7 +18,7 @@ metadata:
   namespace: system
   labels:
     control-plane: infrastructure-manager
-    app.kubernetes.io/name: deployment
+    app.kubernetes.io/name: infrastructure-manager
     app.kubernetes.io/instance: infrastructure-manager
     app.kubernetes.io/component: infrastructure-manager.kyma-project.io
     app.kubernetes.io/created-by: infrastructure-manager
@@ -79,6 +79,9 @@ spec:
           capabilities:
             drop:
               - "ALL"
+        ports:
+          - containerPort: 8080
+            name: metrics
         livenessProbe:
           httpGet:
             path: /healthz

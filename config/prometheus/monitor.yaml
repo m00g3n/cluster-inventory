@@ -5,7 +5,7 @@ kind: ServiceMonitor
 metadata:
   labels:
     control-plane: infrastructure-manager
-    app.kubernetes.io/name: servicemonitor
+    app.kubernetes.io/name: infrastructure-manager-metrics-monitor
     app.kubernetes.io/instance: infrastructure-manager-metrics-monitor
     app.kubernetes.io/component: metrics
     app.kubernetes.io/created-by: infrastructure-manager
@@ -16,11 +16,12 @@ metadata:
 spec:
   endpoints:
     - path: /metrics
-      port: https
-      scheme: https
+      port: metrics
+      scheme: http
       bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       tlsConfig:
         insecureSkipVerify: true
   selector:
     matchLabels:
-      control-plane: infrastructure-manager
+      app.kubernetes.io/name: metrics
+      app.kubernetes.io/component: infrastructure-manager.kyma-project.io

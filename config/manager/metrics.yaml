@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    control-plane: infrastructure-manager
+    app.kubernetes.io/name: metrics
+    app.kubernetes.io/instance: infrastructure-manager
+    app.kubernetes.io/component: infrastructure-manager.kyma-project.io
+    app.kubernetes.io/created-by: infrastructure-manager
+    app.kubernetes.io/part-of: infrastructure-manager
+    app.kubernetes.io/managed-by: kustomize
+  name: infrastructure-manager-metrics
+  namespace: kcp-system
+spec:
+  ports:
+    - name: metrics
+      port: 8080
+      protocol: TCP
+      appProtocol: http
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/name: infrastructure-manager
+    app.kubernetes.io/component: infrastructure-manager.kyma-project.io
