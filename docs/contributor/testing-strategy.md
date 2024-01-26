@@ -1,18 +1,33 @@
 # Testing Strategy Infrastructure-Manager
 
 ## Introduction
-This testing strategy outlines the approach and methodologies to be used for testing a Kubernetes project built using the Kubebuilder framework. It includes various levels of testing such as unit testing, integration testing, and end-to-end testing to ensure the stability, reliability, and correctness of the project.
-## Testing Levels
-1. **Unit Testing:** Writing and executing tests for individual functions, methods, and components to verify their behavior and correctness in isolation.
-2. **Integration Testing:** Validating the integration and interaction between different components, modules, and services in the project.
-3. **End-to-End Testing:** Testing the application as a whole in a production-like environment, mimicking real-world scenarios to ensure the entire system functions correctly.
-## Testing Tools and Frameworks
-Use the following tools and frameworks to implement the above-mentioned testing levels:
-- **Ginkgo and Gomega**: For writing and executing unit tests with a BDD-style syntax and assertions.
-- **Kubebuilder Test Framework**: For creating and executing integration tests that interact with the Kubernetes cluster.
-- **Helm**: For deploying and managing test clusters and environments for end-to-end testing.
-- **Kubernetes clients for Go**: Use the official Kubernetes client libraries to interact with the Kubernetes API and validate the behavior of the project.
+This testing strategy describes how the Framefrog team is testing the product `Kyma Infrastructure Manager`. It outlines the approach and methodologies to be used for testing all layers of this product to ensure the stability, reliability, and correctness.
+
+
+## Testing Methodology
+
+We investigate the product by separating it into layers:
+
+1. Business Logic
+
+    Includes the technical frameworks (e.g. Kubebuilder) and custom Golang code.
+
+2. Business Features
+
+    Combines the business logic into feature which is consumed by our customers.
+
+3. Product Integration
+
+    Verifies how our product is integarted into the technical landscape, how it interacts with 3rd party systems and how it is accessible by customers or remote systems.
+ 
+For each layer is a dedicated testing approach used:
+
+1. **Unit Testing for Business Logic:** Writing and executing tests for individual functions, methods, and components to verify their behavior and correctness in isolation.
+2. **Integration Testing for Business Features:** Validating the integration and interaction between different components, modules, and services in the project.
+3. **End-to-End Testing:** Testing the application as a whole in a production-like environment, mimicking real-world scenarios to ensure the entire system functions correctly, is performing well and secure.
+
 ## Testing Approach
+
 ### Unit Testing
 1. Identify critical functions, methods, and components that require testing.
 2. Write unit tests using Ginkgo and Gomega frameworks.
@@ -20,17 +35,43 @@ Use the following tools and frameworks to implement the above-mentioned testing 
 4. Test for both positive and negative inputs to validate the expected behavior.
 5. Mock external dependencies and use stubs or fakes to isolate the unit under test.
 6. Run unit tests periodically during development and before each commit to prevent regressions.
+
 ### Integration Testing
 1. Create a separate test suite for integration testing.
 2. Use the Kubebuilder Test Framework to create test cases that interact with the Kubernetes cluster.
 3. Test the interaction and integration of your custom resources, controllers, and other components with the Kubernetes API.
 4. Ensure test cases cover various aspects such as resource creation, updating, deletion, and handling of edge cases.
 5. Validate the correctness of event handling, reconciliation, and other control logic.
+
 ### End-to-End Testing
 1. Use Helm to create, deploy, and manage test clusters and environments that closely resemble the
 
+### Testing Tools and Frameworks
+Use the following tools and frameworks to implement the above-mentioned testing levels:
 
-The following CI/CD jobs are a part of the development cycle:
+- **GoTest**: For unit testing of Golang code.
+- **Kubebuilder Test Framework and EnvTest**: For creating and executing integration tests that interact with the Kubernetes API.
+- **Ginkgo and Gomega**: For writing and executing unit tests with a BDD-style syntax and assertions.
+- **Kubebuilder Test Framework and EnvTest**: For creating and executing integration tests that interact with the Kubernetes API.
+- **K3d**: For creating short-living and lightweight Kubernetes clustes running within a Docker context.
+- **Helm**: For deploying and managing test clusters and environments for end-to-end testing.
+- **K6:**: For performance and stress testing
+
+|Framework|Unit Testing|Integration Testing|End-to-End Testing|
+|--|--|--|--|
+|GoTest| X |  |  |
+|Kubebuilder Test Framework| X | X | |
+|EnvTest| X | X |  |
+|Ginkgo|  | X |  |
+|Gomega|  | X |  |
+|K3d|  |  | X |
+|Helm|  |  | X |
+|K6|  |  | X |
+
+
+## Test Automation
+
+The following CI/CD jobs are a part of the development cycle and executing quality assurance related steps:
 
 > **NOTE:** Jobs marked with `pull_request` are triggered with each pull request. Jobs marked with `push` are executed after the merge.
 
