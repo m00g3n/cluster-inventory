@@ -26,25 +26,28 @@ For each layer is a dedicated testing approach used:
 2. **Integration Testing for Business Features:** Validating the integration and interaction between different components, modules, and services in the project.
 3. **End-to-End Testing:** Testing the application as a whole in a production-like environment, mimicking real-world scenarios to ensure the entire system functions correctly, is performing well and secure.
 
+
 ## Testing Approach
 
 ### Unit Testing
 1. Identify critical functions, methods, and components that require testing.
-2. Write unit tests using Ginkgo and Gomega frameworks.
-3. Ensure tests cover various scenarios, edge cases, and possible failure scenarios.
+2. Write unit tests using GoUnit tests, Ginkgo and Gomega frameworks.
+3. Ensure tests cover various scenarios, edge cases, and possible failure scenarios. We try to verify business relevant logic with at least 65% code coverage.
 4. Test for both positive and negative inputs to validate the expected behavior.
 5. Mock external dependencies and use stubs or fakes to isolate the unit under test.
 6. Run unit tests periodically during development and before each commit to prevent regressions.
 
 ### Integration Testing
-1. Create a separate test suite for integration testing.
-2. Use the Kubebuilder Test Framework to create test cases that interact with the Kubernetes cluster.
-3. Test the interaction and integration of your custom resources, controllers, and other components with the Kubernetes API.
-4. Ensure test cases cover various aspects such as resource creation, updating, deletion, and handling of edge cases.
-5. Validate the correctness of event handling, reconciliation, and other control logic.
+1. The PO together with the team create an registry of implemented business features and define for each feature a suitable test scenario.
+2. Create a separate test suite for integration testing.
+3. Each test scenario is implemented in a separte test case. Use the Kubebuilder Test Framework and others to create test cases that interact with the Kubernetes cluster.  
+4. Test the interaction and integration of your custom resources, controllers, and other components with the Kubernetes API.
+5. Ensure test cases cover various aspects such as resource creation, updating, deletion, and handling of edge cases.
+6. Validate the correctness of event handling, reconciliation, and other control logic.
 
 ### End-to-End Testing
-1. Use Helm to create, deploy, and manage test clusters and environments that closely resemble the
+1. Use Helm to create, deploy, and manage test clusters and environments that closely resemble the productive execution context.
+2. Run regularly, but at least once per release, a performance test that measures product KPIs to indicate KPI violations or performance differences between release candidates.
 
 ### Testing Tools and Frameworks
 Use the following tools and frameworks to implement the above-mentioned testing levels:
@@ -62,8 +65,8 @@ Use the following tools and frameworks to implement the above-mentioned testing 
 |GoTest| X |  |  |
 |Kubebuilder Test Framework| X | X | |
 |EnvTest| X | X |  |
-|Ginkgo|  | X |  |
-|Gomega|  | X |  |
+|Ginkgo| X | X |  |
+|Gomega| X | X |  |
 |K3d|  |  | X |
 |Helm|  |  | X |
 |K6|  |  | X |
