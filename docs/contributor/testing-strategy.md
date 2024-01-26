@@ -52,6 +52,12 @@ For each layer is a dedicated testing approach used:
 2. For shot living Kubernetes clusters, use K3d or other lightweight Kubernetes cluster providers.
 3. Run regularly, but at least once per release, a performance test that measures product KPIs to indicate KPI violations or performance differences between release candidates.
 
+|Testing Approach|Per Commit|Per PR|Per Release|In intervals|
+|--|--|--|--|--|
+|Unit Testing|X|X||Only long running tests daily|
+|Integration Testing||X||Only long running tests daily|
+|End-to-End Testing|||X|Daily|
+
 ### Testing Tools and Frameworks
 Use the following tools and frameworks to implement the above-mentioned testing levels:
 
