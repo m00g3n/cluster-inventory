@@ -47,7 +47,8 @@ For each layer is a dedicated testing approach used:
 
 ### End-to-End Testing
 1. Use Helm to create, deploy, and manage test clusters and environments that closely resemble the productive execution context.
-2. Run regularly, but at least once per release, a performance test that measures product KPIs to indicate KPI violations or performance differences between release candidates.
+2. For shot living Kubernetes clusters, use K3d or other lightweight Kubernetes cluster providers.
+3. Run regularly, but at least once per release, a performance test that measures product KPIs to indicate KPI violations or performance differences between release candidates.
 
 ### Testing Tools and Frameworks
 Use the following tools and frameworks to implement the above-mentioned testing levels:
