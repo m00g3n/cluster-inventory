@@ -35,7 +35,8 @@ For each layer is a dedicated testing approach used:
 3. Ensure tests cover various scenarios, edge cases, and possible failure scenarios. We try to verify business relevant logic with at least 65% code coverage.
 4. Test for both positive and negative inputs to validate the expected behavior.
 5. Mock external dependencies and use stubs or fakes to isolate the unit under test.
-6. Run unit tests periodically during development and before each commit to prevent regressions.
+6. Run unit tests periodically during development and before each PR to prevent regressions.
+7. Unit tests have to be executed as fast as possible to minimize roundtrip times. Long running tests should be excluded from requently executed test runs and be triggered periodically (e.g. 4 times a day)
 
 ### Integration Testing
 1. The PO together with the team create an registry of implemented business features and define for each feature a suitable test scenario.
@@ -44,6 +45,7 @@ For each layer is a dedicated testing approach used:
 4. Test the interaction and integration of your custom resources, controllers, and other components with the Kubernetes API.
 5. Ensure test cases cover various aspects such as resource creation, updating, deletion, and handling of edge cases.
 6. Validate the correctness of event handling, reconciliation, and other control logic.
+7. Unit tests have to be executed as fast as possible to minimize roundtrip times and be applied for each PR. Long running tests should be excluded from requently executed test runs and be triggered periodically (e.g. 4 times a day)
 
 ### End-to-End Testing
 1. Use Helm to create, deploy, and manage test clusters and environments that closely resemble the productive execution context.
