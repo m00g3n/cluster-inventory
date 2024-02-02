@@ -1,7 +1,7 @@
-# Testing Strategy Infrastructure-Manager
+# Testing Strategy for Infrastructure Manager
 
 ## Introduction
-This testing strategy describes how the Framefrog team is testing the product `Kyma Infrastructure Manager`. It outlines the approach and methodologies to be used for testing all layers of this product to ensure the stability, reliability, and correctness.
+This testing strategy describes how the Framefrog team tests Kyma Infrastructure Manager. It outlines the approach and methodologies used for testing all layers of this product to ensure stability, reliability, and correctness.
 
 
 ## Testing Methodology
@@ -20,7 +20,7 @@ We investigate the product by separating it into layers:
 
     Verifies how our product is integarted into the technical landscape, how it interacts with 3rd party systems and how it is accessible by customers or remote systems.
  
-For each layer is a dedicated testing approach used:
+For each layer, there is a dedicated testing approach used:
 
 1. **Unit Testing for Business Logic:** Writing and executing tests for individual functions, methods, and components to verify their behavior and correctness in isolation.
 2. **Integration Testing for Business Features:** Validating the integration and interaction between different components, modules, and services in the project.
@@ -39,7 +39,7 @@ For each layer is a dedicated testing approach used:
 7. Unit tests have to be executed as fast as possible to minimize roundtrip times. Long running tests should be excluded from requently executed test runs and be triggered periodically (e.g. 4 times a day)
 
 ### Integration Testing
-1. The PO together with the team create an registry of implemented business features and define for each feature a suitable test scenario.
+1. The PO and the team create a registry of implemented business features and define a suitable test scenario for each feature.
 2. Create a separate test suite for integration testing.
 3. Each test scenario is implemented in a separte test case. Use the Kubebuilder Test Framework and others to create test cases that interact with the Kubernetes cluster.  
 4. Test the interaction and integration of your custom resources, controllers, and other components with the Kubernetes API.
@@ -49,7 +49,7 @@ For each layer is a dedicated testing approach used:
 
 ### End-to-End Testing
 1. Use Helm to create, deploy, and manage test clusters and environments that closely resemble the productive execution context.
-2. For shot living Kubernetes clusters, use K3d or other lightweight Kubernetes cluster providers.
+2. For short-living Kubernetes clusters, use k3d or other lightweight Kubernetes cluster providers.
 3. Run regularly, but at least once per release, a performance test that measures product KPIs to indicate KPI violations or performance differences between release candidates.
 
 |Testing Approach|Per Commit|Per PR|Per Release|In intervals|
@@ -64,10 +64,9 @@ Use the following tools and frameworks to implement the above-mentioned testing 
 - **GoTest**: For unit testing of Golang code.
 - **Kubebuilder Test Framework and EnvTest**: For creating and executing integration tests that interact with the Kubernetes API.
 - **Ginkgo and Gomega**: For writing and executing unit tests with a BDD-style syntax and assertions.
-- **Kubebuilder Test Framework and EnvTest**: For creating and executing integration tests that interact with the Kubernetes API.
-- **K3d**: For creating short-living and lightweight Kubernetes clustes running within a Docker context.
+- **k3d**: For creating short-living and lightweight Kubernetes clusters running within a Docker context.
 - **Helm**: For deploying and managing test clusters and environments for end-to-end testing.
-- **K6:**: For performance and stress testing
+- **k6:**: For performance and stress testing
 
 |Framework|Unit Testing|Integration Testing|End-to-End Testing|
 |--|--|--|--|
@@ -76,9 +75,9 @@ Use the following tools and frameworks to implement the above-mentioned testing 
 |EnvTest| X | X |  |
 |Ginkgo| X | X |  |
 |Gomega| X | X |  |
-|K3d|  |  | X |
+|k3d|  |  | X |
 |Helm|  |  | X |
-|K6|  |  | X |
+|k6|  |  | X |
 
 
 ## Test Automation
