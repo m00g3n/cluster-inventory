@@ -8,7 +8,7 @@ This testing strategy describes how the Framefrog team tests Kyma Infrastructure
 
 We investigate the product by separating it into layers:
 
-1. Business Logic
+1. Code
 
     Includes the technical frameworks (e.g. Kubebuilder) and custom Golang code.
 
