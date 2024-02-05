@@ -14,7 +14,7 @@ We investigate the product by separating it into layers:
 
 2. Business Features
 
-    Combines the business logic into feature which is consumed by our customers.
+    Combines the code into feature which is consumed by our customers.
 
 3. Product Integration
 
@@ -22,7 +22,7 @@ We investigate the product by separating it into layers:
  
 For each layer, there is a dedicated testing approach used:
 
-1. **Unit Testing for Business Logic:** Writing and executing tests for individual functions, methods, and components to verify their behavior and correctness in isolation.
+1. **Unit Testing for Code:** Writing and executing tests for individual functions, methods, and components to verify their behavior and correctness in isolation.
 2. **Integration Testing for Business Features:** Validating the integration and interaction between different components, modules, and services in the project.
 3. **End-to-End Testing:** Testing the application as a whole in a production-like environment, mimicking real-world scenarios to ensure the entire system functions correctly, is performing well and secure.
 
