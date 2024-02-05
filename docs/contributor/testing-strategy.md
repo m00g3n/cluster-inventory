@@ -48,7 +48,7 @@ For each layer, there is a dedicated testing approach used:
 7. Integration tests have to be executed fast to minimize roundtrip times and be applied for each PR. Long-running tests should be excluded from frequently executed test runs and be triggered periodically (e.g. 4 times a day)
 
 ### End-to-End Testing
-1. Use Helm to create, deploy, and manage test clusters and environments that closely resemble the productive execution context.
+1. Use a mainstream Kubernetes management tool (e.g. [Helm](https://helm.sh/) or [Kustomize](https://kustomize.io/)) to create, deploy, and manage test clusters and environments that closely resemble the productive execution context.
 2. For short-living Kubernetes clusters, use k3d or other lightweight Kubernetes cluster providers.
 3. Run regularly, but at least once per release, a performance test that measures product KPIs to indicate KPI violations or performance differences between release candidates.
 
