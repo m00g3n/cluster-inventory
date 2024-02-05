@@ -45,7 +45,7 @@ For each layer, there is a dedicated testing approach used:
 4. Test the interaction and integration of your custom resources, controllers, and other components with the Kubernetes API.
 5. Ensure test cases cover various aspects such as resource creation, updating, deletion, and handling of edge cases.
 6. Validate the correctness of event handling, reconciliation, and other control logic.
-7. Unit tests have to be executed as fast as possible to minimize roundtrip times and be applied for each PR. Long running tests should be excluded from requently executed test runs and be triggered periodically (e.g. 4 times a day)
+7. Integration tests have to be executed fast to minimize roundtrip times and be applied for each PR. Long-running tests should be excluded from frequently executed test runs and be triggered periodically (e.g. 4 times a day)
 
 ### End-to-End Testing
 1. Use Helm to create, deploy, and manage test clusters and environments that closely resemble the productive execution context.
