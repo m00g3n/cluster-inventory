@@ -77,8 +77,6 @@ Use the following tools and frameworks to implement the above-mentioned testing 
 
 |Framework|Unit Testing|Integration Testing|End-to-End Testing|
 |--|--|--|--|
-|Golangci-lint| X |  |  |
-|Go-critic| X |  |  |
 |Golangci-lint| X | | |
 |Go-critic| X | | |
 |GoTest| X |  |  |
