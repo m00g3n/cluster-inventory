@@ -1,7 +1,12 @@
 # Testing Strategy for Infrastructure Manager
 
 ## Introduction
-This testing strategy describes how the Framefrog team tests Kyma Infrastructure Manager. It outlines the approach and methodologies used for testing all layers of this product to ensure stability, reliability, and correctness.
+This testing strategy describes how the Framefrog team tests the Kyma Infrastructure Manager product. It outlines the approach and methodologies used for testing all layers of this product to ensure the following:
+
+* Stability by applying load and performance tests that verify the product resilience under load peaks.
+* Reliability by running chaos tests and operational awareness workshops to ensure product reliability in a productive context.
+* Functional correctness by documenting and tracing all product features, their acceptance criteria and the used end-2-end tests to verify a correct implementation.
+* Maintainability by regularly measuring the code quality metrics like reusability, modularity and, package qualities.
 
 
 ## Testing Methodology
@@ -61,15 +66,19 @@ For each layer, there is a dedicated testing approach used:
 ### Testing Tools and Frameworks
 Use the following tools and frameworks to implement the above-mentioned testing levels:
 
+- **[golanci-lint](https://github.com/golangci/golangci-lint)**: Golang code linting for better code quality.
+- **[go-critic](https://github.com/go-critic/go-critic)**: Another linter for measuring different code quality metrics.
 - **GoTest**: For unit testing of Golang code.
-- **Kubebuilder Test Framework and EnvTest**: For creating and executing integration tests that interact with the Kubernetes API.
-- **Ginkgo and Gomega**: For writing and executing unit tests with a BDD-style syntax and assertions.
-- **k3d**: For creating short-living and lightweight Kubernetes clusters running within a Docker context.
-- **Helm**: For deploying and managing test clusters and environments for end-to-end testing.
-- **k6:**: For performance and stress testing
+- **Kubebuilder Test Framework and [EnvTest](https://book.kubebuilder.io/reference/envtest.html)**: For creating and executing integration tests that interact with the Kubernetes API.
+- **[Ginkgo](https://github.com/onsi/ginkgo) and [Gomega](https://github.com/onsi/gomega)**: For writing and executing unit tests with a BDD-style syntax and assertions.
+- **[k3d](https://k3d.io/)**: For creating short-living and lightweight Kubernetes clusters running within a Docker context.
+- **[Helm](https://helm.sh/)**: For deploying and managing test clusters and environments for end-to-end testing.
+- **[k6](https://k6.io/):**: For performance and stress testing.
 
 |Framework|Unit Testing|Integration Testing|End-to-End Testing|
 |--|--|--|--|
+|Golangci-lint| X | | |
+|Go-critic| X | | |
 |GoTest| X |  |  |
 |Kubebuilder Test Framework| X | X | |
 |EnvTest| X | X |  |
