@@ -6,61 +6,55 @@ This testing strategy describes how the Framefrog team tests the Kyma Infrastruc
 * Stability by applying load and performance tests that verify the product resilience under load peaks.
 * Reliability by running chaos tests and operational awareness workshops to ensure product reliability in a productive context.
 * Functional correctness by documenting and tracing all product features, their acceptance criteria and the used end-2-end tests to verify a correct implementation.
-* Maintainability by regularly measuring the code quality metrics like reusability, modularity and, package qualities.
+* Maintainability by regularly measuring code quality metrics like reusability, modularity, and package qualities.
 
 
 ## Testing Methodology
 
 We investigate the product by separating it into layers:
 
-1. Code
+1. Code: Includes the technical frameworks (e.g. Kubebuilder) and custom Golang code.
 
-    Includes the technical frameworks (e.g. Kubebuilder) and custom Golang code.
+2. Business Features: Combines the code into a feature our customers consume.
 
-2. Business Features
-
-    Combines the code into feature which is consumed by our customers.
-
-3. Product Integration
-
-    Verifies how our product is integarted into the technical landscape, how it interacts with 3rd party systems and how it is accessible by customers or remote systems.
+3. Product Integration: Verifies how our product is integrated into the technical landscape, how it interacts with 3rd party systems, and how it is accessible by customers or remote systems.
  
-For each layer, there is a dedicated testing approach used:
+For each layer, a dedicated testing approach is used:
 
 1. **Unit Testing for Code:** Writing and executing tests for individual functions, methods, and components to verify their behavior and correctness in isolation.
 2. **Integration Testing for Business Features:** Validating the integration and interaction between different components, modules, and services in the project.
-3. **End-to-End Testing:** Testing the application as a whole in a production-like environment, mimicking real-world scenarios to ensure the entire system functions correctly, is performing well and secure.
+3. **End-to-End Testing:** Testing the application as a whole in a production-like environment, mimicking real-world scenarios to ensure the entire system is secure, functions correctly, and performs well.
 
 
 ## Testing Approach
 
 ### Unit Testing
 1. Identify critical functions, methods, and components that require testing.
-2. Write unit tests using GoUnit tests, Ginkgo and Gomega frameworks.
+2. Write unit tests using GoUnit tests, Ginkgo, and Gomega frameworks.
 3. Ensure tests cover various scenarios, edge cases, and possible failure scenarios. We try to verify business relevant logic with at least 65% code coverage.
 4. Test for both positive and negative inputs to validate the expected behavior.
 5. Mock external dependencies and use stubs or fakes to isolate the unit under test.
-6. Run unit tests periodically during development and before each PR to prevent regressions.
-7. Unit tests have to be executed as fast as possible to minimize roundtrip times. Long running tests should be excluded from requently executed test runs and be triggered periodically (e.g. 4 times a day)
+6. Run unit tests periodically during development and before each PR is merged to prevent regressions.
+7. Unit tests must be executed as fast as possible to minimize roundtrip times. Long-running tests should be excluded from frequently executed test runs and be triggered periodically, for example, 4 times a day.
 
 ### Integration Testing
 1. The PO and the team create a registry of implemented business features and define a suitable test scenario for each feature.
 2. Create a separate test suite for integration testing.
-3. Each test scenario is implemented in a separte test case. Use the Kubebuilder Test Framework and others to create test cases that interact with the Kubernetes cluster.  
+3. Each test scenario is implemented in a separate test case. Use the Kubebuilder Test Framework and others to create test cases that interact with the Kubernetes cluster.  
 4. Test the interaction and integration of your custom resources, controllers, and other components with the Kubernetes API.
 5. Ensure test cases cover various aspects such as resource creation, updating, deletion, and handling of edge cases.
 6. Validate the correctness of event handling, reconciliation, and other control logic.
-7. Integration tests have to be executed fast to minimize roundtrip times and be applied for each PR. Long-running tests should be excluded from frequently executed test runs and be triggered periodically (e.g. 4 times a day)
+7. Integration tests must be executed fast to minimize roundtrip times and be applied for each PR. Long-running tests should be excluded from frequently executed test runs and be triggered periodically, for example, 4 times a day.
 
 ### End-to-End Testing
-1. Use a mainstream Kubernetes management tool (e.g. [Helm](https://helm.sh/) or [Kustomize](https://kustomize.io/)) to create, deploy, and manage test clusters and environments that closely resemble the productive execution context.
+1. Use a mainstream Kubernetes management tool (for example, [Helm](https://helm.sh/) or [Kustomize](https://kustomize.io/)) to create, deploy, and manage test clusters and environments that closely resemble the productive execution context.
 2. For short-living Kubernetes clusters, use k3d or other lightweight Kubernetes cluster providers.
 3. Run regularly, but at least once per release, a performance test that measures product KPIs to indicate KPI violations or performance differences between release candidates.
 
 |Testing Approach|Per Commit|Per PR|Per Release|In intervals|
 |--|--|--|--|--|
-|Unit Testing|X|X||Only long running tests daily|
-|Integration Testing||X||Only long running tests daily|
+|Unit Testing|X|X||Only long-running tests daily|
+|Integration Testing||X||Only long-running tests daily|
 |End-to-End Testing|||X|Daily|
 
 ### Testing Tools and Frameworks
@@ -73,7 +67,7 @@ Use the following tools and frameworks to implement the above-mentioned testing 
 - **[Ginkgo](https://github.com/onsi/ginkgo) and [Gomega](https://github.com/onsi/gomega)**: For writing and executing unit tests with a BDD-style syntax and assertions.
 - **[k3d](https://k3d.io/)**: For creating short-living and lightweight Kubernetes clusters running within a Docker context.
 - **[Helm](https://helm.sh/)**: For deploying and managing test clusters and environments for end-to-end testing.
-- **[k6](https://k6.io/):**: For performance and stress testing.
+- **[k6](https://k6.io/)**: For performance and stress testing.
 
 |Framework|Unit Testing|Integration Testing|End-to-End Testing|
 |--|--|--|--|
@@ -91,7 +85,7 @@ Use the following tools and frameworks to implement the above-mentioned testing 
 
 ## Test Automation
 
-The following CI/CD jobs are a part of the development cycle and executing quality assurance related steps:
+The following CI/CD jobs are a part of the development cycle and execute quality assurance-related steps:
 
 > **NOTE:** Jobs marked with `pull_request` are triggered with each pull request. Jobs marked with `push` are executed after the merge.
 
