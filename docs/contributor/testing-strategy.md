@@ -82,7 +82,7 @@ Use the following tools and frameworks to implement the above-mentioned testing 
 |--|--|--|--|
 |Golangci-lint| X | | |
 |Go-critic| X | | |
-|GoTest| X |  |  |
+|go test| X |  |  |
 |Kubebuilder Test Framework| X | X | |
 |EnvTest| X | X |  |
 |Ginkgo| X | X |  |
