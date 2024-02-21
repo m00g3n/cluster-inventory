@@ -11,7 +11,7 @@ This testing strategy describes how the Framefrog team tests the Kyma Infrastruc
 
 ## Testing Methodology
 
-We investigate the product by separating it into layers:
+We investigate the product by dividing it into layers:
 
 1. Code: Includes the technical frameworks (e.g. Kubebuilder) and custom Golang code.
 
@@ -29,6 +29,9 @@ For each layer, a dedicated testing approach is used:
 ## Testing Approach
 
 ### Unit Testing
+
+This section focuses on ensuring the functionality and reliability of critical functions, methods, and components within our system.
+
 1. Identify critical functions, methods, and components that require testing.
 2. Write unit tests using GoUnit tests, Ginkgo, and Gomega frameworks.
 3. Ensure tests cover various scenarios, edge cases, and possible failure scenarios. We try to verify business relevant logic with at least 65% code coverage.
@@ -38,6 +41,9 @@ For each layer, a dedicated testing approach is used:
 7. Unit tests must be executed as fast as possible to minimize roundtrip times. Long-running tests should be excluded from frequently executed test runs and be triggered periodically, for example, 4 times a day.
 
 ### Integration Testing
+
+This section focuses on the integration testing process, which involves testing the interaction and integration of various components and custom resources with the Kubernetes API. It provides you with a step-by-step guide to conduct integration testing, ensuring the correctness and functionality of the implemented business features.
+
 1. The PO and the team create a registry of implemented business features and define a suitable test scenario for each feature.
 2. Create a separate test suite for integration testing.
 3. Each test scenario is implemented in a separate test case. Use the Kubebuilder Test Framework and others to create test cases that interact with the Kubernetes cluster.  
@@ -47,6 +53,9 @@ For each layer, a dedicated testing approach is used:
 7. Integration tests must be executed fast to minimize roundtrip times and be applied for each PR. Long-running tests should be excluded from frequently executed test runs and be triggered periodically, for example, 4 times a day.
 
 ### End-to-End Testing
+
+This section describes how to create and manage test clusters using mainstream Kubernetes management tools like Helm or Kustomize, and how to perform regular performance tests to ensure your application functions correctly and meets the KPIs in a production-like environment.
+
 1. Use a mainstream Kubernetes management tool (for example, [Helm](https://helm.sh/) or [Kustomize](https://kustomize.io/)) to create, deploy, and manage test clusters and environments that closely resemble the productive execution context.
 2. For short-living Kubernetes clusters, use k3d or other lightweight Kubernetes cluster providers.
 3. Run regularly, but at least once per release, a performance test that measures product KPIs to indicate KPI violations or performance differences between release candidates.
@@ -62,7 +71,7 @@ Use the following tools and frameworks to implement the above-mentioned testing 
 
 - **[golanci-lint](https://github.com/golangci/golangci-lint)**: Golang code linting for better code quality.
 - **[go-critic](https://github.com/go-critic/go-critic)**: Another linter for measuring different code quality metrics.
-- **GoTest**: For unit testing of Golang code.
+- **[go test](https://pkg.go.dev/testing)**: For unit testing of Golang code.
 - **Kubebuilder Test Framework and [EnvTest](https://book.kubebuilder.io/reference/envtest.html)**: For creating and executing integration tests that interact with the Kubernetes API.
 - **[Ginkgo](https://github.com/onsi/ginkgo) and [Gomega](https://github.com/onsi/gomega)**: For writing and executing unit tests with a BDD-style syntax and assertions.
 - **[k3d](https://k3d.io/)**: For creating short-living and lightweight Kubernetes clusters running within a Docker context.
@@ -89,9 +98,9 @@ The following CI/CD jobs are a part of the development cycle and execute quality
 
 > **NOTE:** Jobs marked with `pull_request` are triggered with each pull request. Jobs marked with `push` are executed after the merge.
 
-- `golangci-lint / lint (pull_request/push)` - Is responsible for linting and static code analysis. It's configured [here](https://github.com/kyma-project/infrastructure-manager/blob/main/.golangci.yaml) and [here](https://github.com/kyma-project/infrastructure-manager/blob/main/.github/workflows/golangci-lint.yaml).
-- `PR Markdown Link Check / markdown-link-check (pull_request)` - Checks if there are no broken links in the pull request `.md` files. It's configured [here](https://github.com/kyma-project/infrastructure-manager/blob/main/mlc.config.json).
-- `Run unit tests / validate (pull_request/push)` - Executes basic create/update/delete functional tests of the reconciliation logic. It's configured [here](https://github.com/kyma-project/infrastructure-manager/blob/main/.github/workflows/run-tests.yaml).
-- `Run vuln check / test (pull_request/push)` - Runs [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck) on the code to detect known vulnerabilities. It's configured [here](https://github.com/kyma-project/infrastructure-manager/blob/main/.github/workflows/run-vuln-check.yaml).
-- `pull-infrastructure-manager-build` - Triggered with each pull request. It builds the Docker image and pushes it to the registry. It's configured [here](https://github.com/kyma-project/test-infra/blob/a3c2a07da4ba42e468f69cf42f1960d7bfcc3fff/prow/jobs/kyma-project/infrastructure-manager/infrastructure-manager.yaml).	
-- `main-infrastructure-manager-build` - Triggered after the merge. Rebuilds the image and pushes it to the registry. It's configured [here](https://github.com/kyma-project/test-infra/blob/a3c2a07da4ba42e468f69cf42f1960d7bfcc3fff/prow/jobs/kyma-project/infrastructure-manager/infrastructure-manager.yaml).
+- `golangci-lint / lint (pull_request/push)` - Is responsible for linting and static code analysis. For the configuration details, see [`golangci.yaml`](https://github.com/kyma-project/infrastructure-manager/blob/main/.golangci.yaml) and [`golangci-lint.yaml`](https://github.com/kyma-project/infrastructure-manager/blob/main/.github/workflows/golangci-lint.yaml).
+- `PR Markdown Link Check / markdown-link-check (pull_request)` - Checks if there are no broken links in the pull request `.md` files. For the configuration details, see [`mlc.config.json`](https://github.com/kyma-project/infrastructure-manager/blob/main/mlc.config.json).
+- `Run unit tests / validate (pull_request/push)` - Executes basic create/update/delete functional tests of the reconciliation logic. For the configuration details, see [`run-tests.yaml`](https://github.com/kyma-project/infrastructure-manager/blob/main/.github/workflows/run-tests.yaml).
+- `Run vuln check / test (pull_request/push)` - Runs [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck) on the code to detect known vulnerabilities. For the configuration details, see [`run-vuln-check.yaml`](https://github.com/kyma-project/infrastructure-manager/blob/main/.github/workflows/run-vuln-check.yaml).
+- `pull-infrastructure-manager-build` - Triggered with each pull request. It builds the Docker image and pushes it to the registry. For the configuration details, see [`infrastructure-manager.yaml`](https://github.com/kyma-project/test-infra/blob/a3c2a07da4ba42e468f69cf42f1960d7bfcc3fff/prow/jobs/kyma-project/infrastructure-manager/infrastructure-manager.yaml).	
+- `main-infrastructure-manager-build` - Triggered after the merge. Rebuilds the image and pushes it to the registry. For the configuration details, see [`infrastructure-manager.yaml`](https://github.com/kyma-project/test-infra/blob/a3c2a07da4ba42e468f69cf42f1960d7bfcc3fff/prow/jobs/kyma-project/infrastructure-manager/infrastructure-manager.yaml).
