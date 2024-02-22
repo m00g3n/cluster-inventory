@@ -13,17 +13,15 @@ This testing strategy describes how the Framefrog team tests the Kyma Infrastruc
 
 We investigate the product by dividing it into layers:
 
-1. Code: Includes the technical frameworks (e.g. Kubebuilder) and custom Golang code.
-
-2. Business Features: Combines the code into a feature our customers consume.
-
-3. Product Integration: Verifies how our product is integrated into the technical landscape, how it interacts with 3rd party systems, and how it is accessible by customers or remote systems.
+* Code: Includes the technical frameworks (e.g. Kubebuilder) and custom Golang code.
+* Business Features: Combines the code into a feature our customers consume.
+* Product Integration: Verifies how our product is integrated into the technical landscape, how it interacts with 3rd party systems, and how it is accessible by customers or remote systems.
  
 For each layer, a dedicated testing approach is used:
 
-1. **Unit Testing for Code:** Writing and executing tests for individual functions, methods, and components to verify their behavior and correctness in isolation.
-2. **Integration Testing for Business Features:** Validating the integration and interaction between different components, modules, and services in the project.
-3. **End-to-End Testing:** Testing the application as a whole in a production-like environment, mimicking real-world scenarios to ensure the entire system is secure, functions correctly, and performs well.
+* **Unit Testing for Code:** Writing and executing tests for individual functions, methods, and components to verify their behavior and correctness in isolation.
+* **Integration Testing for Business Features:** Validating the integration and interaction between different components, modules, and services in the project.
+* **End-to-End Testing:** Testing the application as a whole in a production-like environment, mimicking real-world scenarios to ensure the entire system is secure, functions correctly, and performs well.
 
 
 ## Testing Approach
