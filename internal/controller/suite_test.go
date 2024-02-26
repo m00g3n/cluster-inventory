@@ -41,12 +41,12 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	cfg            *rest.Config         //nolint:gochecknoglobals
-	k8sClient      client.Client        //nolint:gochecknoglobals
-	testEnv        *envtest.Environment //nolint:gochecknoglobals
-	suiteCtx       context.Context      //nolint:gochecknoglobals
-	cancelSuiteCtx context.CancelFunc   //nolint:gochecknoglobals
-	anyContext     = MatchedBy(func(_ context.Context) bool { return true })
+	cfg            *rest.Config                                              //nolint:gochecknoglobals
+	k8sClient      client.Client                                             //nolint:gochecknoglobals
+	testEnv        *envtest.Environment                                      //nolint:gochecknoglobals
+	suiteCtx       context.Context                                           //nolint:gochecknoglobals
+	cancelSuiteCtx context.CancelFunc                                        //nolint:gochecknoglobals
+	anyContext     = MatchedBy(func(_ context.Context) bool { return true }) //nolint:gochecknoglobals
 )
 
 const TestKubeconfigValidityTime = 24 * time.Hour
