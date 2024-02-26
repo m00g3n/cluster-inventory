@@ -3,8 +3,8 @@ package controller
 import (
 	"time"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2" //nolint:revive
+	. "github.com/onsi/gomega"    //nolint:revive
 )
 
 var _ = Describe("findLastSyncTime", func() {
