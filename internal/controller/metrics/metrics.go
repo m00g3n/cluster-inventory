@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	runtimeIdKeyName = "runtimeId"
+	runtimeIDKeyName = "runtimeId"
 	state            = "state"
 	reason           = "reason"
-	runtimeIdLabel   = "kyma-project.io/runtime-id"
+	runtimeIDLabel   = "kyma-project.io/runtime-id"
 	componentName    = "infrastructure_manager"
 )
 
@@ -26,19 +26,19 @@ func NewMetrics() Metrics {
 				Subsystem: componentName,
 				Name:      "im_gardener_clusters_state",
 				Help:      "Indicates the Status.state for GardenerCluster CRs",
-			}, []string{runtimeIdKeyName, state, reason}),
+			}, []string{runtimeIDKeyName, state, reason}),
 	}
 	ctrlMetrics.Registry.MustRegister(m.gardenerClustersStateGaugeVec)
 	return m
 }
 
 func (m Metrics) SetGardenerClusterStates(cluster v1.GardenerCluster) {
-	var runtimeId = cluster.GetLabels()[runtimeIdLabel]
+	var runtimeId = cluster.GetLabels()[runtimeIDLabel]
 
 	if runtimeId != "" {
 		var reason = cluster.Status.Conditions[0].Reason
 
-		//first clean the old metric
+		// first clean the old metric
 		m.cleanUpGardenerClusterGauge(runtimeId)
 		m.gardenerClustersStateGaugeVec.WithLabelValues(runtimeId, string(cluster.Status.State), reason).Set(1)
 	}
@@ -61,7 +61,7 @@ func (m Metrics) cleanUpGardenerClusterGauge(runtimeId string) {
 	fmt.Printf("GardenerClusterStates set value to 0 for %v", runtimeId)
 
 	metricsDeleted := m.gardenerClustersStateGaugeVec.DeletePartialMatch(prometheus.Labels{
-		runtimeIdKeyName: runtimeId,
+		runtimeIDKeyName: runtimeId,
 	})
 
 	if metricsDeleted > 0 {
