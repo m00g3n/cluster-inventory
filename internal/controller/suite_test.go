@@ -25,10 +25,10 @@ import (
 
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/mocks"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2" //nolint:revive
+	. "github.com/onsi/gomega"    //nolint:revive
 	"github.com/pkg/errors"
-	. "github.com/stretchr/testify/mock"
+	. "github.com/stretchr/testify/mock" //nolint:revive
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -42,12 +42,12 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	cfg            *rest.Config         //nolint:gochecknoglobals
-	k8sClient      client.Client        //nolint:gochecknoglobals
-	testEnv        *envtest.Environment //nolint:gochecknoglobals
-	suiteCtx       context.Context      //nolint:gochecknoglobals
-	cancelSuiteCtx context.CancelFunc   //nolint:gochecknoglobals
-	anyContext     = MatchedBy(func(ctx context.Context) bool { return true })
+	cfg            *rest.Config                                              //nolint:gochecknoglobals
+	k8sClient      client.Client                                             //nolint:gochecknoglobals
+	testEnv        *envtest.Environment                                      //nolint:gochecknoglobals
+	suiteCtx       context.Context                                           //nolint:gochecknoglobals
+	cancelSuiteCtx context.CancelFunc                                        //nolint:gochecknoglobals
+	anyContext     = MatchedBy(func(_ context.Context) bool { return true }) //nolint:gochecknoglobals
 )
 
 const TestKubeconfigValidityTime = 24 * time.Hour
