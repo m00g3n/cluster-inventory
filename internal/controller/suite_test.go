@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	metrics "github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"path/filepath"
 	"testing"
 	"time"
@@ -81,8 +82,9 @@ var _ = BeforeSuite(func() {
 
 	kubeconfigProviderMock := &mocks.KubeconfigProvider{}
 	setupKubeconfigProviderMock(kubeconfigProviderMock)
+	metrics := metrics.NewMetrics()
 
-	controller := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger, TestKubeconfigValidityTime)
+	controller := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger, TestKubeconfigValidityTime, metrics)
 	Expect(controller).NotTo(BeNil())
 
 	err = controller.SetupWithManager(mgr)

@@ -52,15 +52,17 @@ type GardenerClusterController struct {
 	KubeconfigProvider KubeconfigProvider
 	log                logr.Logger
 	rotationPeriod     time.Duration
+	metrics            metrics.Metrics
 }
 
-func NewGardenerClusterController(mgr ctrl.Manager, kubeconfigProvider KubeconfigProvider, logger logr.Logger, rotationPeriod time.Duration) *GardenerClusterController {
+func NewGardenerClusterController(mgr ctrl.Manager, kubeconfigProvider KubeconfigProvider, logger logr.Logger, rotationPeriod time.Duration, metrics metrics.Metrics) *GardenerClusterController {
 	return &GardenerClusterController{
 		Client:             mgr.GetClient(),
 		Scheme:             mgr.GetScheme(),
 		KubeconfigProvider: kubeconfigProvider,
 		log:                logger,
 		rotationPeriod:     rotationPeriod,
+		metrics:            metrics,
 	}
 }
 
@@ -86,7 +88,6 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	controller.log.Info("Starting reconciliation.", loggingContext(req)...)
 
 	var cluster imv1.GardenerCluster
-	metrics.IncrementReconciliationLoopsStarted()
 
 	err := controller.Get(ctx, req.NamespacedName, &cluster)
 
@@ -152,12 +153,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 }
 
 func (controller *GardenerClusterController) unsetStateMetric(ctx context.Context, req ctrl.Request) {
-	var secretKey = "kubeconfig-" + req.NamespacedName.Name
-	var secretNamespacedName = types.NamespacedName{Name: secretKey, Namespace: "kcp-system"}
-	var kubeconfigSecret corev1.Secret
-	_ = controller.Get(ctx, secretNamespacedName, &kubeconfigSecret)
-
-	metrics.UnSetGardenerClusterStates(kubeconfigSecret)
+	controller.metrics.UnSetGardenerClusterStates(req.NamespacedName.Name)
 }
 
 func loggingContextFromCluster(cluster *imv1.GardenerCluster) []any {
@@ -171,7 +167,7 @@ func loggingContext(req ctrl.Request) []any {
 func (controller *GardenerClusterController) resultWithRequeue(cluster *imv1.GardenerCluster, requeueAfter time.Duration) ctrl.Result {
 	controller.log.Info("result with requeue", "RequeueAfter", requeueAfter.String())
 
-	metrics.SetGardenerClusterStates(*cluster)
+	controller.metrics.SetGardenerClusterStates(*cluster)
 
 	return ctrl.Result{
 		Requeue:      true,
@@ -181,7 +177,7 @@ func (controller *GardenerClusterController) resultWithRequeue(cluster *imv1.Gar
 
 func (controller *GardenerClusterController) resultWithoutRequeue(cluster *imv1.GardenerCluster) ctrl.Result { //nolint:unparam
 	controller.log.Info("result without requeue")
-	metrics.SetGardenerClusterStates(*cluster)
+	controller.metrics.SetGardenerClusterStates(*cluster)
 	return ctrl.Result{}
 }
 

@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"os"
 	"time"
 
@@ -120,7 +121,8 @@ func main() {
 	}
 
 	rotationPeriod := time.Duration(minimalRotationTimeRatio*expirationTime.Minutes()) * time.Minute
-	if err = (controller.NewGardenerClusterController(mgr, kubeconfigProvider, logger, rotationPeriod)).SetupWithManager(mgr); err != nil {
+	metrics := metrics.NewMetrics()
+	if err = (controller.NewGardenerClusterController(mgr, kubeconfigProvider, logger, rotationPeriod, metrics)).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GardenerCluster")
 		os.Exit(1)
 	}

@@ -4,51 +4,67 @@ import (
 	"fmt"
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/prometheus/client_golang/prometheus"
-	corev1 "k8s.io/api/core/v1"
 	ctrlMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 const (
-	runtimeId = "runtimeId"
-	state     = "state"
+	runtimeIdKeyName = "runtimeId"
+	state            = "state"
+	reason           = "reason"
+	runtimeIdLabel   = "kyma-project.io/runtime-id"
+	componentName    = "infrastructure_manager"
 )
 
-var (
-
-	//nolint:godox //TODO: test custom metric, remove when done with https://github.com/kyma-project/infrastructure-manager/issues/11
-	playgroundTotalReconciliationLoopsStarted = prometheus.NewCounter( //nolint:gochecknoglobals
-		prometheus.CounterOpts{
-			Name: "im_playground_reconciliation_loops_started_total",
-			Help: "Number of times reconciliation loop was started",
-		},
-	)
-
-	metricGardenerClustersState = prometheus.NewGaugeVec( //nolint:gochecknoglobals
-		prometheus.GaugeOpts{ //nolint:gochecknoglobals
-			Subsystem: "infrastructure_manager",
-			Name:      "im_gardener_clusters_state",
-			Help:      "Indicates the Status.state for GardenerCluster CRs",
-		}, []string{runtimeId, state})
-)
-
-func init() {
-	ctrlMetrics.Registry.MustRegister(playgroundTotalReconciliationLoopsStarted, metricGardenerClustersState)
+type Metrics struct {
+	gardenerClustersStateGaugeVec *prometheus.GaugeVec
 }
 
-func IncrementReconciliationLoopsStarted() {
-	playgroundTotalReconciliationLoopsStarted.Inc()
+func NewMetrics() Metrics {
+	m := Metrics{
+		gardenerClustersStateGaugeVec: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Subsystem: componentName,
+				Name:      "im_gardener_clusters_state",
+				Help:      "Indicates the Status.state for GardenerCluster CRs",
+			}, []string{runtimeIdKeyName, state, reason}),
+	}
+	ctrlMetrics.Registry.MustRegister(m.gardenerClustersStateGaugeVec)
+	return m
 }
 
-func SetGardenerClusterStates(cluster v1.GardenerCluster) {
-	metricGardenerClustersState.WithLabelValues(cluster.Name, string(cluster.Status.State)).Set(1)
+func (m Metrics) SetGardenerClusterStates(cluster v1.GardenerCluster) {
+	var runtimeId = cluster.GetLabels()[runtimeIdLabel]
+
+	if runtimeId != "" {
+		var reason = cluster.Status.Conditions[0].Reason
+
+		//first clean the old metric
+		m.cleanUpGardenerClusterGauge(runtimeId)
+		m.gardenerClustersStateGaugeVec.WithLabelValues(runtimeId, string(cluster.Status.State), reason).Set(1)
+	}
 }
 
-func UnSetGardenerClusterStates(secret corev1.Secret) {
-	var runtimeId = secret.GetLabels()["kyma-project.io/runtime-id"]
-	var deletedReady = metricGardenerClustersState.DeleteLabelValues(runtimeId, "Ready")
-	var deletedError = metricGardenerClustersState.DeleteLabelValues(runtimeId, "Error")
+func (m Metrics) UnSetGardenerClusterStates(runtimeId string) {
+	m.cleanUpGardenerClusterGauge(runtimeId)
+}
 
-	if deletedReady || deletedError {
-		fmt.Printf("GardenerClusterStates deleted value for %v", runtimeId)
+func (m Metrics) cleanUpGardenerClusterGauge(runtimeId string) {
+
+	var readyMetric, _ = m.gardenerClustersStateGaugeVec.GetMetricWithLabelValues(runtimeId, "Ready")
+	if readyMetric != nil {
+		readyMetric.Set(0)
+	}
+	var errorMetric, _ = m.gardenerClustersStateGaugeVec.GetMetricWithLabelValues(runtimeId, "Error")
+	if errorMetric != nil {
+		errorMetric.Set(0)
+	}
+	fmt.Printf("GardenerClusterStates set value to 0 for %v", runtimeId)
+
+	metricsDeleted := m.gardenerClustersStateGaugeVec.DeletePartialMatch(prometheus.Labels{
+		runtimeIdKeyName: runtimeId,
+	})
+
+	if metricsDeleted > 0 {
+		fmt.Printf("gardenerClusterStateGauge deleted %d metrics for runtimeId %v", metricsDeleted, runtimeId)
 	}
 }
