@@ -18,12 +18,12 @@ package controller
 
 import (
 	"context"
-	metrics "github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"path/filepath"
 	"testing"
 	"time"
 
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	metrics "github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/mocks"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
