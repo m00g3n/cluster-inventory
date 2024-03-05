@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"fmt"
+
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/prometheus/client_golang/prometheus"
 	ctrlMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
@@ -51,7 +52,6 @@ func (m Metrics) UnSetGardenerClusterStates(runtimeId string) {
 }
 
 func (m Metrics) cleanUpGardenerClusterGauge(runtimeId string) {
-
 	var readyMetric, _ = m.gardenerClustersStateGaugeVec.GetMetricWithLabelValues(runtimeId, "Ready")
 	if readyMetric != nil {
 		readyMetric.Set(0)
