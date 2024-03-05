@@ -34,39 +34,39 @@ func NewMetrics() Metrics {
 }
 
 func (m Metrics) SetGardenerClusterStates(cluster v1.GardenerCluster) {
-	var runtimeId = cluster.GetLabels()[runtimeIDLabel]
+	var runtimeID = cluster.GetLabels()[runtimeIDLabel]
 
-	if runtimeId != "" {
+	if runtimeID != "" {
 		if len(cluster.Status.Conditions) != 0 {
 			var reason = cluster.Status.Conditions[0].Reason
 
 			// first clean the old metric
-			m.cleanUpGardenerClusterGauge(runtimeId)
-			m.gardenerClustersStateGaugeVec.WithLabelValues(runtimeId, string(cluster.Status.State), reason).Set(1)
+			m.cleanUpGardenerClusterGauge(runtimeID)
+			m.gardenerClustersStateGaugeVec.WithLabelValues(runtimeID, string(cluster.Status.State), reason).Set(1)
 		}
 	}
 }
 
-func (m Metrics) UnSetGardenerClusterStates(runtimeId string) {
-	m.cleanUpGardenerClusterGauge(runtimeId)
+func (m Metrics) UnSetGardenerClusterStates(runtimeID string) {
+	m.cleanUpGardenerClusterGauge(runtimeID)
 }
 
-func (m Metrics) cleanUpGardenerClusterGauge(runtimeId string) {
-	var readyMetric, _ = m.gardenerClustersStateGaugeVec.GetMetricWithLabelValues(runtimeId, "Ready")
+func (m Metrics) cleanUpGardenerClusterGauge(runtimeID string) {
+	var readyMetric, _ = m.gardenerClustersStateGaugeVec.GetMetricWithLabelValues(runtimeID, "Ready")
 	if readyMetric != nil {
 		readyMetric.Set(0)
 	}
-	var errorMetric, _ = m.gardenerClustersStateGaugeVec.GetMetricWithLabelValues(runtimeId, "Error")
+	var errorMetric, _ = m.gardenerClustersStateGaugeVec.GetMetricWithLabelValues(runtimeID, "Error")
 	if errorMetric != nil {
 		errorMetric.Set(0)
 	}
-	fmt.Printf("GardenerClusterStates set value to 0 for %v", runtimeId)
+	fmt.Printf("GardenerClusterStates set value to 0 for %v", runtimeID)
 
 	metricsDeleted := m.gardenerClustersStateGaugeVec.DeletePartialMatch(prometheus.Labels{
-		runtimeIDKeyName: runtimeId,
+		runtimeIDKeyName: runtimeID,
 	})
 
 	if metricsDeleted > 0 {
-		fmt.Printf("gardenerClusterStateGauge deleted %d metrics for runtimeId %v", metricsDeleted, runtimeId)
+		fmt.Printf("gardenerClusterStateGauge deleted %d metrics for runtimeID %v", metricsDeleted, runtimeID)
 	}
 }

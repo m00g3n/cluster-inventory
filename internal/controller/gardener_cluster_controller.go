@@ -151,7 +151,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	return controller.resultWithRequeue(&cluster, requeueAfter), nil
 }
 
-func (controller *GardenerClusterController) unsetStateMetric(ctx context.Context, req ctrl.Request) {
+func (controller *GardenerClusterController) unsetStateMetric(req ctrl.Request) {
 	controller.metrics.UnSetGardenerClusterStates(req.NamespacedName.Name)
 }
 
