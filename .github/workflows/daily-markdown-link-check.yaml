@@ -1,11 +1,11 @@
-name: Daily Markdown Link Check
+name: documentation
 run-name: ${{github.event.pull_request.title}}
 on:
     schedule:
     # Run everyday at 5:00 AM
     - cron: "0 5 * * *"
 jobs:
-  markdown-link-check:
+  daily-markdown-link-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
