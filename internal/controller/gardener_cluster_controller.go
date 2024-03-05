@@ -93,7 +93,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			controller.unsetStateMetric(ctx, req)
+			controller.unsetStateMetric(req)
 			err = controller.deleteKubeconfigSecret(ctx, req.Name)
 		}
 
