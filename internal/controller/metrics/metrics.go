@@ -36,11 +36,13 @@ func (m Metrics) SetGardenerClusterStates(cluster v1.GardenerCluster) {
 	var runtimeId = cluster.GetLabels()[runtimeIDLabel]
 
 	if runtimeId != "" {
-		var reason = cluster.Status.Conditions[0].Reason
+		if len(cluster.Status.Conditions) != 0 {
+			var reason = cluster.Status.Conditions[0].Reason
 
-		// first clean the old metric
-		m.cleanUpGardenerClusterGauge(runtimeId)
-		m.gardenerClustersStateGaugeVec.WithLabelValues(runtimeId, string(cluster.Status.State), reason).Set(1)
+			// first clean the old metric
+			m.cleanUpGardenerClusterGauge(runtimeId)
+			m.gardenerClustersStateGaugeVec.WithLabelValues(runtimeId, string(cluster.Status.State), reason).Set(1)
+		}
 	}
 }
 
