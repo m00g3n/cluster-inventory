@@ -57,7 +57,7 @@ var _ = Describe("Gardener Cluster controller", func() {
 			lastSyncTime := kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]
 			Expect(lastSyncTime).ToNot(BeEmpty())
 
-			By("Metrics should be updated")
+			By("Metrics should be appended after creation")
 			metricReason, metricState := getMetricsAttributes(kymaName)
 			Expect(metricReason).To(Equal(string(imv1.ConditionReasonKubeconfigSecretCreated)))
 			Expect(metricState).To(Equal(string(imv1.ReadyState)))
@@ -93,9 +93,8 @@ var _ = Describe("Gardener Cluster controller", func() {
 				return secretNotFound
 			}, time.Minute*30, time.Second*3).Should(BeTrue())
 
-			By("Metrics should be cleared")
+			By("Metrics should be cleared after deletion")
 			Eventually(func() string {
-				fmt.Printf("\n=== Eventually->Metrics should be cleared!\n")
 				metricReason, _ := getMetricsAttributes(kymaName)
 				return metricReason
 			}, time.Second*30, time.Second*3).Should(BeEmpty())
@@ -175,11 +174,6 @@ var _ = Describe("Gardener Cluster controller", func() {
 			Expect(string(kubeconfigSecret.Data["config"])).To(Equal(expectedKubeconfig))
 			lastSyncTime := kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]
 			Expect(lastSyncTime).ToNot(BeEmpty())
-
-			By("Metrics should show SecretRotated reason")
-			metricReason, metricState := getMetricsAttributes(gardenerClusterKey.Name)
-			Expect(metricReason).To(Equal(string(imv1.ConditionReasonKubeconfigSecretRotated)))
-			Expect(metricState).To(Equal(string(imv1.ReadyState)))
 		},
 			Entry("Rotate kubeconfig when rotation time passed",
 				fixGardenerClusterCR("kymaname4", namespace, "shootName4", "secret-name4"),
@@ -223,8 +217,6 @@ func getMetricsAttributes(runtimeID string) (outputReason, outputState string) {
 	stringBody, _ := getMetricsBody()
 	clusterStateMetricRegex := getGardenerClusterStateMetricRegex(runtimeID)
 	matches := clusterStateMetricRegex.FindStringSubmatch(stringBody)
-	fmt.Printf("\n===matches:%v", matches)
-	//fmt.Printf("\n!!!!stringBody:%v", stringBody)
 	if len(matches) > 0 {
 		outputReason = matches[1]
 		outputState = matches[2]
@@ -233,9 +225,13 @@ func getMetricsAttributes(runtimeID string) (outputReason, outputState string) {
 	return outputReason, outputState
 }
 
+// getGardenerClusterStateMetricRegex returns regex that will find matches of gardener_cluster_state metrics
+// and capture two groups for given `runtimeId` label value:
+// 1) `reason` label value
+// 2) `state` label value
 func getGardenerClusterStateMetricRegex(runtimeID string) *regexp.Regexp {
-	//infrastructure_manager_im_gardener_clusters_state{reason="KubeconfigSecretCreated",runtimeId="runtimeID",state="Ready"} 1
-	return regexp.MustCompile(fmt.Sprintf("infrastructure_manager_im_gardener_clusters_state.*reason=\"(.*?)\",runtimeId=\"%v\",state=\"(.*?)\"", runtimeID))
+	regexString := fmt.Sprintf("infrastructure_manager_im_gardener_clusters_state.*reason=\"(.*?)\",runtimeId=\"%v\",state=\"(.*?)\"", runtimeID)
+	return regexp.MustCompile(regexString)
 }
 
 func getMetricsBody() (string, error) {

@@ -1,8 +1,6 @@
 package metrics
 
 import (
-	"fmt"
-
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/prometheus/client_golang/prometheus"
 	ctrlMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
@@ -44,7 +42,6 @@ func (m Metrics) SetGardenerClusterStates(cluster v1.GardenerCluster) {
 			// first clean the old metric
 			m.cleanUpGardenerClusterGauge(runtimeID)
 			m.gardenerClustersStateGaugeVec.WithLabelValues(runtimeID, string(cluster.Status.State), reason).Set(1)
-			fmt.Printf("\n++set metrics WithLabelValues(%v, %v, %v)", runtimeID, string(cluster.Status.State), reason)
 		}
 	}
 }
@@ -54,22 +51,7 @@ func (m Metrics) UnSetGardenerClusterStates(runtimeID string) {
 }
 
 func (m Metrics) cleanUpGardenerClusterGauge(runtimeID string) {
-	var readyMetric, _ = m.gardenerClustersStateGaugeVec.GetMetricWithLabelValues(runtimeID, "Ready")
-	if readyMetric != nil {
-		readyMetric.Set(0)
-		fmt.Printf("\n--cleanUpGardenerClusterGauge(set value to 0 for %v)", runtimeID)
-	}
-	var errorMetric, _ = m.gardenerClustersStateGaugeVec.GetMetricWithLabelValues(runtimeID, "Error")
-	if errorMetric != nil {
-		errorMetric.Set(0)
-		fmt.Printf("\n--cleanUpGardenerClusterGauge(set value to 0 for %v)", runtimeID)
-	}
-
-	metricsDeleted := m.gardenerClustersStateGaugeVec.DeletePartialMatch(prometheus.Labels{
+	m.gardenerClustersStateGaugeVec.DeletePartialMatch(prometheus.Labels{
 		runtimeIDKeyName: runtimeID,
 	})
-
-	if metricsDeleted > 0 {
-		fmt.Printf("\n--cleanUpGardenerClusterGauge(deleted %d metrics for runtimeID %v)", metricsDeleted, runtimeID)
-	}
 }
