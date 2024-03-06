@@ -2,6 +2,10 @@ package controller
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"regexp"
 	"time"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -53,6 +57,10 @@ var _ = Describe("Gardener Cluster controller", func() {
 			lastSyncTime := kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]
 			Expect(lastSyncTime).ToNot(BeEmpty())
 
+			By("Metrics should be updated")
+			metricReason, metricState := getMetricsAttributes(kymaName)
+			Expect(metricReason).To(Equal(string(imv1.ConditionReasonKubeconfigSecretCreated)))
+			Expect(metricState).To(Equal(string(imv1.ReadyState)))
 		})
 
 		It("Should delete secret", func() {
@@ -80,8 +88,18 @@ var _ = Describe("Gardener Cluster controller", func() {
 			By("Wait for secret deletion")
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), secretKey, &kubeconfigSecret)
-				return err != nil && k8serrors.IsNotFound(err)
-			}, time.Second*30, time.Second*3).Should(BeTrue())
+				secretNotFound := err != nil && k8serrors.IsNotFound(err)
+				fmt.Printf("\nEventually->Wait for secret deletion->secretDeleted:%v", secretNotFound)
+				return secretNotFound
+			}, time.Minute*30, time.Second*3).Should(BeTrue())
+
+			By("Metrics should be cleared")
+			Eventually(func() string {
+				fmt.Printf("\n=== Eventually->Metrics should be cleared!\n")
+				metricReason, _ := getMetricsAttributes(kymaName)
+				return metricReason
+			}, time.Second*30, time.Second*3).Should(BeEmpty())
+
 		})
 
 		It("Should set Error status on CR if failed to fetch kubeconfig", func() {
@@ -103,6 +121,12 @@ var _ = Describe("Gardener Cluster controller", func() {
 
 				return newGardenerCluster.Status.State == imv1.ErrorState
 			}, time.Second*30, time.Second*3).Should(BeTrue())
+
+			By("Metrics should contain error label")
+			metricReason, metricState := getMetricsAttributes(kymaName)
+			Expect(metricReason).To(Equal(string(imv1.ConditionReasonFailedToGetKubeconfig)))
+			Expect(metricState).To(Equal(string(imv1.ErrorState)))
+
 		})
 	})
 
@@ -152,6 +176,10 @@ var _ = Describe("Gardener Cluster controller", func() {
 			lastSyncTime := kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]
 			Expect(lastSyncTime).ToNot(BeEmpty())
 
+			By("Metrics should show SecretRotated reason")
+			metricReason, metricState := getMetricsAttributes(gardenerClusterKey.Name)
+			Expect(metricReason).To(Equal(string(imv1.ConditionReasonKubeconfigSecretRotated)))
+			Expect(metricState).To(Equal(string(imv1.ReadyState)))
 		},
 			Entry("Rotate kubeconfig when rotation time passed",
 				fixGardenerClusterCR("kymaname4", namespace, "shootName4", "secret-name4"),
@@ -190,6 +218,45 @@ var _ = Describe("Gardener Cluster controller", func() {
 		})
 	})
 })
+
+func getMetricsAttributes(runtimeID string) (outputReason, outputState string) {
+	stringBody, _ := getMetricsBody()
+	clusterStateMetricRegex := getGardenerClusterStateMetricRegex(runtimeID)
+	matches := clusterStateMetricRegex.FindStringSubmatch(stringBody)
+	fmt.Printf("\n===matches:%v", matches)
+	//fmt.Printf("\n!!!!stringBody:%v", stringBody)
+	if len(matches) > 0 {
+		outputReason = matches[1]
+		outputState = matches[2]
+	}
+
+	return outputReason, outputState
+}
+
+func getGardenerClusterStateMetricRegex(runtimeID string) *regexp.Regexp {
+	//infrastructure_manager_im_gardener_clusters_state{reason="KubeconfigSecretCreated",runtimeId="runtimeID",state="Ready"} 1
+	return regexp.MustCompile(fmt.Sprintf("infrastructure_manager_im_gardener_clusters_state.*reason=\"(.*?)\",runtimeId=\"%v\",state=\"(.*?)\"", runtimeID))
+}
+
+func getMetricsBody() (string, error) {
+	clnt := &http.Client{}
+	request, err := http.NewRequestWithContext(suiteCtx, http.MethodGet, "http://localhost:8080/metrics", nil)
+	if err != nil {
+		return "", fmt.Errorf("request to metrics endpoint :%w", err)
+	}
+	response, err := clnt.Do(request)
+	if err != nil {
+		return "", fmt.Errorf("response from metrics endpoint :%w", err)
+	}
+	defer response.Body.Close()
+	bodyBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		return "", fmt.Errorf("response body:%w", err)
+	}
+	bodyString := string(bodyBytes)
+
+	return bodyString, nil
+}
 
 func fixNewSecret(name, namespace, kymaName, shootName, data string, lastSyncTime string) corev1.Secret {
 	labels := fixSecretLabels(kymaName, shootName)
@@ -305,7 +372,7 @@ func fixGardenerClusterLabels(kymaName, shootName string) map[string]string {
 	labels := map[string]string{}
 
 	labels["kyma-project.io/instance-id"] = "instanceID"
-	labels["kyma-project.io/runtime-id"] = "runtimeID"
+	labels["kyma-project.io/runtime-id"] = kymaName
 	labels["kyma-project.io/broker-plan-id"] = "planID"
 	labels["kyma-project.io/broker-plan-name"] = "planName"
 	labels["kyma-project.io/global-account-id"] = "globalAccountID"

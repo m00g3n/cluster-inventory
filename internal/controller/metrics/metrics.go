@@ -9,11 +9,12 @@ import (
 )
 
 const (
-	runtimeIDKeyName = "runtimeId"
-	state            = "state"
-	reason           = "reason"
-	runtimeIDLabel   = "kyma-project.io/runtime-id"
-	componentName    = "infrastructure_manager"
+	runtimeIDKeyName               = "runtimeId"
+	state                          = "state"
+	reason                         = "reason"
+	componentName                  = "infrastructure_manager"
+	RuntimeIDLabel                 = "kyma-project.io/runtime-id"
+	GardenerClusterStateMetricName = "im_gardener_clusters_state"
 )
 
 type Metrics struct {
@@ -25,7 +26,7 @@ func NewMetrics() Metrics {
 		gardenerClustersStateGaugeVec: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Subsystem: componentName,
-				Name:      "im_gardener_clusters_state",
+				Name:      GardenerClusterStateMetricName,
 				Help:      "Indicates the Status.state for GardenerCluster CRs",
 			}, []string{runtimeIDKeyName, state, reason}),
 	}
@@ -34,7 +35,7 @@ func NewMetrics() Metrics {
 }
 
 func (m Metrics) SetGardenerClusterStates(cluster v1.GardenerCluster) {
-	var runtimeID = cluster.GetLabels()[runtimeIDLabel]
+	var runtimeID = cluster.GetLabels()[RuntimeIDLabel]
 
 	if runtimeID != "" {
 		if len(cluster.Status.Conditions) != 0 {
@@ -43,6 +44,7 @@ func (m Metrics) SetGardenerClusterStates(cluster v1.GardenerCluster) {
 			// first clean the old metric
 			m.cleanUpGardenerClusterGauge(runtimeID)
 			m.gardenerClustersStateGaugeVec.WithLabelValues(runtimeID, string(cluster.Status.State), reason).Set(1)
+			fmt.Printf("\n++set metrics WithLabelValues(%v, %v, %v)", runtimeID, string(cluster.Status.State), reason)
 		}
 	}
 }
@@ -55,18 +57,19 @@ func (m Metrics) cleanUpGardenerClusterGauge(runtimeID string) {
 	var readyMetric, _ = m.gardenerClustersStateGaugeVec.GetMetricWithLabelValues(runtimeID, "Ready")
 	if readyMetric != nil {
 		readyMetric.Set(0)
+		fmt.Printf("\n--cleanUpGardenerClusterGauge(set value to 0 for %v)", runtimeID)
 	}
 	var errorMetric, _ = m.gardenerClustersStateGaugeVec.GetMetricWithLabelValues(runtimeID, "Error")
 	if errorMetric != nil {
 		errorMetric.Set(0)
+		fmt.Printf("\n--cleanUpGardenerClusterGauge(set value to 0 for %v)", runtimeID)
 	}
-	fmt.Printf("GardenerClusterStates set value to 0 for %v", runtimeID)
 
 	metricsDeleted := m.gardenerClustersStateGaugeVec.DeletePartialMatch(prometheus.Labels{
 		runtimeIDKeyName: runtimeID,
 	})
 
 	if metricsDeleted > 0 {
-		fmt.Printf("gardenerClusterStateGauge deleted %d metrics for runtimeID %v", metricsDeleted, runtimeID)
+		fmt.Printf("\n--cleanUpGardenerClusterGauge(deleted %d metrics for runtimeID %v)", metricsDeleted, runtimeID)
 	}
 }
