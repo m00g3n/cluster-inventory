@@ -89,7 +89,6 @@ var _ = Describe("Gardener Cluster controller", func() {
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), secretKey, &kubeconfigSecret)
 				secretNotFound := err != nil && k8serrors.IsNotFound(err)
-				fmt.Printf("\nEventually->Wait for secret deletion->secretDeleted:%v", secretNotFound)
 				return secretNotFound
 			}, time.Minute*30, time.Second*3).Should(BeTrue())
 
