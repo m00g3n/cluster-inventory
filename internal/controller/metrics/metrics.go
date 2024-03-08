@@ -40,17 +40,13 @@ func (m Metrics) SetGardenerClusterStates(cluster v1.GardenerCluster) {
 			var reason = cluster.Status.Conditions[0].Reason
 
 			// first clean the old metric
-			m.cleanUpGardenerClusterGauge(runtimeID)
+			m.CleanUpGardenerClusterGauge(runtimeID)
 			m.gardenerClustersStateGaugeVec.WithLabelValues(runtimeID, string(cluster.Status.State), reason).Set(1)
 		}
 	}
 }
 
-func (m Metrics) UnSetGardenerClusterStates(runtimeID string) {
-	m.cleanUpGardenerClusterGauge(runtimeID)
-}
-
-func (m Metrics) cleanUpGardenerClusterGauge(runtimeID string) {
+func (m Metrics) CleanUpGardenerClusterGauge(runtimeID string) {
 	m.gardenerClustersStateGaugeVec.DeletePartialMatch(prometheus.Labels{
 		runtimeIDKeyName: runtimeID,
 	})

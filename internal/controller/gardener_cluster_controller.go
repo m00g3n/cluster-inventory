@@ -152,7 +152,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 }
 
 func (controller *GardenerClusterController) unsetStateMetric(req ctrl.Request) {
-	controller.metrics.UnSetGardenerClusterStates(req.NamespacedName.Name)
+	controller.metrics.CleanUpGardenerClusterGauge(req.NamespacedName.Name)
 }
 
 func loggingContextFromCluster(cluster *imv1.GardenerCluster) []any {
