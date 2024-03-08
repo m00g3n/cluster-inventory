@@ -320,7 +320,7 @@ func (controller *GardenerClusterController) createNewSecret(ctx context.Context
 	}
 
 	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretCreated, metav1.ConditionTrue)
-
+	controller.metrics.SetKubeconfigExpiration(newSecret)
 	message := fmt.Sprintf("Secret %s has been created in %s namespace.", newSecret.Name, newSecret.Namespace)
 	controller.log.Info(message, loggingContextFromCluster(cluster)...)
 

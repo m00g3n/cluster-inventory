@@ -3,20 +3,25 @@ package metrics
 import (
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/prometheus/client_golang/prometheus"
+	corev1 "k8s.io/api/core/v1"
 	ctrlMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 const (
 	runtimeIDKeyName               = "runtimeId"
-	state                          = "state"
-	reason                         = "reason"
 	componentName                  = "infrastructure_manager"
 	RuntimeIDLabel                 = "kyma-project.io/runtime-id"
 	GardenerClusterStateMetricName = "im_gardener_clusters_state"
+	state                          = "state"
+	reason                         = "reason"
+	KubeconfigExpirationMetricName = "im_kubeconfig_expiry"
+	expires                        = "expires"
+	lastSyncAnnotation             = "operator.kyma-project.io/last-sync"
 )
 
 type Metrics struct {
 	gardenerClustersStateGaugeVec *prometheus.GaugeVec
+	kubeconfigExpirationGauge     *prometheus.GaugeVec
 }
 
 func NewMetrics() Metrics {
@@ -27,8 +32,14 @@ func NewMetrics() Metrics {
 				Name:      GardenerClusterStateMetricName,
 				Help:      "Indicates the Status.state for GardenerCluster CRs",
 			}, []string{runtimeIDKeyName, state, reason}),
+		kubeconfigExpirationGauge: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Subsystem: componentName,
+				Name:      KubeconfigExpirationMetricName,
+				Help:      "Exposes current kubeconfig expiry value in epoch timestamp value format",
+			}, []string{runtimeIDKeyName, expires}),
 	}
-	ctrlMetrics.Registry.MustRegister(m.gardenerClustersStateGaugeVec)
+	ctrlMetrics.Registry.MustRegister(m.gardenerClustersStateGaugeVec, m.kubeconfigExpirationGauge)
 	return m
 }
 
@@ -50,4 +61,12 @@ func (m Metrics) CleanUpGardenerClusterGauge(runtimeID string) {
 	m.gardenerClustersStateGaugeVec.DeletePartialMatch(prometheus.Labels{
 		runtimeIDKeyName: runtimeID,
 	})
+}
+
+func (m Metrics) SetKubeconfigExpiration(secret corev1.Secret) {
+	var runtimeID = secret.GetLabels()[RuntimeIDLabel]
+	var lastSyncTime = secret.GetAnnotations()[lastSyncAnnotation]
+	if runtimeID != "" {
+		m.kubeconfigExpirationGauge.WithLabelValues(runtimeID, lastSyncTime)
+	}
 }
