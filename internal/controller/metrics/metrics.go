@@ -7,36 +7,47 @@ import (
 )
 
 const (
-	shootName = "shootName"
-	state     = "state"
+	runtimeIDKeyName               = "runtimeId"
+	state                          = "state"
+	reason                         = "reason"
+	componentName                  = "infrastructure_manager"
+	RuntimeIDLabel                 = "kyma-project.io/runtime-id"
+	GardenerClusterStateMetricName = "im_gardener_clusters_state"
 )
 
-var (
-
-	//nolint:godox //TODO: test custom metric, remove when done with https://github.com/kyma-project/infrastructure-manager/issues/11
-	playgroundTotalReconciliationLoopsStarted = prometheus.NewCounter( //nolint:gochecknoglobals
-		prometheus.CounterOpts{
-			Name: "im_playground_reconciliation_loops_started_total",
-			Help: "Number of times reconciliation loop was started",
-		},
-	)
-
-	metricGardenerClustersState = prometheus.NewGaugeVec( //nolint:gochecknoglobals
-		prometheus.GaugeOpts{ //nolint:gochecknoglobals
-			Subsystem: "infrastructure_manager",
-			Name:      "im_gardener_clusters_state",
-			Help:      "Indicates the Status.state for GardenerCluster CRs",
-		}, []string{shootName, state})
-)
-
-func init() {
-	ctrlMetrics.Registry.MustRegister(playgroundTotalReconciliationLoopsStarted, metricGardenerClustersState)
+type Metrics struct {
+	gardenerClustersStateGaugeVec *prometheus.GaugeVec
 }
 
-func IncrementReconciliationLoopsStarted() {
-	playgroundTotalReconciliationLoopsStarted.Inc()
+func NewMetrics() Metrics {
+	m := Metrics{
+		gardenerClustersStateGaugeVec: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Subsystem: componentName,
+				Name:      GardenerClusterStateMetricName,
+				Help:      "Indicates the Status.state for GardenerCluster CRs",
+			}, []string{runtimeIDKeyName, state, reason}),
+	}
+	ctrlMetrics.Registry.MustRegister(m.gardenerClustersStateGaugeVec)
+	return m
 }
 
-func SetGardenerClusterStates(cluster v1.GardenerCluster) {
-	metricGardenerClustersState.WithLabelValues(cluster.Spec.Shoot.Name, string(cluster.Status.State)).Set(1)
+func (m Metrics) SetGardenerClusterStates(cluster v1.GardenerCluster) {
+	var runtimeID = cluster.GetLabels()[RuntimeIDLabel]
+
+	if runtimeID != "" {
+		if len(cluster.Status.Conditions) != 0 {
+			var reason = cluster.Status.Conditions[0].Reason
+
+			// first clean the old metric
+			m.CleanUpGardenerClusterGauge(runtimeID)
+			m.gardenerClustersStateGaugeVec.WithLabelValues(runtimeID, string(cluster.Status.State), reason).Set(1)
+		}
+	}
+}
+
+func (m Metrics) CleanUpGardenerClusterGauge(runtimeID string) {
+	m.gardenerClustersStateGaugeVec.DeletePartialMatch(prometheus.Labels{
+		runtimeIDKeyName: runtimeID,
+	})
 }
