@@ -5,6 +5,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	ctrlMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
+	"strconv"
+	"time"
 )
 
 const (
@@ -14,7 +16,7 @@ const (
 	GardenerClusterStateMetricName = "im_gardener_clusters_state"
 	state                          = "state"
 	reason                         = "reason"
-	KubeconfigExpirationMetricName = "im_kubeconfig_expiry"
+	KubeconfigExpirationMetricName = "im_kubeconfig_expiration"
 	expires                        = "expires"
 	lastSyncAnnotation             = "operator.kyma-project.io/last-sync"
 )
@@ -36,7 +38,7 @@ func NewMetrics() Metrics {
 			prometheus.GaugeOpts{
 				Subsystem: componentName,
 				Name:      KubeconfigExpirationMetricName,
-				Help:      "Exposes current kubeconfig expiry value in epoch timestamp value format",
+				Help:      "Exposes current kubeconfig expiration value in epoch timestamp value format",
 			}, []string{runtimeIDKeyName, expires}),
 	}
 	ctrlMetrics.Registry.MustRegister(m.gardenerClustersStateGaugeVec, m.kubeconfigExpirationGauge)
@@ -65,8 +67,15 @@ func (m Metrics) CleanUpGardenerClusterGauge(runtimeID string) {
 
 func (m Metrics) SetKubeconfigExpiration(secret corev1.Secret) {
 	var runtimeID = secret.GetLabels()[RuntimeIDLabel]
-	var lastSyncTime = secret.GetAnnotations()[lastSyncAnnotation]
+
 	if runtimeID != "" {
-		m.kubeconfigExpirationGauge.WithLabelValues(runtimeID, lastSyncTime)
+		var lastSyncTime = secret.GetAnnotations()[lastSyncAnnotation]
+
+		parsedSyncTime, err := time.Parse(time.RFC3339, lastSyncTime)
+		if err == nil {
+			syncTimeEpoch := parsedSyncTime.Unix()
+			syncTimeEpochString := strconv.Itoa(int(syncTimeEpoch))
+			m.kubeconfigExpirationGauge.WithLabelValues(runtimeID, syncTimeEpochString)
+		}
 	}
 }
