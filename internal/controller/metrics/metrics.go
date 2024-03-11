@@ -65,8 +65,17 @@ func (m Metrics) CleanUpGardenerClusterGauge(runtimeID string) {
 	})
 }
 
+func (m Metrics) CleanUpKubeconfigExpiration(runtimeID string) {
+	m.kubeconfigExpirationGauge.DeletePartialMatch(prometheus.Labels{
+		runtimeIDKeyName: runtimeID,
+	})
+}
+
 func (m Metrics) SetKubeconfigExpiration(secret corev1.Secret) {
 	var runtimeID = secret.GetLabels()[RuntimeIDLabel]
+
+	// first clean the old metric
+	m.CleanUpKubeconfigExpiration(runtimeID)
 
 	if runtimeID != "" {
 		var lastSyncTime = secret.GetAnnotations()[lastSyncAnnotation]

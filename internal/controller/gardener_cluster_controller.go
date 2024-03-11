@@ -362,6 +362,7 @@ func (controller *GardenerClusterController) updateExistingSecret(ctx context.Co
 	}
 
 	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretRotated, metav1.ConditionTrue)
+	controller.metrics.SetKubeconfigExpiration(*existingSecret)
 
 	message := fmt.Sprintf("Secret %s has been updated in %s namespace.", existingSecret.Name, existingSecret.Namespace)
 	controller.log.Info(message, loggingContextFromCluster(cluster)...)

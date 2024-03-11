@@ -68,7 +68,6 @@ var _ = Describe("Gardener Cluster controller", func() {
 			Expect(epochParseErr).To(BeNil())
 			tm := time.Unix(intEpoch, 0)
 			Expect(tm.UTC().Format(time.RFC3339)).To(Equal(lastSyncTime))
-
 		})
 
 		It("Should delete secret", func() {
@@ -180,6 +179,13 @@ var _ = Describe("Gardener Cluster controller", func() {
 			Expect(string(kubeconfigSecret.Data["config"])).To(Equal(expectedKubeconfig))
 			lastSyncTime := kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]
 			Expect(lastSyncTime).ToNot(BeEmpty())
+
+			metricsData := getMetricsData(gardenerClusterKey.Name)
+			By("Kubeconfig expiration metrics should be appended after creation")
+			intEpoch, epochParseErr := strconv.ParseInt(metricsData.kubeconfigExpiration.epoch, 10, 64)
+			Expect(epochParseErr).To(BeNil())
+			tm := time.Unix(intEpoch, 0)
+			Expect(tm.UTC().Format(time.RFC3339)).To(Equal(lastSyncTime))
 		},
 			Entry("Rotate kubeconfig when rotation epoch passed",
 				fixGardenerClusterCR("kymaname4", namespace, "shootName4", "secret-name4"),
