@@ -63,11 +63,7 @@ var _ = Describe("Gardener Cluster controller", func() {
 			Expect(metricsData.gardenerClusterStatesData.reason).To(Equal(string(imv1.ConditionReasonKubeconfigSecretCreated)))
 			Expect(metricsData.gardenerClusterStatesData.state).To(Equal(string(imv1.ReadyState)))
 
-			By("Kubeconfig expiration metrics should be appended after creation")
-			intEpoch, epochParseErr := strconv.ParseInt(metricsData.kubeconfigExpiration.epoch, 10, 64)
-			Expect(epochParseErr).To(BeNil())
-			tm := time.Unix(intEpoch, 0)
-			Expect(tm.UTC().Format(time.RFC3339)).To(Equal(lastSyncTime))
+			expectKubeconfigMetricsAreValid(metricsData, gardenerClusterKey.Name, lastSyncTime, "Kubeconfig expiration metrics should be appended after creation")
 		})
 
 		It("Should delete secret", func() {
@@ -181,11 +177,7 @@ var _ = Describe("Gardener Cluster controller", func() {
 			Expect(lastSyncTime).ToNot(BeEmpty())
 
 			metricsData := getMetricsData(gardenerClusterKey.Name)
-			By("Kubeconfig expiration metrics should be appended after creation")
-			intEpoch, epochParseErr := strconv.ParseInt(metricsData.kubeconfigExpiration.epoch, 10, 64)
-			Expect(epochParseErr).To(BeNil())
-			tm := time.Unix(intEpoch, 0)
-			Expect(tm.UTC().Format(time.RFC3339)).To(Equal(lastSyncTime))
+			expectKubeconfigMetricsAreValid(metricsData, gardenerClusterKey.Name, lastSyncTime, "Kubeconfig expiration metrics should be appended after creation")
 		},
 			Entry("Rotate kubeconfig when rotation epoch passed",
 				fixGardenerClusterCR("kymaname4", namespace, "shootName4", "secret-name4"),
@@ -224,6 +216,14 @@ var _ = Describe("Gardener Cluster controller", func() {
 		})
 	})
 })
+
+func expectKubeconfigMetricsAreValid(metricsData metricsData, runtimeID, lastSyncTime, stepDescription string) {
+	By(stepDescription)
+	intEpoch, epochParseErr := strconv.ParseInt(metricsData.kubeconfigExpiration.epoch, 10, 64)
+	Expect(epochParseErr).To(BeNil())
+	tm := time.Unix(intEpoch, 0)
+	Expect(tm.UTC().Format(time.RFC3339)).To(Equal(lastSyncTime))
+}
 
 type gardenerClusterStatesData struct {
 	reason string
