@@ -93,7 +93,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			controller.unsetStateMetric(req)
+			controller.unsetMetrics(req)
 			err = controller.deleteKubeconfigSecret(ctx, req.Name)
 		}
 
@@ -151,8 +151,9 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	return controller.resultWithRequeue(&cluster, requeueAfter), nil
 }
 
-func (controller *GardenerClusterController) unsetStateMetric(req ctrl.Request) {
+func (controller *GardenerClusterController) unsetMetrics(req ctrl.Request) {
 	controller.metrics.CleanUpGardenerClusterGauge(req.NamespacedName.Name)
+	controller.metrics.CleanUpKubeconfigExpiration(req.NamespacedName.Name)
 }
 
 func loggingContextFromCluster(cluster *imv1.GardenerCluster) []any {
@@ -263,6 +264,8 @@ func (controller *GardenerClusterController) handleKubeconfig(ctx context.Contex
 			return ksZero, err
 		}
 
+		controller.metrics.CleanUpKubeconfigExpiration(cluster.Name)
+
 		return ksRotated, nil
 	}
 
@@ -270,6 +273,7 @@ func (controller *GardenerClusterController) handleKubeconfig(ctx context.Contex
 		message := fmt.Sprintf("Secret %s in namespace %s does not need to be rotated yet.", cluster.Spec.Kubeconfig.Secret.Name, cluster.Spec.Kubeconfig.Secret.Namespace)
 		controller.log.Info(message, loggingContextFromCluster(cluster)...)
 		cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretCreated, metav1.ConditionTrue)
+		controller.metrics.SetKubeconfigExpiration(*secret)
 		return ksZero, nil
 	}
 
