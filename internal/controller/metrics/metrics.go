@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"fmt"
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
@@ -67,11 +66,9 @@ func (m Metrics) CleanUpGardenerClusterGauge(runtimeID string) {
 }
 
 func (m Metrics) CleanUpKubeconfigExpiration(runtimeID string) {
-	metricsDeleted := m.kubeconfigExpirationGauge.DeletePartialMatch(prometheus.Labels{
+	m.kubeconfigExpirationGauge.DeletePartialMatch(prometheus.Labels{
 		runtimeIDKeyName: runtimeID,
 	})
-
-	fmt.Printf("%v metrics has been deleted\n", metricsDeleted)
 }
 
 func (m Metrics) SetKubeconfigExpiration(secret corev1.Secret) {
