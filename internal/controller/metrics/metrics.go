@@ -71,7 +71,7 @@ func (m Metrics) CleanUpKubeconfigExpiration(runtimeID string) {
 	})
 }
 
-func (m Metrics) SetKubeconfigExpiration(secret corev1.Secret) {
+func (m Metrics) SetKubeconfigExpiration(secret corev1.Secret, rotationPeriod time.Duration) {
 	var runtimeID = secret.GetLabels()[RuntimeIDLabel]
 
 	// first clean the old metric
@@ -82,9 +82,10 @@ func (m Metrics) SetKubeconfigExpiration(secret corev1.Secret) {
 
 		parsedSyncTime, err := time.Parse(time.RFC3339, lastSyncTime)
 		if err == nil {
-			syncTimeEpoch := parsedSyncTime.Unix()
-			syncTimeEpochString := strconv.Itoa(int(syncTimeEpoch))
-			m.kubeconfigExpirationGauge.WithLabelValues(runtimeID, syncTimeEpochString)
+			expirationTime := parsedSyncTime.Add(rotationPeriod)
+			expirationTimeEpoch := expirationTime.Unix()
+			expirationTimeEpochString := strconv.Itoa(int(expirationTimeEpoch))
+			m.kubeconfigExpirationGauge.WithLabelValues(runtimeID, expirationTimeEpochString)
 		}
 	}
 }

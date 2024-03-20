@@ -217,12 +217,19 @@ var _ = Describe("Gardener Cluster controller", func() {
 	})
 })
 
-func expectKubeconfigMetricsAreValid(metricsData metricsData, runtimeID, lastSyncTime, stepDescription string) {
+func expectKubeconfigMetricsAreValid(metricsData metricsData, lastSyncTimeString, stepDescription string) {
 	By(stepDescription)
 	intEpoch, epochParseErr := strconv.ParseInt(metricsData.kubeconfigExpiration.epoch, 10, 64)
 	Expect(epochParseErr).To(BeNil())
-	tm := time.Unix(intEpoch, 0)
-	Expect(tm.UTC().Format(time.RFC3339)).To(Equal(lastSyncTime))
+	expirationMetric := time.Unix(intEpoch, 0)
+
+	lastSyncTimeDateTime, err := time.Parse(time.RFC3339, lastSyncTimeString)
+	var kubeconfigValidUntil time.Time
+	if err == nil {
+		kubeconfigValidUntil = lastSyncTimeDateTime.Add(TestKubeconfigValidityTime)
+	}
+
+	Expect(expirationMetric.UTC().Format(time.RFC3339)).To(Equal(kubeconfigValidUntil.Format(time.RFC3339)))
 }
 
 type gardenerClusterStatesData struct {

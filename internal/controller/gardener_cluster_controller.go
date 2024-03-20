@@ -273,7 +273,7 @@ func (controller *GardenerClusterController) handleKubeconfig(ctx context.Contex
 		message := fmt.Sprintf("Secret %s in namespace %s does not need to be rotated yet.", cluster.Spec.Kubeconfig.Secret.Name, cluster.Spec.Kubeconfig.Secret.Namespace)
 		controller.log.Info(message, loggingContextFromCluster(cluster)...)
 		cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretCreated, metav1.ConditionTrue)
-		controller.metrics.SetKubeconfigExpiration(*secret)
+		controller.metrics.SetKubeconfigExpiration(*secret, controller.rotationPeriod)
 		return ksZero, nil
 	}
 
@@ -324,7 +324,7 @@ func (controller *GardenerClusterController) createNewSecret(ctx context.Context
 	}
 
 	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretCreated, metav1.ConditionTrue)
-	controller.metrics.SetKubeconfigExpiration(newSecret)
+	controller.metrics.SetKubeconfigExpiration(newSecret, controller.rotationPeriod)
 	message := fmt.Sprintf("Secret %s has been created in %s namespace.", newSecret.Name, newSecret.Namespace)
 	controller.log.Info(message, loggingContextFromCluster(cluster)...)
 
@@ -366,7 +366,7 @@ func (controller *GardenerClusterController) updateExistingSecret(ctx context.Co
 	}
 
 	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretRotated, metav1.ConditionTrue)
-	controller.metrics.SetKubeconfigExpiration(*existingSecret)
+	controller.metrics.SetKubeconfigExpiration(*existingSecret, controller.rotationPeriod)
 
 	message := fmt.Sprintf("Secret %s has been updated in %s namespace.", existingSecret.Name, existingSecret.Namespace)
 	controller.log.Info(message, loggingContextFromCluster(cluster)...)
