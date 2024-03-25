@@ -12,6 +12,7 @@ import (
 const (
 	runtimeIDKeyName               = "runtimeId"
 	shootNameIDKeyName             = "shootName"
+	rotationDuration               = "rotationDuration"
 	componentName                  = "infrastructure_manager"
 	RuntimeIDLabel                 = "kyma-project.io/runtime-id"
 	ShootNameLabel                 = "kyma-project.io/shoot-name"
@@ -41,7 +42,7 @@ func NewMetrics() Metrics {
 				Subsystem: componentName,
 				Name:      KubeconfigExpirationMetricName,
 				Help:      "Exposes current kubeconfig expiration value in epoch timestamp value format",
-			}, []string{runtimeIDKeyName, shootNameIDKeyName, expires}),
+			}, []string{runtimeIDKeyName, shootNameIDKeyName, expires, rotationDuration}),
 	}
 	ctrlMetrics.Registry.MustRegister(m.gardenerClustersStateGaugeVec, m.kubeconfigExpirationGauge)
 	return m
@@ -89,7 +90,14 @@ func (m Metrics) SetKubeconfigExpiration(secret corev1.Secret, rotationPeriod ti
 			expirationTime := parsedSyncTime.Add(rotationPeriod)
 			expirationTimeEpoch := expirationTime.Unix()
 			expirationTimeEpochString := strconv.Itoa(int(expirationTimeEpoch))
-			m.kubeconfigExpirationGauge.WithLabelValues(runtimeID, shootName, expirationTimeEpochString)
+			rotationPeriodString := strconv.FormatFloat(rotationPeriod.Seconds(), 'G', -1, 64)
+
+			m.kubeconfigExpirationGauge.WithLabelValues(
+				runtimeID,
+				shootName,
+				expirationTimeEpochString,
+				rotationPeriodString,
+			)
 		}
 	}
 }

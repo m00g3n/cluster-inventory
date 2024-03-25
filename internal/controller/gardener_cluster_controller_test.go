@@ -242,7 +242,8 @@ type gardenerClusterStatesData struct {
 }
 
 type kubeconfigExpiration struct {
-	epoch string
+	epoch    string
+	duration string
 }
 
 type metricsData struct {
@@ -268,7 +269,8 @@ func getMetricsData(runtimeID string) metricsData {
 	kubeconfigExpirationMetricMatches := kubeconfigExpirationMetricRegex.FindStringSubmatch(stringBody)
 	if len(kubeconfigExpirationMetricMatches) > 0 {
 		metricsData.kubeconfigExpiration.epoch = kubeconfigExpirationMetricMatches[1]
-		metricsData.shootName = kubeconfigExpirationMetricMatches[2]
+		metricsData.kubeconfigExpiration.duration = kubeconfigExpirationMetricMatches[2]
+		metricsData.shootName = kubeconfigExpirationMetricMatches[3]
 	}
 
 	return metricsData
@@ -278,7 +280,7 @@ func getMetricsData(runtimeID string) metricsData {
 // and capture a group for given `runtimeId` label value:
 // 1) `expires` label value
 func getKubeconfigExpirationMetricRegex(runtimeID string) *regexp.Regexp {
-	regexString := fmt.Sprintf("im_kubeconfig_expiration{expires=\"(.*?)\",runtimeId=\"%v\",shootName=\"(.*?)\"", runtimeID)
+	regexString := fmt.Sprintf("im_kubeconfig_expiration{expires=\"(.*?)\",rotationDuration=\"(.*?)\",runtimeId=\"%v\",shootName=\"(.*?)\"", runtimeID)
 	return regexp.MustCompile(regexString)
 }
 
