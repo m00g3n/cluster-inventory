@@ -13,6 +13,7 @@ const (
 	runtimeIDKeyName               = "runtimeId"
 	shootNameIDKeyName             = "shootName"
 	rotationDuration               = "rotationDuration"
+	expirationDuration             = "expirationDuration"
 	componentName                  = "infrastructure_manager"
 	RuntimeIDLabel                 = "kyma-project.io/runtime-id"
 	ShootNameLabel                 = "kyma-project.io/shoot-name"
@@ -42,7 +43,7 @@ func NewMetrics() Metrics {
 				Subsystem: componentName,
 				Name:      KubeconfigExpirationMetricName,
 				Help:      "Exposes current kubeconfig expiration value in epoch timestamp value format",
-			}, []string{runtimeIDKeyName, shootNameIDKeyName, expires, rotationDuration}),
+			}, []string{runtimeIDKeyName, shootNameIDKeyName, expires, rotationDuration, expirationDuration}),
 	}
 	ctrlMetrics.Registry.MustRegister(m.gardenerClustersStateGaugeVec, m.kubeconfigExpirationGauge)
 	return m
@@ -75,7 +76,11 @@ func (m Metrics) CleanUpKubeconfigExpiration(runtimeID string) {
 	})
 }
 
-func (m Metrics) SetKubeconfigExpiration(secret corev1.Secret, rotationPeriod time.Duration) {
+func computeExpirationInSeconds(rotationPeriod time.Duration, minimalRotationTimeRatio float64) float64 {
+	return rotationPeriod.Seconds() / minimalRotationTimeRatio
+}
+
+func (m Metrics) SetKubeconfigExpiration(secret corev1.Secret, rotationPeriod time.Duration, minimalRotationTimeRatio float64) {
 	var runtimeID = secret.GetLabels()[RuntimeIDLabel]
 	var shootName = secret.GetLabels()[ShootNameLabel]
 
@@ -87,16 +92,21 @@ func (m Metrics) SetKubeconfigExpiration(secret corev1.Secret, rotationPeriod ti
 
 		parsedSyncTime, err := time.Parse(time.RFC3339, lastSyncTime)
 		if err == nil {
-			expirationTime := parsedSyncTime.Add(rotationPeriod)
+			expirationTimeInSeconds := computeExpirationInSeconds(rotationPeriod, minimalRotationTimeRatio)
+			expirationTime := parsedSyncTime.Add(time.Duration(expirationTimeInSeconds * float64(time.Second)))
+
 			expirationTimeEpoch := expirationTime.Unix()
 			expirationTimeEpochString := strconv.Itoa(int(expirationTimeEpoch))
 			rotationPeriodString := strconv.FormatFloat(rotationPeriod.Seconds(), 'G', -1, 64)
+
+			expirationTimeInSecondsString := strconv.FormatFloat(expirationTimeInSeconds, 'G', -1, 64)
 
 			m.kubeconfigExpirationGauge.WithLabelValues(
 				runtimeID,
 				shootName,
 				expirationTimeEpochString,
 				rotationPeriodString,
+				expirationTimeInSecondsString,
 			)
 		}
 	}

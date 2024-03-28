@@ -222,6 +222,8 @@ var _ = Describe("Gardener Cluster controller", func() {
 
 func expectKubeconfigMetricsAreValid(metricsData metricsData, lastSyncTimeString, stepDescription, shootName string) {
 	By(stepDescription)
+	Expect(metricsData.shootName).To(Equal(shootName))
+
 	intEpoch, epochParseErr := strconv.ParseInt(metricsData.kubeconfigExpiration.epoch, 10, 64)
 	Expect(epochParseErr).To(BeNil())
 	expirationMetric := time.Unix(intEpoch, 0)
@@ -231,9 +233,12 @@ func expectKubeconfigMetricsAreValid(metricsData metricsData, lastSyncTimeString
 	if err == nil {
 		kubeconfigValidUntil = lastSyncTimeDateTime.Add(TestKubeconfigValidityTime)
 	}
-
-	Expect(metricsData.shootName).To(Equal(shootName))
 	Expect(expirationMetric.UTC().Format(time.RFC3339)).To(Equal(kubeconfigValidUntil.Format(time.RFC3339)))
+
+	expirationDuration, expirationDurationParseErr := strconv.ParseFloat(metricsData.kubeconfigExpiration.expirationDuration, 10)
+	Expect(expirationDurationParseErr).To(BeNil())
+	Expect(expirationDuration).To(Equal(TestKubeconfigValidityTime.Seconds()))
+
 }
 
 type gardenerClusterStatesData struct {
@@ -242,8 +247,9 @@ type gardenerClusterStatesData struct {
 }
 
 type kubeconfigExpiration struct {
-	epoch    string
-	duration string
+	epoch              string
+	expirationDuration string
+	rotationDuration   string
 }
 
 type metricsData struct {
@@ -268,9 +274,10 @@ func getMetricsData(runtimeID string) metricsData {
 	kubeconfigExpirationMetricRegex := getKubeconfigExpirationMetricRegex(runtimeID)
 	kubeconfigExpirationMetricMatches := kubeconfigExpirationMetricRegex.FindStringSubmatch(stringBody)
 	if len(kubeconfigExpirationMetricMatches) > 0 {
-		metricsData.kubeconfigExpiration.epoch = kubeconfigExpirationMetricMatches[1]
-		metricsData.kubeconfigExpiration.duration = kubeconfigExpirationMetricMatches[2]
-		metricsData.shootName = kubeconfigExpirationMetricMatches[3]
+		metricsData.kubeconfigExpiration.expirationDuration = kubeconfigExpirationMetricMatches[1]
+		metricsData.kubeconfigExpiration.epoch = kubeconfigExpirationMetricMatches[2]
+		metricsData.kubeconfigExpiration.rotationDuration = kubeconfigExpirationMetricMatches[3]
+		metricsData.shootName = kubeconfigExpirationMetricMatches[4]
 	}
 
 	return metricsData
@@ -280,7 +287,7 @@ func getMetricsData(runtimeID string) metricsData {
 // and capture a group for given `runtimeId` label value:
 // 1) `expires` label value
 func getKubeconfigExpirationMetricRegex(runtimeID string) *regexp.Regexp {
-	regexString := fmt.Sprintf("im_kubeconfig_expiration{expires=\"(.*?)\",rotationDuration=\"(.*?)\",runtimeId=\"%v\",shootName=\"(.*?)\"", runtimeID)
+	regexString := fmt.Sprintf("im_kubeconfig_expiration{expirationDuration=\"(.*?)\",expires=\"(.*?)\",rotationDuration=\"(.*?)\",runtimeId=\"%v\",shootName=\"(.*?)\"", runtimeID)
 	return regexp.MustCompile(regexString)
 }
 
