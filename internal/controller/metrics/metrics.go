@@ -1,12 +1,13 @@
 package metrics
 
 import (
+	"strconv"
+	"time"
+
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/prometheus/client_golang/prometheus"
 	corev1 "k8s.io/api/core/v1"
 	ctrlMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
-	"strconv"
-	"time"
 )
 
 const (
