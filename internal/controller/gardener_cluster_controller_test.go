@@ -285,7 +285,10 @@ func getMetricsData(runtimeID string) metricsData {
 
 // getKubeconfigExpirationMetricRegex returns regex that will find matches of kubeconfig_expiration metrics
 // and capture a group for given `runtimeId` label value:
-// 1) `expires` label value
+// 1) `expirationDuration` label value
+// 2) `expires` label value
+// 3) `rotationDuration` label value
+// 4) `shootName` label value
 func getKubeconfigExpirationMetricRegex(runtimeID string) *regexp.Regexp {
 	regexString := fmt.Sprintf("im_kubeconfig_expiration{expirationDuration=\"(.*?)\",expires=\"(.*?)\",rotationDuration=\"(.*?)\",runtimeId=\"%v\",shootName=\"(.*?)\"", runtimeID)
 	return regexp.MustCompile(regexString)
