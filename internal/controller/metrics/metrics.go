@@ -107,7 +107,7 @@ func (m Metrics) SetKubeconfigExpiration(secret corev1.Secret, rotationPeriod ti
 				expirationTimeEpochString,
 				rotationPeriodString,
 				expirationTimeInSecondsString,
-			)
+			).Set(float64(expirationTimeEpoch))
 		}
 	}
 }
