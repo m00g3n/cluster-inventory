@@ -6,9 +6,11 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"strconv"
 	"time"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
 	corev1 "k8s.io/api/core/v1"
@@ -49,18 +51,21 @@ var _ = Describe("Gardener Cluster controller", func() {
 				return newGardenerCluster.Status.State == imv1.ReadyState
 			}, time.Second*30, time.Second*3).Should(BeTrue())
 
-			err := k8sClient.Get(context.Background(), secretKey, &kubeconfigSecret)
-			Expect(err).To(BeNil())
+			epochParseErr := k8sClient.Get(context.Background(), secretKey, &kubeconfigSecret)
+			Expect(epochParseErr).To(BeNil())
 			expectedSecret := fixNewSecret(secretName, namespace, kymaName, shootName, "kubeconfig1", "")
 			Expect(kubeconfigSecret.Labels).To(Equal(expectedSecret.Labels))
 			Expect(kubeconfigSecret.Data).To(Equal(expectedSecret.Data))
 			lastSyncTime := kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]
 			Expect(lastSyncTime).ToNot(BeEmpty())
 
-			By("Metrics should be appended after creation")
-			metricReason, metricState := getMetricsAttributes(kymaName)
-			Expect(metricReason).To(Equal(string(imv1.ConditionReasonKubeconfigSecretCreated)))
-			Expect(metricState).To(Equal(string(imv1.ReadyState)))
+			metricsData := getMetricsData(kymaName)
+			By("ClusterState metrics should be appended after creation")
+			Expect(metricsData.gardenerClusterStatesData.reason).To(Equal(string(imv1.ConditionReasonKubeconfigSecretCreated)))
+			Expect(metricsData.gardenerClusterStatesData.state).To(Equal(string(imv1.ReadyState)))
+			Expect(metricsData.shootName).To(Equal(shootName))
+
+			expectKubeconfigMetricsAreValid(metricsData, lastSyncTime, "Kubeconfig expiration metrics should be appended after creation", shootName)
 		})
 
 		It("Should delete secret", func() {
@@ -94,8 +99,8 @@ var _ = Describe("Gardener Cluster controller", func() {
 
 			By("Metrics should be cleared after deletion")
 			Eventually(func() string {
-				metricReason, _ := getMetricsAttributes(kymaName)
-				return metricReason
+				metricsData := getMetricsData(kymaName)
+				return metricsData.gardenerClusterStatesData.reason
 			}, time.Second*30, time.Second*3).Should(BeEmpty())
 
 		})
@@ -121,10 +126,10 @@ var _ = Describe("Gardener Cluster controller", func() {
 			}, time.Second*30, time.Second*3).Should(BeTrue())
 
 			By("Metrics should contain error label")
-			metricReason, metricState := getMetricsAttributes(kymaName)
-			Expect(metricReason).To(Equal(string(imv1.ConditionReasonFailedToGetKubeconfig)))
-			Expect(metricState).To(Equal(string(imv1.ErrorState)))
-
+			metricsData := getMetricsData(kymaName)
+			Expect(metricsData.gardenerClusterStatesData.reason).To(Equal(string(imv1.ConditionReasonFailedToGetKubeconfig)))
+			Expect(metricsData.gardenerClusterStatesData.state).To(Equal(string(imv1.ErrorState)))
+			Expect(metricsData.shootName).To(Equal(shootName))
 		})
 	})
 
@@ -173,8 +178,11 @@ var _ = Describe("Gardener Cluster controller", func() {
 			Expect(string(kubeconfigSecret.Data["config"])).To(Equal(expectedKubeconfig))
 			lastSyncTime := kubeconfigSecret.Annotations[lastKubeconfigSyncAnnotation]
 			Expect(lastSyncTime).ToNot(BeEmpty())
+
+			metricsData := getMetricsData(gardenerClusterKey.Name)
+			expectKubeconfigMetricsAreValid(metricsData, lastSyncTime, "Kubeconfig expiration metrics should be appended after creation", kubeconfigSecret.Labels[metrics.ShootNameLabel])
 		},
-			Entry("Rotate kubeconfig when rotation time passed",
+			Entry("Rotate kubeconfig when rotation epoch passed",
 				fixGardenerClusterCR("kymaname4", namespace, "shootName4", "secret-name4"),
 				fixNewSecret("secret-name4", namespace, "kymaname4", "shootName4", "kubeconfig4", "2023-10-09T23:00:00Z"),
 				"kubeconfig4"),
@@ -212,16 +220,77 @@ var _ = Describe("Gardener Cluster controller", func() {
 	})
 })
 
-func getMetricsAttributes(runtimeID string) (outputReason, outputState string) {
+func expectKubeconfigMetricsAreValid(metricsData metricsData, lastSyncTimeString, stepDescription, shootName string) {
+	By(stepDescription)
+	Expect(metricsData.shootName).To(Equal(shootName))
+
+	intEpoch, epochParseErr := strconv.ParseInt(metricsData.kubeconfigExpiration.epoch, 10, 64)
+	Expect(epochParseErr).To(BeNil())
+	expirationMetric := time.Unix(intEpoch, 0)
+
+	lastSyncTimeDateTime, err := time.Parse(time.RFC3339, lastSyncTimeString)
+	var kubeconfigValidUntil time.Time
+	if err == nil {
+		kubeconfigValidUntil = lastSyncTimeDateTime.Add(TestKubeconfigValidityTime)
+	}
+	Expect(expirationMetric.UTC().Format(time.RFC3339)).To(Equal(kubeconfigValidUntil.Format(time.RFC3339)))
+
+	expirationDuration, expirationDurationParseErr := strconv.ParseFloat(metricsData.kubeconfigExpiration.expirationDuration, 64)
+	Expect(expirationDurationParseErr).To(BeNil())
+	Expect(expirationDuration).To(Equal(TestKubeconfigValidityTime.Seconds()))
+}
+
+type gardenerClusterStatesData struct {
+	reason string
+	state  string
+}
+
+type kubeconfigExpiration struct {
+	epoch              string
+	expirationDuration string
+	rotationDuration   string
+}
+
+type metricsData struct {
+	gardenerClusterStatesData gardenerClusterStatesData
+	kubeconfigExpiration      kubeconfigExpiration
+	shootName                 string
+}
+
+func getMetricsData(runtimeID string) metricsData {
+	data := metricsData{}
+
 	stringBody, _ := getMetricsBody()
 	clusterStateMetricRegex := getGardenerClusterStateMetricRegex(runtimeID)
-	matches := clusterStateMetricRegex.FindStringSubmatch(stringBody)
-	if len(matches) > 0 {
-		outputReason = matches[1]
-		outputState = matches[2]
+	clusterStateMetricMatches := clusterStateMetricRegex.FindStringSubmatch(stringBody)
+
+	if len(clusterStateMetricMatches) > 0 {
+		data.gardenerClusterStatesData.reason = clusterStateMetricMatches[1]
+		data.shootName = clusterStateMetricMatches[2]
+		data.gardenerClusterStatesData.state = clusterStateMetricMatches[3]
 	}
 
-	return outputReason, outputState
+	kubeconfigExpirationMetricRegex := getKubeconfigExpirationMetricRegex(runtimeID)
+	kubeconfigExpirationMetricMatches := kubeconfigExpirationMetricRegex.FindStringSubmatch(stringBody)
+	if len(kubeconfigExpirationMetricMatches) > 0 {
+		data.kubeconfigExpiration.expirationDuration = kubeconfigExpirationMetricMatches[1]
+		data.kubeconfigExpiration.epoch = kubeconfigExpirationMetricMatches[2]
+		data.kubeconfigExpiration.rotationDuration = kubeconfigExpirationMetricMatches[3]
+		data.shootName = kubeconfigExpirationMetricMatches[4]
+	}
+
+	return data
+}
+
+// getKubeconfigExpirationMetricRegex returns regex that will find matches of kubeconfig_expiration metrics
+// and capture a group for given `runtimeId` label value:
+// 1) `expirationDuration` label value
+// 2) `expires` label value
+// 3) `rotationDuration` label value
+// 4) `shootName` label value
+func getKubeconfigExpirationMetricRegex(runtimeID string) *regexp.Regexp {
+	regexString := fmt.Sprintf("im_kubeconfig_expiration{expirationDuration=\"(.*?)\",expires=\"(.*?)\",rotationDuration=\"(.*?)\",runtimeId=\"%v\",shootName=\"(.*?)\"", runtimeID)
+	return regexp.MustCompile(regexString)
 }
 
 // getGardenerClusterStateMetricRegex returns regex that will find matches of gardener_cluster_state metrics
@@ -229,7 +298,7 @@ func getMetricsAttributes(runtimeID string) (outputReason, outputState string) {
 // 1) `reason` label value
 // 2) `state` label value
 func getGardenerClusterStateMetricRegex(runtimeID string) *regexp.Regexp {
-	regexString := fmt.Sprintf("infrastructure_manager_im_gardener_clusters_state.*reason=\"(.*?)\",runtimeId=\"%v\",state=\"(.*?)\"", runtimeID)
+	regexString := fmt.Sprintf("infrastructure_manager_im_gardener_clusters_state.*reason=\"(.*?)\",runtimeId=\"%v\",shootName=\"(.*?)\",state=\"(.*?)\"", runtimeID)
 	return regexp.MustCompile(regexString)
 }
 

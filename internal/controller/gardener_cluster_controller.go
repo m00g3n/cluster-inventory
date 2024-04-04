@@ -48,21 +48,23 @@ const (
 // GardenerClusterController reconciles a GardenerCluster object
 type GardenerClusterController struct {
 	client.Client
-	Scheme             *runtime.Scheme
-	KubeconfigProvider KubeconfigProvider
-	log                logr.Logger
-	rotationPeriod     time.Duration
-	metrics            metrics.Metrics
+	Scheme                   *runtime.Scheme
+	KubeconfigProvider       KubeconfigProvider
+	log                      logr.Logger
+	rotationPeriod           time.Duration
+	minimalRotationTimeRatio float64
+	metrics                  metrics.Metrics
 }
 
-func NewGardenerClusterController(mgr ctrl.Manager, kubeconfigProvider KubeconfigProvider, logger logr.Logger, rotationPeriod time.Duration, metrics metrics.Metrics) *GardenerClusterController {
+func NewGardenerClusterController(mgr ctrl.Manager, kubeconfigProvider KubeconfigProvider, logger logr.Logger, rotationPeriod time.Duration, minimalRotationTimeRatio float64, metrics metrics.Metrics) *GardenerClusterController {
 	return &GardenerClusterController{
-		Client:             mgr.GetClient(),
-		Scheme:             mgr.GetScheme(),
-		KubeconfigProvider: kubeconfigProvider,
-		log:                logger,
-		rotationPeriod:     rotationPeriod,
-		metrics:            metrics,
+		Client:                   mgr.GetClient(),
+		Scheme:                   mgr.GetScheme(),
+		KubeconfigProvider:       kubeconfigProvider,
+		log:                      logger,
+		rotationPeriod:           rotationPeriod,
+		minimalRotationTimeRatio: minimalRotationTimeRatio,
+		metrics:                  metrics,
 	}
 }
 
@@ -93,7 +95,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			controller.unsetStateMetric(req)
+			controller.unsetMetrics(req)
 			err = controller.deleteKubeconfigSecret(ctx, req.Name)
 		}
 
@@ -151,8 +153,9 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	return controller.resultWithRequeue(&cluster, requeueAfter), nil
 }
 
-func (controller *GardenerClusterController) unsetStateMetric(req ctrl.Request) {
+func (controller *GardenerClusterController) unsetMetrics(req ctrl.Request) {
 	controller.metrics.CleanUpGardenerClusterGauge(req.NamespacedName.Name)
+	controller.metrics.CleanUpKubeconfigExpiration(req.NamespacedName.Name)
 }
 
 func loggingContextFromCluster(cluster *imv1.GardenerCluster) []any {
@@ -263,6 +266,8 @@ func (controller *GardenerClusterController) handleKubeconfig(ctx context.Contex
 			return ksZero, err
 		}
 
+		controller.metrics.CleanUpKubeconfigExpiration(cluster.Name)
+
 		return ksRotated, nil
 	}
 
@@ -270,6 +275,7 @@ func (controller *GardenerClusterController) handleKubeconfig(ctx context.Contex
 		message := fmt.Sprintf("Secret %s in namespace %s does not need to be rotated yet.", cluster.Spec.Kubeconfig.Secret.Name, cluster.Spec.Kubeconfig.Secret.Namespace)
 		controller.log.Info(message, loggingContextFromCluster(cluster)...)
 		cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretCreated, metav1.ConditionTrue)
+		controller.metrics.SetKubeconfigExpiration(*secret, controller.rotationPeriod, controller.minimalRotationTimeRatio)
 		return ksZero, nil
 	}
 
@@ -320,7 +326,7 @@ func (controller *GardenerClusterController) createNewSecret(ctx context.Context
 	}
 
 	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretCreated, metav1.ConditionTrue)
-
+	controller.metrics.SetKubeconfigExpiration(newSecret, controller.rotationPeriod, controller.minimalRotationTimeRatio)
 	message := fmt.Sprintf("Secret %s has been created in %s namespace.", newSecret.Name, newSecret.Namespace)
 	controller.log.Info(message, loggingContextFromCluster(cluster)...)
 
@@ -362,6 +368,7 @@ func (controller *GardenerClusterController) updateExistingSecret(ctx context.Co
 	}
 
 	cluster.UpdateConditionForReadyState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonKubeconfigSecretRotated, metav1.ConditionTrue)
+	controller.metrics.SetKubeconfigExpiration(*existingSecret, controller.rotationPeriod, controller.minimalRotationTimeRatio)
 
 	message := fmt.Sprintf("Secret %s has been updated in %s namespace.", existingSecret.Name, existingSecret.Namespace)
 	controller.log.Info(message, loggingContextFromCluster(cluster)...)
