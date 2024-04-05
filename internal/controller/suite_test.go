@@ -50,7 +50,9 @@ var (
 	anyContext     = MatchedBy(func(_ context.Context) bool { return true }) //nolint:gochecknoglobals
 )
 
+const TestMinimalRotationTimeRatio = 0.5
 const TestKubeconfigValidityTime = 24 * time.Hour
+const TestKubeconfigRotationPeriod = time.Duration(float64(TestKubeconfigValidityTime) * TestMinimalRotationTimeRatio)
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -84,7 +86,8 @@ var _ = BeforeSuite(func() {
 	setupKubeconfigProviderMock(kubeconfigProviderMock)
 	metrics := metrics.NewMetrics()
 
-	controller := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger, TestKubeconfigValidityTime, metrics)
+	controller := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger, TestKubeconfigRotationPeriod, TestMinimalRotationTimeRatio, metrics)
+
 	Expect(controller).NotTo(BeNil())
 
 	err = controller.SetupWithManager(mgr)

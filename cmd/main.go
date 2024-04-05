@@ -122,7 +122,7 @@ func main() {
 
 	rotationPeriod := time.Duration(minimalRotationTimeRatio*expirationTime.Minutes()) * time.Minute
 	metrics := metrics.NewMetrics()
-	if err = (controller.NewGardenerClusterController(mgr, kubeconfigProvider, logger, rotationPeriod, metrics)).SetupWithManager(mgr); err != nil {
+	if err = (controller.NewGardenerClusterController(mgr, kubeconfigProvider, logger, rotationPeriod, minimalRotationTimeRatio, metrics)).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GardenerCluster")
 		os.Exit(1)
 	}
