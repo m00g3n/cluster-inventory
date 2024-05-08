@@ -74,6 +74,7 @@ spec:
           signingAlgs:
             - RS256
           usernameClaim: sub
+    # spec.shoot.provider is provided by the KEB, required
     provider:
       type: aws
       region: eu-central-1
@@ -161,7 +162,7 @@ spec:
               - RS256
             usernameClaim: sub
             usernamePrefix: 'someother'
-    ## spec.shoot.provider is provided by the KEB, required
+    # spec.shoot.provider is provided by the KEB, required
     provider:
       type: aws
       region: eu-central-1
