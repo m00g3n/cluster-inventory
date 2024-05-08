@@ -39,6 +39,11 @@ spec:
       pods: 10.96.0.0/13
       nodes: 10.250.0.0/22
       services: 10.104.0.0/13
+    # spec.shoot.controlPlane is provided by the KEB, required
+    controlPlane:
+      highAvailability:
+        failureTolerance:
+          type: zone
     workers:
       - machine:
           # spec.shoot.workers.machine.type provided by the KEB, required

@@ -18,7 +18,7 @@ spec:
     # Set by KEB, required
     name: shoot-name
     # Set by KEB, required
-    purpose: trial
+    purpose: evaluation
     kubernetes:
       kubeAPIServer:
         ## spec.shoot.kubernetes.kubeAPIServer.oidcConfig is provided by the KEB, required
@@ -37,6 +37,15 @@ spec:
       # Provided by the KEB, required.
       # We must consider whether it makes sense to move HAP into KIM
       secretBindingName: "hypersaler secret"
+    networking:
+      pods: 100.64.0.0/12
+      nodes: 10.250.0.0/16
+      services: 100.104.0.0/13
+    # spec.shoot.controlPlane is provided by the KEB, required
+    controlPlane:
+      highAvailability:
+        failureTolerance:
+          type: zone
     workers:
       - machine:
           # Set by KEB, required
