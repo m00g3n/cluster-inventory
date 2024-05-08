@@ -6,7 +6,7 @@ This document defines architecture, and API for the Gardener cluster provisionin
 The following picture shows the agreed architecture:
 ![](./assets/keb-kim-target-arch.drawio.svg)
 
-> Note: at the time of writing the `GardenerCluster` CR is used for generating kubeconfig. The [workplan](https://github.com/kyma-project/infrastructure-manager/issues/112) for delivering provisioning functionality in the Kyma Infrastructure Manager includes renaming the CR to maintain consistency.
+> Note: at the time of writing the `GardenerCluster` CR is used for generating kubeconfig. The [workplan](https://github.com/kyma-project/infrastructure-manager/issues/112) for delivering provisioning functionality includes renaming the CR to maintain consistency.
 
 The following assumptions were taken:
 - KEB has the following responsibilities:
