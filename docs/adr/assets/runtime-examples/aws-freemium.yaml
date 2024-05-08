@@ -15,9 +15,9 @@ metadata:
   namespace: kcp-system
 spec:
   shoot:
-    # Set by KEB, required
+    # Set by the KEB, required
     name: shoot-name
-    # Set by KEB, required
+    # Set by the KEB, required
     purpose: evaluation
     kubernetes:
       kubeAPIServer:
@@ -48,7 +48,7 @@ spec:
           type: zone
     workers:
       - machine:
-          # Set by KEB, required
+          # Set by the KEB, required
           type: m5.xlarge
           # Optional, when not provider default will be used
           # Will be modified by the SRE
