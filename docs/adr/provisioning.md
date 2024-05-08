@@ -44,7 +44,6 @@ Please mind that the `Runtime` CR should contain the following labels:
  kyma-project.io/broker-plan-name: plan-name
  kyma-project.io/global-account-id: global-account-id
  kyma-project.io/subaccount-id: subAccount-id
- kyma-project.io/shoot-name: shoot-name
  kyma-project.io/region: region
  operator.kyma-project.io/kyma-name: kymaName
 ```
