@@ -36,7 +36,7 @@ spec:
       region: eu-central-1
       # Provided by the KEB, required.
       # We must consider whether it makes sense to move HAP into KIM
-      secretBindingName: "hypersaler secret"
+      secretBindingName: "hyperscaler secret"
     networking:
       pods: 100.64.0.0/12
       nodes: 10.250.0.0/16

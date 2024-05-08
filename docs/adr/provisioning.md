@@ -78,7 +78,7 @@ spec:
       type: aws
       region: eu-central-1
       # We must consider whether it makes sense to move HAP into KIM
-      secretBindingName: "hypersaler secret"
+      secretBindingName: "hyperscaler secret"
     # spec.shoot.Networking is Provided by the KEB, required
     networking:
       pods: 100.64.0.0/12
@@ -166,7 +166,7 @@ spec:
       type: aws
       region: eu-central-1
       # We must consider whether it makes sense to move HAP into KIM
-      secretBindingName: "hypersaler secret"
+      secretBindingName: "hyperscaler secret"
     # spec.shoot.Networking is Provided by the KEB, required
     networking:
       pods: 100.64.0.0/12
