@@ -17,7 +17,7 @@ The following assumptions were taken:
       - OIDC settings
       - Cluster administrators list
       - Egress network filter settings
-      - Control Plane failure tolerance
+      - Control Plane failure tolerance config
     - observing status of the CR to determine whether provisioning succeeded
 - Kyma Infrastructure Manager has the following responsibilities:
     - Creating shoots based on:
