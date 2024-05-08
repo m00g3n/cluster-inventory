@@ -1,36 +1,36 @@
 # Introduction
-This document defines architecture, and API for provisioning functionality.
+This document defines architecture, and API for the provisioning functionality.
 
 # Target architecture
 
-The following picture shows the proposed architecture:
+The following picture shows the agreed architecture:
 ![](./assets/keb-kim-target-arch.drawio.svg)
 
 > Note: at the time of writing the `GardenerCluster` CR is used for generating kubeconfig. The [workplan](https://github.com/kyma-project/infrastructure-manager/issues/112) for delivering provisioning functionality in the Kyma Infrastructure Manager includes renaming the CR to maintain consistency.
 
 The following assumptions were taken:
-- KEB is responsible for:
+- KEB has the following responsibilities:
     - Creating `Runtime` CR containing the following data:
-      - provider config (type, region, and secret with credentials for hyperscaler)
-      - worker pool specification
-      - cluster networking settings (nodes, pods, and services API ranges)
+      - Provider config (type, region, and secret with credentials for hyperscaler)
+      - Worker pool specification
+      - Cluster networking settings (nodes, pods, and services API ranges)
       - OIDC settings
-      - cluster administrators list
+      - Cluster administrators list
       - Egress network filter settings
       - Control Plane failure tolerance
-    - Observing status of the CR to determine whether provisioning succeeded
-- Kyma Infrastructure Manager is responsible for:
-    - creating shoots based on:
-      - corresponding `Runtime` CR properties
-      - predefined defaults for the optional properties:
+    - observing status of the CR to determine whether provisioning succeeded
+- Kyma Infrastructure Manager has the following responsibilities:
+    - Creating shoots based on:
+      - Corresponding `Runtime` CR properties
+      - Predefined defaults for the optional properties:
         - Kubernetes version
         - Machine image version
-      - predefined configuration for the following extensions:
+      - Predefined configuration for the following extensions:
         - DNS 
         - Certificates
-    - upgrading, and deleting shoots for corresponding `Runtime` CRs
-    - applying audit log configuration on the shoot resource
-    - generating kubeconfig
+    - Upgrading, and deleting shoots for corresponding `Runtime` CRs
+    - Applying audit log configuration on the shoot resource
+    - Generating kubeconfig
 
 # API proposal
 
@@ -119,9 +119,9 @@ spec:
       - admin@myorg.com
 ```
 
-There are some additional optional fields  that could be specified:
-- `spec.shoot.kubernetes.version` ; if not provided default value will be read by KIM from configuration
-- `spec.shoot.workers.machine.image` ; if not provided default value will be read by KIM from configuration
+There are some additional optional fields that could be specified:
+- `spec.shoot.kubernetes.version` ; if not provided default value will be read by the KIM from configuration
+- `spec.shoot.workers.machine.image` ; if not provided default value will be read by the KIM from configuration
 - `spec.shoot.kubernetes.kubeAPIServer.additionalOidcConfig` ; if not provided, no addition OIDC provider will be configured
 - `spec.shoot.workers.name` ; if not provided, some hardcoded name will be used
 - `spec.security.networking.filtering.ingress.enabled` ; if not provided `false` value will be used
