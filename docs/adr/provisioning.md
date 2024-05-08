@@ -18,7 +18,7 @@ The following assumptions were taken:
       - Cluster administrators list
       - Egress network filter settings
       - Control Plane failure tolerance config
-    - observing status of the CR to determine whether provisioning succeeded
+    - Observing status of the CR to determine whether provisioning succeeded
 - Kyma Infrastructure Manager has the following responsibilities:
     - Creating shoots based on:
       - Corresponding `Runtime` CR properties
