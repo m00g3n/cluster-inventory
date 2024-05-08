@@ -39,3 +39,29 @@ rules:
   - gardenerclusters/status
   verbs:
   - update
+- apiGroups:
+  - infrastructuremanager.kyma-project.io
+  resources:
+  - runtimes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infrastructuremanager.kyma-project.io
+  resources:
+  - runtimes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - infrastructuremanager.kyma-project.io
+  resources:
+  - runtimes/status
+  verbs:
+  - get
+  - patch
+  - update

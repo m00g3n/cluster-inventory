@@ -1,0 +1,48 @@
+apiVersion: infrastructuremanager.kyma-project.io/v1alpha1
+kind: GardenerCluster
+metadata:
+  name: runtime-id
+  namespace: kcp-system
+spec:
+  shoot:
+    name: shoot-name
+    purpose: production
+    kubernetes:
+      kubeAPIServer:
+        oidcConfig:
+          clientID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+          groupsClaim: groups
+          issuerURL: https://my.cool.tokens.com
+          signingAlgs:
+            - RS256
+          usernameClaim: sub
+    provider:
+      type: aws
+      region: eu-central-1
+      secretBindingName: "hypersaler secret"
+    networking:
+      pods: 100.64.0.0/12
+      nodes: 10.250.0.0/16
+      services: 100.104.0.0/13
+    controlPlane:
+      highAvailability:
+        failureTolerance:
+          type: node
+    workers:
+      - machine:
+          type: m6i.large
+        zones:
+          - eu-central-1a
+          - eu-central-1b
+          - eu-central-1c
+        minimum: 3
+        maximum: 20
+        maxSurge: 3
+        maxUnavailable:  0
+  security:
+    networking:
+      filtering:
+        egress:
+          enabled: false
+    administrators:
+      - test.me@plz
