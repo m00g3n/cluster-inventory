@@ -221,8 +221,7 @@ spec:
     administrators:
       - admin@myorg.com
 ```
-
-The following example 
+> Note: please mind that the additional OIDC providers, and ingress network filtering will not be implemented in teh first release.
 
 Please, see the following examples to understand what CRs need to be created for particular KEB plans:
 - [AWS trial plan](assets/runtime-examples/aws-trial.yaml)
