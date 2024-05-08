@@ -1,5 +1,5 @@
 # Introduction
-This document defines architecture, and API for the provisioning functionality.
+This document defines architecture, and API for the Gardener cluster provisioning functionality.
 
 # Target architecture
 
