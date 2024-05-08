@@ -84,7 +84,7 @@ spec:
       pods: 100.64.0.0/12
       nodes: 10.250.0.0/16
       services: 100.104.0.0/13
-    # spec.shoot.controlPlane is provided by the KEB, optional, default=nil
+    # spec.shoot.controlPlane is provided by the KEB, required
     controlPlane:
       highAvailability:
         failureTolerance:
@@ -171,7 +171,7 @@ spec:
       pods: 100.64.0.0/12
       nodes: 10.250.0.0/16
       services: 100.104.0.0/13
-    # spec.shoot.controlPlane is provided by the KEB, optional, default=nil
+    # spec.shoot.controlPlane is provided by the KEB, required
     controlPlane:
       highAvailability:
         failureTolerance:
