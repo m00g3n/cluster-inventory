@@ -232,7 +232,7 @@ Please, see the following examples to understand what CRs need to be created for
 ## API structures
 
 ```go
-package v2
+package v1
 
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -268,14 +268,14 @@ type Provider struct {
 }
 
 type Networking struct {
-	Pods     *string `json:"pods,omitempty"`
-	Nodes    *string `json:"nodes,omitempty"`
-	Services *string `json:"services,omitempty"`
+	Pods     string `json:"pods,omitempty"`
+	Nodes    string `json:"nodes,omitempty"`
+	Services string `json:"services,omitempty"`
 }
 
 type Kubernetes struct {
-	Version       string     `json:"version"`
-	KubeAPIServer *APIServer `json:"kubeAPIServer,omitempty"`
+	Version       string    `json:"version"`
+	KubeAPIServer APIServer `json:"kubeAPIServer,omitempty"`
 }
 
 type APIServer struct {
@@ -293,8 +293,8 @@ type NetworkingSecurity struct {
 }
 
 type Filter struct {
-	Ingress Ingress `json:"ingress"`
-	Egress  Egress  `json:"egress"`
+	Ingress *Ingress `json:"ingress"`
+	Egress  Egress   `json:"egress"`
 }
 
 type Ingress struct {
