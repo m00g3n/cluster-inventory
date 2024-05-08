@@ -111,7 +111,7 @@ spec:
   security:
     networking:
       filter:
-        # spec.security.networking is provided by the KEB, required
+        # spec.security.networking.filter.egress.enabled is provided by the KEB, required
         egress:
           enabled: false
     # spec.security.administrators is provided by the KEB, required
