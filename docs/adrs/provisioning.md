@@ -37,12 +37,10 @@ The following assumptions were taken:
 ## CR examples
 
 The example below shows the CR that should be created by the KEB to provision AWS production cluster:
-```ayaml
+```yaml
 apiVersion: infrastructuremanager.kyma-project.io/v1alpha1
 kind: Runtime
 metadata:
-  name: runtime-id
-  namespace: kcp-system
   labels:
     kyma-project.io/instance-id: instance-id
     kyma-project.io/runtime-id: runtime-id
@@ -53,6 +51,8 @@ metadata:
     kyma-project.io/shoot-name: shoot-name
     kyma-project.io/region: region
     operator.kyma-project.io/kyma-name: kymaName
+  name: runtime-id
+  namespace: kcp-system
 spec:
   shoot:
     # spec.shoot.name is set by the KEB, required
