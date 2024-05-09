@@ -1,5 +1,5 @@
 apiVersion: infrastructuremanager.kyma-project.io/v1alpha1
-kind: GardenerCluster
+kind: Runtime
 metadata:
   name: runtime-id
   namespace: kcp-system
