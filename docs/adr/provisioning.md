@@ -73,13 +73,17 @@ metadata:
   namespace: kcp-system
 spec:
   shoot:
-    # spec.shoot.name is set by the KEB, required
+    # spec.shoot.name is required
     name: shoot-name
-    # spec.shoot.purpose is set by the KEB, required
+    # spec.shoot.purpose is required
     purpose: production
+    # spec.shoot.region is required
+    region: eu-central-1
+    # spec.shoot.secretBindingName is required
+    secretBindingName: "hyperscaler secret"
     kubernetes:
       kubeAPIServer:
-        ## spec.shoot.kubernetes.kubeAPIServer.oidcConfig is provided by the KEB, required
+        ## spec.shoot.kubernetes.kubeAPIServer.oidcConfig is required
         oidcConfig:
           clientID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
           groupsClaim: groups
@@ -87,47 +91,44 @@ spec:
           signingAlgs:
             - RS256
           usernameClaim: sub
-    # spec.shoot.provider is provided by the KEB, required
     provider:
       type: aws
-      region: eu-central-1
-      secretBindingName: "hyperscaler secret"
-    # spec.shoot.Networking is Provided by the KEB, required
+    # spec.shoot.Networking is required
     networking:
       pods: 100.64.0.0/12
       nodes: 10.250.0.0/16
       services: 100.104.0.0/13
-    # spec.shoot.controlPlane is provided by the KEB, required
+    # spec.shoot.controlPlane is required
     controlPlane:
       highAvailability:
         failureTolerance:
           type: node
     workers:
       - machine:
-          # spec.shoot.workers.machine.type provided by the KEB, required
+          # spec.shoot.workers.machine.type is required
           type: m6i.large
-        # spec.shoot.workers.zones is provided by the KEB, required
+        # spec.shoot.workers.zones is required
         zones:
           - eu-central-1a
           - eu-central-1b
           - eu-central-1c
-        # spec.shoot.workers.minimum is provided by the KEB, required
+        # spec.shoot.workers.minimum is required
         minimum: 3
-        # spec.shoot.workers.maximum is provided by the KEB, required
+        # spec.shoot.workers.maximum is required
         maximum: 20
-        # spec.shoot.workers.maxSurge is provided by the KEB, required in the first release.
+        # spec.shoot.workers.maxSurge is required in the first release.
         # It can be optional in the future, as it equals to zone count
         maxSurge: 3
-        # spec.shoot.workers.maxUnavailable is provided by the KEB, required in the first release.
+        # spec.shoot.workers.maxUnavailable is required in the first release.
         # It can be optional in the future, as it is always set to 0
         maxUnavailable:  0
   security:
     networking:
       filter:
-        # spec.security.networking.filter.egress.enabled is provided by the KEB, required
+        # spec.security.networking is required
         egress:
           enabled: false
-    # spec.security.administrators is provided by the KEB, required
+    # spec.security.administrators is required
     administrators:
       - admin@myorg.com
 ```
@@ -148,16 +149,20 @@ metadata:
   namespace: kcp-system
 spec:
   shoot:
-    # spec.shoot.name is set by the KEB, required
+    # spec.shoot.name is required
     name: shoot-name
-    # spec.shoot.purpose is set by the KEB, required
+    # spec.shoot.purpose is required
     purpose: production
-    # Will be modified by the SRE
+    # spec.shoot.region is required
+    region: eu-central-1
+    # spec.shoot.secretBindingName is required
+    secretBindingName: "hyperscaler secret"
     kubernetes:
       # spec.shoot.kubernetes.version is optional, when not provided default will be used
+      # Will be modified by the SRE
       version: "1.28.7"
       kubeAPIServer:
-        ## spec.shoot.kubernetes.kubeAPIServer.oidcConfig is provided by the KEB, required
+        ## spec.shoot.kubernetes.kubeAPIServer.oidcConfig is required
         oidcConfig:
           clientID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
           groupsClaim: groups
@@ -165,7 +170,7 @@ spec:
           signingAlgs:
           - RS256
           usernameClaim: sub
-        ## spec.shoot.kubernetes.kubeAPIServer.additionalOidcConfig is provided by the KEB, optional, not implemented in the first KIM release
+        # spec.shoot.kubernetes.kubeAPIServer.additionalOidcConfig is optional, not implemented in the first KIM release
         additionalOidcConfig:
           - clientID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
             groupsClaim: groups
@@ -174,62 +179,60 @@ spec:
               - RS256
             usernameClaim: sub
             usernamePrefix: 'someother'
-    # spec.shoot.provider is provided by the KEB, required
+    ## spec.shoot.provider is required
     provider:
       type: aws
-      region: eu-central-1
-      secretBindingName: "hyperscaler secret"
-    # spec.shoot.Networking is Provided by the KEB, required
+    # spec.shoot.Networking is required
     networking:
       pods: 100.64.0.0/12
       nodes: 10.250.0.0/16
       services: 100.104.0.0/13
-    # spec.shoot.controlPlane is provided by the KEB, required
+    # spec.shoot.controlPlane is required
     controlPlane:
       highAvailability:
         failureTolerance:
-          type: node
+          type: zone
     workers:
       - machine:
-          # spec.shoot.workers.machine.type provided by the KEB, required
+          # spec.shoot.workers.machine.type is required
           type: m6i.large
           # spec.shoot.workers.machine.image is optional, when not provider default will be used
           # Will be modified by the SRE
           image:
             name: gardenlinux
             version: 1312.3.0
-        # spec.shoot.workers.volume is provided by the KEB, required for the first release
+        # spec.shoot.workers.volume is required for the first release
         # Probably can be moved into KIM, as it is hardcoded in KEB, and not dependent on plan
         volume:
           type: gp2
           size: 50Gi
-        # spec.shoot.workers.zones is provided by the KEB, required
+        # spec.shoot.workers.zones is required
         zones:
           - eu-central-1a
           - eu-central-1b
           - eu-central-1c
-        # spec.shoot.workers.name is provided by the KEB. Optional, if not provided default will be used
+        # spec.shoot.workers.name is optional, if not provided default will be used
         name: cpu-worker-0
-        # spec.shoot.workers.minimum is provided by the KEB, required
+        # spec.shoot.workers.minimum is required
         minimum: 3
-        # spec.shoot.workers.maximum is provided by the KEB, required
+        # spec.shoot.workers.maximum is required
         maximum: 20
-        # spec.shoot.workers.maxSurge is provided by the KEB, required in the first release.
+        # spec.shoot.workers.maxSurge is required in the first release.
         # It can be optional in the future, as it equals to zone count
         maxSurge: 3
-        # spec.shoot.workers.maxUnavailable is provided by the KEB, required in the first release.
+        # spec.shoot.workers.maxUnavailable is required in the first release.
         # It can be optional in the future, as it is always set to 0
         maxUnavailable:  0
   security:
     networking:
       filter:
-        # spec.security.networking.filter.egress.enabled is provided by the KEB, required
+        # spec.security.networking.filter.egress.enabled is required
         egress:
           enabled: false
-        # spec.security.networking.filter.ingress.enabled will be provided by the KEB, optional (default=false)
+        # spec.security.networking.filter.ingress.enabled is optional (default=false), not implemented in the first KIM release
         ingress:
           enabled: true
-    # spec.security.administrators is provided by the KEB, required
+    # spec.security.administrators is required
     administrators:
       - admin@myorg.com
 ```
@@ -250,6 +253,7 @@ package v1
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type Runtime struct {
@@ -266,18 +270,20 @@ type RuntimeSpec struct {
 }
 
 type Shoot struct {
-	Name       string             `json:"name"`
-	Purpose    string             `json:"purpose"`
-	Kubernetes Kubernetes         `json:"kubernetes"`
-	Provider   Provider           `json:"provider"`
-	Networking Networking         `json:"networking"`
-	Workers    *[]gardener.Worker `json:"workers,omitempty"`
+	Name              string             `json:"name"`
+	Purpose           string             `json:"purpose"`
+	Region            string             `json:"region"`
+	SecretBindingName string             `json:"secretBindingName"`
+	Kubernetes        Kubernetes         `json:"kubernetes"`
+	Provider          Provider           `json:"provider"`
+	Networking        Networking         `json:"networking"`
+	Workers           *[]gardener.Worker `json:"workers,omitempty"`
 }
 
 type Provider struct {
-	Type              string `json:"type"`
-	Region            string `json:"region"`
-	SecretBindingName string `json:"secretBindingName"`
+	Type                 string                `json:"type"`
+	ControlPlaneConfig   *runtime.RawExtension `json:"controlPlaneConfig,omitempty"`
+	InfrastructureConfig *runtime.RawExtension `json:"infrastructureConfig,omitempty"`
 }
 
 type Networking struct {
