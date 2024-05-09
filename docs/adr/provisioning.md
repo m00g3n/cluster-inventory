@@ -26,7 +26,7 @@ The Kyma Environment Broker has the following responsibilities:
     - Cluster administrators list
     - Egress network filter settings
     - Control Plane failure tolerance config
-  - Observing status of the CR to determine whether provisioning succeeded
+- Observing status of the CR to determine whether provisioning succeeded
 
  The Kyma Infrastructure Manager has the following responsibilities:
 - Creating shoots based on:
