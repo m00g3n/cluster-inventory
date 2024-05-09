@@ -1,24 +1,24 @@
 # Introduction
-This document defines architecture, and API for the Gardener cluster provisioning functionality.
+This document defines the architecture and API for the Gardener cluster provisioning functionality.
 
 # Target architecture
 
-The following picture shows the proposed architecture:
+The following diagram shows the proposed architecture:
 ![](./assets/keb-kim-target-arch.drawio.svg)
 
-> Note: at the time of writing the `GardenerCluster` CR is used for generating kubeconfig. The [workplan](https://github.com/kyma-project/infrastructure-manager/issues/112) for delivering provisioning functionality includes renaming the CR to maintain consistency.
+> Note: At the time of writing, the GardenerCluster CR was used to generate kubeconfig. The [workplan](https://github.com/kyma-project/infrastructure-manager/issues/112) for delivering provisioning functionality includes renaming the CR to maintain consistency.
 
 The following assumptions were taken:
-- Kyma Environment Broker should not contain all the details of the cluster infrastructure.
-- Kyma Infrastructure Manager's API should expose properties that:
+- Kyma Environment Broker must not contain all the details of the cluster infrastructure.
+- Kyma Infrastructure Manager's API must expose properties that:
   - can be set in the BTP cockpit by the user
   - are directly related to plans in the KEB
-- Kyma Infrastructure Manager's API should not expose properties that are:
+- Kyma Infrastructure Manager's API must not expose properties that are:
   - hardcoded in the Provisioner, or the KEB
   - statically configured in the management-plane-config
 
-The Kyma Environment Broker has the following responsibilities:  
-- Creating `Runtime` CR containing the following data:
+Kyma Environment Broker has the following responsibilities:  
+- Create Runtime CR containing the following data:
     - Provider config (type, region, and secret with credentials for hyperscaler)
     - Worker pool specification
     - Cluster networking settings (nodes, pods, and services API ranges)
@@ -26,10 +26,10 @@ The Kyma Environment Broker has the following responsibilities:
     - Cluster administrators list
     - Egress network filter settings
     - Control Plane failure tolerance config
-- Observing status of the CR to determine whether provisioning succeeded
+- Observe the status of the CR to determine whether provisioning succeeded
 
- The Kyma Infrastructure Manager has the following responsibilities:
-- Creating shoots based on:
+ Kyma Infrastructure Manager has the following responsibilities:
+- Create shoots based on:
    - Corresponding `Runtime` CR properties
    - Corresponding `Runtime` CR labels:
      -  `kyma-project.io/platform-region` for determining if the cluster is located in EU 
@@ -40,15 +40,15 @@ The Kyma Environment Broker has the following responsibilities:
      - configuring DNS extension 
      - configuring Certificates extension
      - providing maintenance settings (Kubernetes, and image autoupdates)
- - Upgrading, and deleting shoots for corresponding `Runtime` CRs
- - Applying audit log configuration on the shoot resource
- - Generating kubeconfig
+ - Upgrade and delete shoots for the corresponding `Runtime` CRs
+ - Apply the audit log configuration on the shoot resource
+ - Generate the kubeconfig
 
 # API proposal
 
 ## CR examples
 
-Please mind that the `Runtime` CR should contain the following labels:
+MInd that the Runtime CR must contain the following labels:
 ```yaml
  kyma-project.io/instance-id: instance-id
  kyma-project.io/runtime-id: runtime-id
@@ -64,7 +64,7 @@ Please mind that the `Runtime` CR should contain the following labels:
 
 The labels are skipped in the following examples due to clarity.
 
-The example below shows the CR that should be created by the KEB to provision AWS production cluster:
+The example below shows the CR that must be created by the KEB to provision the AWS production cluster:
 ```yaml
 apiVersion: infrastructuremanager.kyma-project.io/v1alpha1
 kind: Runtime
@@ -133,13 +133,13 @@ spec:
 ```
 
 There are some additional optional fields that could be specified:
-- `spec.shoot.kubernetes.version` ; if not provided default value will be read by the KIM from configuration
-- `spec.shoot.workers.machine.image` ; if not provided default value will be read by the KIM from configuration
-- `spec.shoot.kubernetes.kubeAPIServer.additionalOidcConfig` ; if not provided, no addition OIDC provider will be configured
-- `spec.shoot.workers.name` ; if not provided, some hardcoded name will be used
-- `spec.security.networking.filtering.ingress.enabled` ; if not provided `false` value will be used
+- `spec.shoot.kubernetes.version` ; if not provided, the default value will be read by the KIM from the configuration
+- `spec.shoot.workers.machine.image` ; if not provided, the default value will be read by the KIM from the configuration
+- `spec.shoot.kubernetes.kubeAPIServer.additionalOidcConfig` ; if not provided, no additional OIDC provider will be configured
+- `spec.shoot.workers.name` ; if not provided, a hardcoded name will be used
+- `spec.security.networking.filtering.ingress.enabled` ; if not provided, the `false` value will be used
 
-The following example shows what `Runtime` CR should be created to provision a cluster with additional OIDC provider, and ingress network filtering enabled:
+The following example shows the Runtime CR that must be created to provision a cluster with an additional OIDC provider and to enable ingress network filtering:
 ```yaml
 apiVersion: infrastructuremanager.kyma-project.io/v1alpha1
 kind: Runtime
@@ -235,7 +235,7 @@ spec:
 ```
 > Note: please mind that the additional OIDC providers, and ingress network filtering will not be implemented in the first release.
 
-Please, see the following examples to understand what CRs need to be created for particular KEB plans:
+Please see the following examples to understand what CRs must be created for particular KEB plans:
 - [AWS trial plan](assets/runtime-examples/aws-trial.yaml)
 - [Azure](assets/runtime-examples/azure.yaml)
 - [Azure lite](assets/runtime-examples/azure-lite.yaml)
