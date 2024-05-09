@@ -10,6 +10,7 @@ metadata:
     kyma-project.io/subaccount-id: subAccount-id
     kyma-project.io/shoot-name: shoot-name
     kyma-project.io/region: region
+    kyma-project.io/platform-region: platform-region
     operator.kyma-project.io/kyma-name: kymaName
   name: runtime-id
   namespace: kcp-system

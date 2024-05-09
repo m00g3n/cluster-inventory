@@ -9,28 +9,40 @@ The following picture shows the agreed architecture:
 > Note: at the time of writing the `GardenerCluster` CR is used for generating kubeconfig. The [workplan](https://github.com/kyma-project/infrastructure-manager/issues/112) for delivering provisioning functionality includes renaming the CR to maintain consistency.
 
 The following assumptions were taken:
-- KEB has the following responsibilities:
-    - Creating `Runtime` CR containing the following data:
-      - Provider config (type, region, and secret with credentials for hyperscaler)
-      - Worker pool specification
-      - Cluster networking settings (nodes, pods, and services API ranges)
-      - OIDC settings
-      - Cluster administrators list
-      - Egress network filter settings
-      - Control Plane failure tolerance config
-    - Observing status of the CR to determine whether provisioning succeeded
-- Kyma Infrastructure Manager has the following responsibilities:
-    - Creating shoots based on:
-      - Corresponding `Runtime` CR properties
-      - Predefined defaults for the optional properties:
-        - Kubernetes version
-        - Machine image version
-      - Predefined configuration for the following extensions:
-        - DNS 
-        - Certificates
-    - Upgrading, and deleting shoots for corresponding `Runtime` CRs
-    - Applying audit log configuration on the shoot resource
-    - Generating kubeconfig
+- Kyma Environment Broker should not contain all the details of the cluster infrastructure.
+- Kyma Infrastructure Manager's API should expose properties that:
+  - can be set in the BTP cockpit by the user
+  - are directly related to plans in the KEB
+- Kyma Infrastructure Manager's API should not expose properties that are:
+  - hardcoded in the Provisioner, or the KEB
+  - statically configured in the management-plane-config
+
+The Kyma Environment Broker has the following responsibilities:  
+- Creating `Runtime` CR containing the following data:
+    - Provider config (type, region, and secret with credentials for hyperscaler)
+    - Worker pool specification
+    - Cluster networking settings (nodes, pods, and services API ranges)
+    - OIDC settings
+    - Cluster administrators list
+    - Egress network filter settings
+    - Control Plane failure tolerance config
+  - Observing status of the CR to determine whether provisioning succeeded
+
+ The Kyma Infrastructure Manager has the following responsibilities:
+- Creating shoots based on:
+   - Corresponding `Runtime` CR properties
+   - Corresponding `Runtime` CR labels:
+     -  `kyma-project.io/platform-region` for determining if the cluster is located in EU 
+   - Predefined defaults for the optional properties:
+     - Kubernetes version
+     - Machine image version
+   - Predefined configuration for the following functionalities:
+     - configuring DNS extension 
+     - configuring Certificates extension
+     - providing maintenance settings (Kubernetes, and image autoupdates)
+ - Upgrading, and deleting shoots for corresponding `Runtime` CRs
+ - Applying audit log configuration on the shoot resource
+ - Generating kubeconfig
 
 # API proposal
 
@@ -46,6 +58,7 @@ Please mind that the `Runtime` CR should contain the following labels:
  kyma-project.io/subaccount-id: subAccount-id
  kyma-project.io/shoot-name: shoot-name
  kyma-project.io/region: region
+ kyma-project.io/platform-region: platform-region
  operator.kyma-project.io/kyma-name: kymaName
 ```
 
