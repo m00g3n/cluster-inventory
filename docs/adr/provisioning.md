@@ -3,7 +3,7 @@ This document defines architecture, and API for the Gardener cluster provisionin
 
 # Target architecture
 
-The following picture shows the agreed architecture:
+The following picture shows the proposed architecture:
 ![](./assets/keb-kim-target-arch.drawio.svg)
 
 > Note: at the time of writing the `GardenerCluster` CR is used for generating kubeconfig. The [workplan](https://github.com/kyma-project/infrastructure-manager/issues/112) for delivering provisioning functionality includes renaming the CR to maintain consistency.
