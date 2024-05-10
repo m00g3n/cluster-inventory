@@ -48,6 +48,18 @@ spec:
     ## spec.shoot.provider is required
     provider:
       type: openstack
+      # spec.shoot.provider.controlPlaneConfig is required
+      controlPlaneConfig:
+        apiVersion: openstack.provider.extensions.gardener.cloud/v1alpha1
+        kind: ControlPlaneConfig
+        loadBalancerProvider: f5
+      # spec.shoot.provider.infrastructureConfig is required
+      infrastructureConfig:
+        apiVersion: openstack.provider.extensions.gardener.cloud/v1alpha1
+        floatingPoolName: FloatingIP-external-kyma-01
+        kind: InfrastructureConfig
+        networks:
+          workers: 10.180.0.0/16
     # spec.shoot.Networking is required
     networking:
       pods: 10.96.0.0/13

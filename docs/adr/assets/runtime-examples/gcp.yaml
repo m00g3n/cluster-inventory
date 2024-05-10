@@ -47,7 +47,19 @@ spec:
             usernamePrefix: 'someother'
     ## spec.shoot.provider is required
     provider:
-      type: aws
+      type: gcp
+      # spec.shoot.controlPlaneConfig is required
+      controlPlaneConfig:
+        apiVersion: gcp.provider.extensions.gardener.cloud/v1alpha1
+        kind: ControlPlaneConfig
+        zone: us-central1-b
+      # spec.shoot.infrastructureConfig is required
+      infrastructureConfig:
+        apiVersion: gcp.provider.extensions.gardener.cloud/v1alpha1
+        kind: InfrastructureConfig
+        networks:
+          worker: 10.250.0.0/22
+          workers: 10.250.0.0/22
     # spec.shoot.Networking is required
     networking:
       pods: 10.96.0.0/13
