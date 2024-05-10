@@ -74,17 +74,6 @@ The example below shows the CR that must be created by the KEB to provision the 
 apiVersion: infrastructuremanager.kyma-project.io/v1alpha1
 kind: Runtime
 metadata:
-  labels:
-    kyma-project.io/instance-id: instance-id
-    kyma-project.io/runtime-id: runtime-id
-    kyma-project.io/broker-plan-id: plan-id
-    kyma-project.io/broker-plan-name: plan-name
-    kyma-project.io/global-account-id: global-account-id
-    kyma-project.io/subaccount-id: subAccount-id
-    kyma-project.io/shoot-name: shoot-name
-    kyma-project.io/region: region
-    kyma-project.io/platform-region: platform-region
-    operator.kyma-project.io/kyma-name: kymaName
   name: runtime-id
   namespace: kcp-system
 spec:
@@ -189,17 +178,6 @@ The following example shows the Runtime CR that must be created to provision a c
 apiVersion: infrastructuremanager.kyma-project.io/v1alpha1
 kind: Runtime
 metadata:
-  labels:
-    kyma-project.io/instance-id: instance-id
-    kyma-project.io/runtime-id: runtime-id
-    kyma-project.io/broker-plan-id: plan-id
-    kyma-project.io/broker-plan-name: plan-name
-    kyma-project.io/global-account-id: global-account-id
-    kyma-project.io/subaccount-id: subAccount-id
-    kyma-project.io/shoot-name: shoot-name
-    kyma-project.io/region: region
-    kyma-project.io/platform-region: platform-region
-    operator.kyma-project.io/kyma-name: kymaName
   name: runtime-id
   namespace: kcp-system
 spec:
