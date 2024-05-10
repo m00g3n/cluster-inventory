@@ -4,5 +4,5 @@ This folder contains architecture decision records.
 
 # Documents
 
-- [Provisioning functionality](./provisioning.md)
+- [Provisioning functionality](./001-provisioning.md)
 
