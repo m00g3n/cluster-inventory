@@ -20,8 +20,6 @@ spec:
     name: shoot-name
     # spec.shoot.purpose is required
     purpose: production
-    # spec.shoot.seedName is optional, default=nil
-    seedName: gcp-ha-us1
     # spec.shoot.region is required
     region: europe-west3
     # spec.shoot.secretBindingName is required

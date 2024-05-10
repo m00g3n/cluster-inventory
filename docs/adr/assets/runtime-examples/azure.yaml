@@ -20,8 +20,6 @@ spec:
     name: shoot-name
     # spec.shoot.purpose is required
     purpose: production
-    # spec.shoot.seedName is optional, default=nil
-    seedName: az-ha-us2
     # spec.shoot.region is required
     region: eastus
     # spec.shoot.secretBindingName is required
