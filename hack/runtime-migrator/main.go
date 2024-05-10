@@ -58,10 +58,10 @@ func main() {
 				Annotations:                shoot.Annotations,
 				OwnerReferences:            shoot.OwnerReferences,
 				Finalizers:                 shoot.Finalizers,
-				ManagedFields:              shoot.ManagedFields, // deliberately left empty
+				ManagedFields:              nil, // deliberately left empty "This is mostly for internal housekeeping, and users typically shouldn't need to set or understand this field."
 			},
 			Spec: v1.RuntimeSpec{
-				Name:    shoot.Name, //TODO: What to pass here? Should it be the same as ObjectMetadata.Name?
+				Name:    shoot.Name, //TODO: What to pass he? Should it be the same as ObjectMetadata.Name?
 				Purpose: "",         //TODO: fixme
 				Kubernetes: v1.RuntimeKubernetes{
 					Version: nil, //TODO: shoot.Spec.Kubernetes.Version?
