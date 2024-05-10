@@ -20,6 +20,8 @@ spec:
     name: shoot-name
     # spec.shoot.purpose is required
     purpose: evaluation
+    # spec.shoot.licenceType is optional, default=nil
+    licenceType: "TestDevelopmentAndDemo"
     # spec.shoot.region is required
     region: eu-central-1
     # spec.shoot.secretBindingName is required

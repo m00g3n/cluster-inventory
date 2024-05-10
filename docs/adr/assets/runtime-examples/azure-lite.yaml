@@ -22,6 +22,8 @@ spec:
     purpose: production
     # spec.shoot.region is required
     region: eastus
+    # spec.shoot.licenceType is optional, default=nil
+    licenceType: "TestDevelopmentAndDemo"
     # spec.shoot.secretBindingName is required
     secretBindingName: "hyperscaler secret"
     kubernetes:
