@@ -32,8 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -122,8 +120,23 @@ func main() {
 
 	rotationPeriod := time.Duration(minimalRotationTimeRatio*expirationTime.Minutes()) * time.Minute
 	metrics := metrics.NewMetrics()
-	if err = (controller.NewGardenerClusterController(mgr, kubeconfigProvider, logger, rotationPeriod, minimalRotationTimeRatio, metrics)).SetupWithManager(mgr); err != nil {
+	if err = controller.NewGardenerClusterController(
+		mgr,
+		kubeconfigProvider,
+		logger,
+		rotationPeriod,
+		minimalRotationTimeRatio,
+		metrics,
+	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GardenerCluster")
+		os.Exit(1)
+	}
+
+	if err = (&controller.RuntimeReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Runtime")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
