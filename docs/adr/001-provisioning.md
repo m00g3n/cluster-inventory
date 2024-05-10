@@ -46,6 +46,7 @@ Kyma Environment Broker has the following responsibilities:
      - providing maintenance settings (Kubernetes, and image autoupdates)
  - Upgrade and delete shoots for the corresponding `Runtime` CRs
  - Apply the audit log configuration on the shoot resource
+ - Create cluster role bindings for administrators
  - Generate the kubeconfig
 
 ## API proposal
