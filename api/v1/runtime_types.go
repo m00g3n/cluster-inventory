@@ -64,16 +64,15 @@ type RuntimeStatus struct {
 }
 
 type RuntimeShoot struct {
-	Name              string             `json:"name"`
-	Purpose           string             `json:"purpose"`
-	Region            string             `json:"region"`
-	SeedName          *string            `json:"seedName,omitempty"`
-	LicenceType       *string            `json:"licenceType,omitempty"`
-	SecretBindingName string             `json:"secretBindingName"`
-	Kubernetes        Kubernetes         `json:"kubernetes"`
-	Provider          Provider           `json:"provider"`
-	Networking        Networking         `json:"networking"`
-	Workers           *[]gardener.Worker `json:"workers"`
+	Name              string                `json:"name"`
+	Purpose           gardener.ShootPurpose `json:"purpose"`
+	Region            string                `json:"region"`
+	LicenceType       *string               `json:"licenceType,omitempty"`
+	SecretBindingName string                `json:"secretBindingName"`
+	Kubernetes        Kubernetes            `json:"kubernetes"`
+	Provider          Provider              `json:"provider"`
+	Networking        Networking            `json:"networking"`
+	Workers           *[]gardener.Worker    `json:"workers"`
 }
 
 type Kubernetes struct {

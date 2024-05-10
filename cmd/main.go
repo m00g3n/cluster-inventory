@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/kubeconfig"
 	"os"
 	"time"
 
@@ -158,20 +159,20 @@ func main() {
 	}
 }
 
-func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, expirationTime time.Duration) (gardener.KubeconfigProvider, error) {
+func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, expirationTime time.Duration) (kubeconfig.KubeconfigProvider, error) {
 	restConfig, err := gardener.NewRestConfigFromFile(kubeconfigPath)
 	if err != nil {
-		return gardener.KubeconfigProvider{}, err
+		return kubeconfig.KubeconfigProvider{}, err
 	}
 
 	gardenerClientSet, err := gardener_apis.NewForConfig(restConfig)
 	if err != nil {
-		return gardener.KubeconfigProvider{}, err
+		return kubeconfig.KubeconfigProvider{}, err
 	}
 
 	gardenerClient, err := client.New(restConfig, client.Options{})
 	if err != nil {
-		return gardener.KubeconfigProvider{}, err
+		return kubeconfig.KubeconfigProvider{}, err
 	}
 
 	shootClient := gardenerClientSet.Shoots(namespace)
@@ -179,10 +180,10 @@ func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, 
 
 	err = v1beta1.AddToScheme(gardenerClient.Scheme())
 	if err != nil {
-		return gardener.KubeconfigProvider{}, errors.Wrap(err, "failed to register Gardener schema")
+		return kubeconfig.KubeconfigProvider{}, errors.Wrap(err, "failed to register Gardener schema")
 	}
 
-	return gardener.NewKubeconfigProvider(shootClient,
+	return kubeconfig.NewKubeconfigProvider(shootClient,
 		dynamicKubeconfigAPI,
 		namespace,
 		int64(expirationTime.Seconds())), nil

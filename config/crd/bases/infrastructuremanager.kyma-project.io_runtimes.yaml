@@ -288,12 +288,11 @@ spec:
                     - type
                     type: object
                   purpose:
+                    description: ShootPurpose is a type alias for string.
                     type: string
                   region:
                     type: string
                   secretBindingName:
-                    type: string
-                  seedName:
                     type: string
                   workers:
                     items:
