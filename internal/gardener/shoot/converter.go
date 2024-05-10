@@ -14,7 +14,7 @@ func ToShoot(runtime imv1.Runtime) gardenerv1beta.Shoot {
 			Labels:      getLabels(runtime),
 			Annotations: getAnnotations(runtime),
 		},
-		Spec: gardenerv1beta.ShootSpec{},
+		Spec: getShootSpec(runtime.Spec.Shoot),
 	}
 }
 
@@ -31,23 +31,25 @@ func getShootSpec(runtimeShoot imv1.RuntimeShoot) gardenerv1beta.ShootSpec {
 		Purpose:           &runtimeShoot.Purpose,
 		Region:            runtimeShoot.Region,
 		SecretBindingName: &runtimeShoot.SecretBindingName,
-		Kubernetes:        getKubernetes(runtimeShoot),
+		Kubernetes:        getKubernetes(runtimeShoot.Kubernetes),
 		Networking:        getNetworking(runtimeShoot.Networking),
+		Provider:          getProvider(runtimeShoot.Provider),
+		ControlPlane:      &runtimeShoot.ControlPlane,
 	}
 }
 
-func getKubernetes(runtime imv1.RuntimeShoot) gardenerv1beta.Kubernetes {
+func getKubernetes(kubernetes imv1.Kubernetes) gardenerv1beta.Kubernetes {
 	return gardenerv1beta.Kubernetes{
-		Version: getKubernetesVersion(runtime),
+		Version: getKubernetesVersion(kubernetes),
 		KubeAPIServer: &gardenerv1beta.KubeAPIServerConfig{
-			OIDCConfig: getOIDCConfig(runtime.Kubernetes.KubeAPIServer.OidcConfig),
+			OIDCConfig: getOIDCConfig(kubernetes.KubeAPIServer.OidcConfig),
 		},
 	}
 }
 
-func getKubernetesVersion(runtime imv1.RuntimeShoot) string {
-	if runtime.Kubernetes.Version != nil {
-		return *runtime.Kubernetes.Version
+func getKubernetesVersion(kubernetes imv1.Kubernetes) string {
+	if kubernetes.Version != nil {
+		return *kubernetes.Version
 	}
 
 	// Determine the default Kubernetes version
@@ -69,11 +71,12 @@ func getOIDCConfig(oidcConfig gardenerv1beta.OIDCConfig) *gardenerv1beta.OIDCCon
 	}
 }
 
-func getProvider(runtimeProvider imv1.Provider) *gardenerv1beta.Provider {
-	return &gardenerv1beta.Provider{
+func getProvider(runtimeProvider imv1.Provider) gardenerv1beta.Provider {
+	return gardenerv1beta.Provider{
 		Type:                 runtimeProvider.Type,
 		ControlPlaneConfig:   &runtimeProvider.ControlPlaneConfig,
 		InfrastructureConfig: &runtimeProvider.InfrastructureConfig,
+		Workers:              runtimeProvider.Workers,
 	}
 }
 
@@ -84,9 +87,3 @@ func getNetworking(runtimeNetworking imv1.Networking) *gardenerv1beta.Networking
 		Services: &runtimeNetworking.Services,
 	}
 }
-
-//func getControlPlane(imv1.) gardenerv1beta.ControlPlane {
-//  return gardenerv1beta.ControlPlane{
-//
-//  }
-//}

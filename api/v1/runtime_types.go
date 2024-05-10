@@ -72,7 +72,7 @@ type RuntimeShoot struct {
 	Kubernetes        Kubernetes            `json:"kubernetes"`
 	Provider          Provider              `json:"provider"`
 	Networking        Networking            `json:"networking"`
-	Workers           *[]gardener.Worker    `json:"workers"`
+	ControlPlane      gardener.ControlPlane `json:"controlPlane"`
 }
 
 type Kubernetes struct {
@@ -89,6 +89,7 @@ type Provider struct {
 	Type                 string               `json:"type"`
 	ControlPlaneConfig   runtime.RawExtension `json:"controlPlaneConfig"`
 	InfrastructureConfig runtime.RawExtension `json:"infrastructureConfig"`
+	Workers              []gardener.Worker    `json:"workers"`
 }
 
 type Networking struct {
