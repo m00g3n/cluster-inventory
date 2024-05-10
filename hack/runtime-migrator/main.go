@@ -6,12 +6,11 @@ import (
 	"fmt"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
-	"github.com/kyma-project/infrastructure-manager/runtime-migrator/gardener"
-	"github.com/kyma-project/infrastructure-manager/runtime-migrator/model"
+	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"os"
-	//"gopkg.in/yaml.v3"
 	"sigs.k8s.io/yaml"
 )
 
@@ -39,8 +38,7 @@ func main() {
 	}
 
 	for _, shoot := range list.Items {
-
-		var runtime = model.Runtime{
+		var runtime = v1.Runtime{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "",
 				APIVersion: "",
@@ -62,12 +60,12 @@ func main() {
 				Finalizers:                 shoot.Finalizers,
 				ManagedFields:              shoot.ManagedFields, // deliberately left empty
 			},
-			Spec: model.RuntimeSpec{
+			Spec: v1.RuntimeSpec{
 				Name:    shoot.Name, //TODO: What to pass here? Should it be the same as ObjectMetadata.Name?
 				Purpose: "",         //TODO: fixme
-				Kubernetes: model.RuntimeKubernetes{
+				Kubernetes: v1.RuntimeKubernetes{
 					Version: nil, //TODO: shoot.Spec.Kubernetes.Version?
-					KubeAPIServer: &model.RuntimeAPIServer{
+					KubeAPIServer: &v1.RuntimeAPIServer{
 						OidcConfig: v1beta1.OIDCConfig{
 							CABundle:             nil,
 							ClientAuthentication: shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.ClientAuthentication,
@@ -83,17 +81,17 @@ func main() {
 						AdditionalOidcConfig: nil, //TODO: fixme
 					},
 				},
-				Provider: model.RuntimeProvider{
+				Provider: v1.RuntimeProvider{
 					Type:              shoot.Spec.Provider.Type,
 					Region:            "", //TODO fixme
 					SecretBindingName: "", //TODO fixme
 				},
-				Networking: model.RuntimeSecurityNetworking{
-					Filtering: model.RuntimeSecurityNetworkingFiltering{
-						Ingress: model.RuntimeSecurityNetworkingFilteringIngress{
+				Networking: v1.RuntimeSecurityNetworking{
+					Filtering: v1.RuntimeSecurityNetworkingFiltering{
+						Ingress: v1.RuntimeSecurityNetworkingFilteringIngress{
 							Enabled: false, //TODO: fixme
 						},
-						Egress: model.RuntimeSecurityNetworkingFilteringEgress{
+						Egress: v1.RuntimeSecurityNetworkingFilteringEgress{
 							Enabled: false, //TODO: fixme
 						},
 					},
@@ -101,20 +99,18 @@ func main() {
 				},
 				Workers: nil, //TODO: fixme
 			},
-			Status: model.RuntimeStatus{
+			Status: v1.RuntimeStatus{
 				State:      "",  //TODO: how to determine out status?
 				Conditions: nil, //TODO: fixme shoot.Status.Conditions,
 			},
 		}
 
-		//TODO: generate yaml from Runtime instead of Shoot
 		shootAsYaml, err := getYamlSpec(runtime)
 		writeSpecToFile(outputPath, shoot, err, shootAsYaml)
 	}
-
 }
 
-func getYamlSpec(shoot model.Runtime) ([]byte, error) {
+func getYamlSpec(shoot v1.Runtime) ([]byte, error) {
 	shootAsYaml, err := yaml.Marshal(shoot)
 	return shootAsYaml, err
 }
