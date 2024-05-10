@@ -331,35 +331,34 @@ type Shoot struct {
 	Name              string             `json:"name"`
 	Purpose           string             `json:"purpose"`
 	Region            string             `json:"region"`
-	SeedName          *string            `json:"seedName,omitempty"`
 	LicenceType       *string            `json:"licenceType,omitempty"`
 	SecretBindingName string             `json:"secretBindingName"`
 	Kubernetes        Kubernetes         `json:"kubernetes"`
 	Provider          Provider           `json:"provider"`
 	Networking        Networking         `json:"networking"`
-	Workers           *[]gardener.Worker `json:"workers,omitempty"`
 }
 
 type Provider struct {
 	Type                 string                `json:"type"`
-	ControlPlaneConfig   *runtime.RawExtension `json:"controlPlaneConfig,omitempty"`
-	InfrastructureConfig *runtime.RawExtension `json:"infrastructureConfig,omitempty"`
+	ControlPlaneConfig   runtime.RawExtension `json:"controlPlaneConfig"`
+	InfrastructureConfig runtime.RawExtension `json:"infrastructureConfig"`
+        Workers              []gardener.Worker     `json:"workers"`
 }
 
 type Networking struct {
-	Pods     string `json:"pods,omitempty"`
-	Nodes    string `json:"nodes,omitempty"`
-	Services string `json:"services,omitempty"`
+	Pods     string `json:"pods"`
+	Nodes    string `json:"nodes"`
+	Services string `json:"services"`
 }
 
 type Kubernetes struct {
-	Version       string    `json:"version"`
-	KubeAPIServer APIServer `json:"kubeAPIServer,omitempty"`
+	Version       *string    `json:"version,omitempty"`
+	KubeAPIServer APIServer  `json:"kubeAPIServer"`
 }
 
 type APIServer struct {
-	oidcConfig           gardener.OIDCConfig    `json:"oidcConfig"`
-	additionalOidcConfig *[]gardener.OIDCConfig `json:"additionalOidcConfig""`
+	OidcConfig           gardener.OIDCConfig    `json:"oidcConfig"`
+	AdditionalOidcConfig *[]gardener.OIDCConfig `json:"additionalOidcConfig""`
 }
 
 type Security struct {
@@ -372,7 +371,7 @@ type NetworkingSecurity struct {
 }
 
 type Filter struct {
-	Ingress *Ingress `json:"ingress"`
+	Ingress *Ingress `json:"ingress,omitempty"`
 	Egress  Egress   `json:"egress"`
 }
 
