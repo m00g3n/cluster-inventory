@@ -49,6 +49,38 @@ spec:
     provider:
       # spec.shoot.provider.type is required
       type: gcp
+      # spec.shoot.provider.workers is required
+      workers:
+        - machine:
+            # spec.shoot.workers.machine.type is required
+            type: n2-standard-2
+            # spec.shoot.workers.machine.image is optional, when not provider default will be used
+            # Will be modified by the SRE
+            image:
+              name: gardenlinux
+              version: 1312.3.0
+          # spec.shoot.workers.volume is required for the first release
+          # Probably can be moved into KIM, as it is hardcoded in KEB, and not dependent on plan
+          volume:
+            type: pd-standard
+            size: 50Gi
+          # spec.shoot.workers.zones is required
+          zones:
+            - europe-west3a
+            - europe-west3b
+            - europe-west3c
+          # spec.shoot.workers.name is optional, if not provided default will be used
+          name: cpu-worker-0
+          # spec.shoot.workers.minimum is required
+          minimum: 3
+          # spec.shoot.workers.maximum is required
+          maximum: 20
+          # spec.shoot.workers.maxSurge is required in the first release.
+          # It can be optional in the future, as it equals to zone count
+          maxSurge: 3
+          # spec.shoot.workers.maxUnavailable is required in the first release.
+          # It can be optional in the future, as it is always set to 0
+          maxUnavailable: 0
       # spec.shoot.controlPlaneConfig is required
       controlPlaneConfig:
         apiVersion: gcp.provider.extensions.gardener.cloud/v1alpha1
@@ -71,37 +103,6 @@ spec:
       highAvailability:
         failureTolerance:
           type: zone
-    workers:
-      - machine:
-          # spec.shoot.workers.machine.type is required
-          type: n2-standard-2
-          # spec.shoot.workers.machine.image is optional, when not provider default will be used
-          # Will be modified by the SRE
-          image:
-            name: gardenlinux
-            version: 1312.3.0
-        # spec.shoot.workers.volume is required for the first release
-        # Probably can be moved into KIM, as it is hardcoded in KEB, and not dependent on plan
-        volume:
-          type: pd-standard
-          size: 50Gi
-        # spec.shoot.workers.zones is required
-        zones:
-          - europe-west3a
-          - europe-west3b
-          - europe-west3c
-        # spec.shoot.workers.name is optional, if not provided default will be used
-        name: cpu-worker-0
-        # spec.shoot.workers.minimum is required
-        minimum: 3
-        # spec.shoot.workers.maximum is required
-        maximum: 20
-        # spec.shoot.workers.maxSurge is required in the first release.
-        # It can be optional in the future, as it equals to zone count
-        maxSurge: 3
-        # spec.shoot.workers.maxUnavailable is required in the first release.
-        # It can be optional in the future, as it is always set to 0
-        maxUnavailable:  0
   security:
     networking:
       filter:

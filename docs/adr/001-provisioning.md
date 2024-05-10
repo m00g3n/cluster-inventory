@@ -74,6 +74,17 @@ The example below shows the CR that must be created by the KEB to provision the 
 apiVersion: infrastructuremanager.kyma-project.io/v1alpha1
 kind: Runtime
 metadata:
+  labels:
+    kyma-project.io/instance-id: instance-id
+    kyma-project.io/runtime-id: runtime-id
+    kyma-project.io/broker-plan-id: plan-id
+    kyma-project.io/broker-plan-name: plan-name
+    kyma-project.io/global-account-id: global-account-id
+    kyma-project.io/subaccount-id: subAccount-id
+    kyma-project.io/shoot-name: shoot-name
+    kyma-project.io/region: region
+    kyma-project.io/platform-region: platform-region
+    operator.kyma-project.io/kyma-name: kymaName
   name: runtime-id
   namespace: kcp-system
 spec:
@@ -88,7 +99,7 @@ spec:
     secretBindingName: "hyperscaler secret"
     kubernetes:
       kubeAPIServer:
-        ## spec.shoot.kubernetes.kubeAPIServer.oidcConfig is required
+        # spec.shoot.kubernetes.kubeAPIServer.oidcConfig is required
         oidcConfig:
           clientID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
           groupsClaim: groups
@@ -97,8 +108,28 @@ spec:
             - RS256
           usernameClaim: sub
     provider:
-      ## spec.shoot.provider.type is required
+      # spec.shoot.provider.type is required
       type: aws
+      # spec.shoot.provider.workers is required
+      workers:
+        - machine:
+            # spec.shoot.workers.machine.type is required
+            type: m6i.large
+          # spec.shoot.workers.zones is required
+          zones:
+            - eu-central-1a
+            - eu-central-1b
+            - eu-central-1c
+          # spec.shoot.workers.minimum is required
+          minimum: 3
+          # spec.shoot.workers.maximum is required
+          maximum: 20
+          # spec.shoot.workers.maxSurge is required in the first release.
+          # It can be optional in the future, as it equals to zone count
+          maxSurge: 3
+          # spec.shoot.workers.maxUnavailable is required in the first release.
+          # It can be optional in the future, as it is always set to 0
+          maxUnavailable: 0
       # spec.shoot.provider.controlPlaneConfig is required
       controlPlaneConfig:
         apiVersion: aws.provider.extensions.gardener.cloud/v1alpha1
@@ -133,25 +164,6 @@ spec:
       highAvailability:
         failureTolerance:
           type: node
-    workers:
-      - machine:
-          # spec.shoot.workers.machine.type is required
-          type: m6i.large
-        # spec.shoot.workers.zones is required
-        zones:
-          - eu-central-1a
-          - eu-central-1b
-          - eu-central-1c
-        # spec.shoot.workers.minimum is required
-        minimum: 3
-        # spec.shoot.workers.maximum is required
-        maximum: 20
-        # spec.shoot.workers.maxSurge is required in the first release.
-        # It can be optional in the future, as it equals to zone count
-        maxSurge: 3
-        # spec.shoot.workers.maxUnavailable is required in the first release.
-        # It can be optional in the future, as it is always set to 0
-        maxUnavailable:  0
   security:
     networking:
       filter:
@@ -177,6 +189,17 @@ The following example shows the Runtime CR that must be created to provision a c
 apiVersion: infrastructuremanager.kyma-project.io/v1alpha1
 kind: Runtime
 metadata:
+  labels:
+    kyma-project.io/instance-id: instance-id
+    kyma-project.io/runtime-id: runtime-id
+    kyma-project.io/broker-plan-id: plan-id
+    kyma-project.io/broker-plan-name: plan-name
+    kyma-project.io/global-account-id: global-account-id
+    kyma-project.io/subaccount-id: subAccount-id
+    kyma-project.io/shoot-name: shoot-name
+    kyma-project.io/region: region
+    kyma-project.io/platform-region: platform-region
+    operator.kyma-project.io/kyma-name: kymaName
   name: runtime-id
   namespace: kcp-system
 spec:
@@ -185,8 +208,6 @@ spec:
     name: shoot-name
     # spec.shoot.purpose is required
     purpose: production
-    # spec.shoot.seedName is optional, default=nil
-    seedName: aws-ha-eu1
     # spec.shoot.region is required
     region: eu-central-1
     # spec.shoot.secretBindingName is required
@@ -196,13 +217,13 @@ spec:
       # Will be modified by the SRE
       version: "1.28.7"
       kubeAPIServer:
-        ## spec.shoot.kubernetes.kubeAPIServer.oidcConfig is required
+        # spec.shoot.kubernetes.kubeAPIServer.oidcConfig is required
         oidcConfig:
           clientID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
           groupsClaim: groups
           issuerURL: https://my.cool.tokens.com
           signingAlgs:
-            - RS256
+          - RS256
           usernameClaim: sub
         # spec.shoot.kubernetes.kubeAPIServer.additionalOidcConfig is optional, not implemented in the first KIM release
         additionalOidcConfig:
@@ -214,8 +235,40 @@ spec:
             usernameClaim: sub
             usernamePrefix: 'someother'
     provider:
-      ## spec.shoot.provider.type is required
+      # spec.shoot.provider.type is required
       type: aws
+      # spec.shoot.provider.workers is required
+      workers:
+        - machine:
+            # spec.shoot.workers.machine.type is required
+            type: m6i.large
+            # spec.shoot.workers.machine.image is optional, when not provider default will be used
+            # Will be modified by the SRE
+            image:
+              name: gardenlinux
+              version: 1312.3.0
+          # spec.shoot.workers.volume is required for the first release
+          # Probably can be moved into KIM, as it is hardcoded in KEB, and not dependent on plan
+          volume:
+            type: gp2
+            size: 50Gi
+          # spec.shoot.workers.zones is required
+          zones:
+            - eu-central-1a
+            - eu-central-1b
+            - eu-central-1c
+          # spec.shoot.workers.name is optional, if not provided default will be used
+          name: cpu-worker-0
+          # spec.shoot.workers.minimum is required
+          minimum: 3
+          # spec.shoot.workers.maximum is required
+          maximum: 20
+          # spec.shoot.workers.maxSurge is required in the first release.
+          # It can be optional in the future, as it equals to zone count
+          maxSurge: 3
+          # spec.shoot.workers.maxUnavailable is required in the first release.
+          # It can be optional in the future, as it is always set to 0
+          maxUnavailable: 0
       # spec.shoot.provider.controlPlaneConfig is required
       controlPlaneConfig:
         apiVersion: aws.provider.extensions.gardener.cloud/v1alpha1
@@ -250,37 +303,6 @@ spec:
       highAvailability:
         failureTolerance:
           type: zone
-    workers:
-      - machine:
-          # spec.shoot.workers.machine.type is required
-          type: m6i.large
-          # spec.shoot.workers.machine.image is optional, when not provider default will be used
-          # Will be modified by the SRE
-          image:
-            name: gardenlinux
-            version: 1312.3.0
-        # spec.shoot.workers.volume is required for the first release
-        # Probably can be moved into KIM, as it is hardcoded in KEB, and not dependent on plan
-        volume:
-          type: gp2
-          size: 50Gi
-        # spec.shoot.workers.zones is required
-        zones:
-          - eu-central-1a
-          - eu-central-1b
-          - eu-central-1c
-        # spec.shoot.workers.name is optional, if not provided default will be used
-        name: cpu-worker-0
-        # spec.shoot.workers.minimum is required
-        minimum: 3
-        # spec.shoot.workers.maximum is required
-        maximum: 20
-        # spec.shoot.workers.maxSurge is required in the first release.
-        # It can be optional in the future, as it equals to zone count
-        maxSurge: 3
-        # spec.shoot.workers.maxUnavailable is required in the first release.
-        # It can be optional in the future, as it is always set to 0
-        maxUnavailable:  0
   security:
     networking:
       filter:
