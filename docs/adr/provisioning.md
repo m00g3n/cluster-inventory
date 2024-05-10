@@ -21,6 +21,7 @@ Kyma Environment Broker has the following responsibilities:
 - Create Runtime CR containing the following data:
     - Provider config (type, region, and secret with credentials for hyperscaler)
     - Worker pool specification
+    - Provider specific config
     - Cluster networking settings (nodes, pods, and services API ranges)
     - OIDC settings
     - Cluster administrators list
@@ -92,7 +93,32 @@ spec:
             - RS256
           usernameClaim: sub
     provider:
+      ## spec.shoot.provider.type is required
       type: aws
+      # spec.shoot.provider.controlPlaneConfig is required
+      controlPlaneConfig:
+        apiVersion: aws.provider.extensions.gardener.cloud/v1alpha1
+        kind: ControlPlaneConfig
+      # spec.shoot.provider.infrastructureConfig is required
+      infrastructureConfig:
+        apiVersion: aws.provider.extensions.gardener.cloud/v1alpha1
+        kind: InfrastructureConfig
+        networks:
+          vpc:
+            cidr: 10.250.0.0/16
+          zones:
+            - internal: 10.250.48.0/20
+              name: eu-central-1c
+              public: 10.250.32.0/20
+              workers: 10.250.0.0/19
+            - internal: 10.250.112.0/20
+              name: eu-central-1b
+              public: 10.250.96.0/20
+              workers: 10.250.64.0/19
+            - internal: 10.250.176.0/20
+              name: eu-central-1a
+              public: 10.250.160.0/20
+              workers: 10.250.128.0/19
     # spec.shoot.Networking is required
     networking:
       pods: 100.64.0.0/12
@@ -153,6 +179,8 @@ spec:
     name: shoot-name
     # spec.shoot.purpose is required
     purpose: production
+    # spec.shoot.seedName is optional, default=nil
+    seedName: aws-ha-eu1
     # spec.shoot.region is required
     region: eu-central-1
     # spec.shoot.secretBindingName is required
@@ -168,7 +196,7 @@ spec:
           groupsClaim: groups
           issuerURL: https://my.cool.tokens.com
           signingAlgs:
-          - RS256
+            - RS256
           usernameClaim: sub
         # spec.shoot.kubernetes.kubeAPIServer.additionalOidcConfig is optional, not implemented in the first KIM release
         additionalOidcConfig:
@@ -179,9 +207,33 @@ spec:
               - RS256
             usernameClaim: sub
             usernamePrefix: 'someother'
-    ## spec.shoot.provider is required
     provider:
+      ## spec.shoot.provider.type is required
       type: aws
+      # spec.shoot.provider.controlPlaneConfig is required
+      controlPlaneConfig:
+        apiVersion: aws.provider.extensions.gardener.cloud/v1alpha1
+        kind: ControlPlaneConfig
+      # spec.shoot.provider.infrastructureConfig is required
+      infrastructureConfig:
+        apiVersion: aws.provider.extensions.gardener.cloud/v1alpha1
+        kind: InfrastructureConfig
+        networks:
+          vpc:
+            cidr: 10.250.0.0/16
+          zones:
+            - internal: 10.250.48.0/20
+              name: eu-central-1c
+              public: 10.250.32.0/20
+              workers: 10.250.0.0/19
+            - internal: 10.250.112.0/20
+              name: eu-central-1b
+              public: 10.250.96.0/20
+              workers: 10.250.64.0/19
+            - internal: 10.250.176.0/20
+              name: eu-central-1a
+              public: 10.250.160.0/20
+              workers: 10.250.128.0/19
     # spec.shoot.Networking is required
     networking:
       pods: 100.64.0.0/12
@@ -248,7 +300,7 @@ Please see the following examples to understand what CRs must be created for par
 ## API structures
 
 ```go
-package v1
+package v2
 
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -273,6 +325,8 @@ type Shoot struct {
 	Name              string             `json:"name"`
 	Purpose           string             `json:"purpose"`
 	Region            string             `json:"region"`
+	SeedName          *string            `json:"seedName,omitempty"`
+	LicenceType       *string            `json:"licenceType,omitempty"`
 	SecretBindingName string             `json:"secretBindingName"`
 	Kubernetes        Kubernetes         `json:"kubernetes"`
 	Provider          Provider           `json:"provider"`
@@ -339,4 +393,6 @@ type RuntimeStatus struct {
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
+
+
 ```

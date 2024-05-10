@@ -28,7 +28,7 @@ spec:
     secretBindingName: "hyperscaler secret"
     kubernetes:
       kubeAPIServer:
-        ## spec.shoot.kubernetes.kubeAPIServer.oidcConfig is required
+        # spec.shoot.kubernetes.kubeAPIServer.oidcConfig is required
         oidcConfig:
           clientID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
           groupsClaim: groups
@@ -37,6 +37,7 @@ spec:
             - RS256
           usernameClaim: sub
     provider:
+      # spec.shoot.provider.type is required
       type: aws
       # spec.shoot.provider.controlPlaneConfig is required
       controlPlaneConfig:

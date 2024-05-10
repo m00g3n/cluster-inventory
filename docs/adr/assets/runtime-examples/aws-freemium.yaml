@@ -35,6 +35,7 @@ spec:
             - RS256
           usernameClaim: sub
     provider:
+      # spec.shoot.provider.type is required
       type: aws
       # spec.shoot.provider.controlPlaneConfig is required
       controlPlaneConfig:

@@ -20,6 +20,8 @@ spec:
     name: shoot-name
     # spec.shoot.purpose is required
     purpose: production
+    # spec.shoot.seedName is optional, default=nil
+    seedName: aws-ha-eu1
     # spec.shoot.region is required
     region: eu-central-1
     # spec.shoot.secretBindingName is required
@@ -29,7 +31,7 @@ spec:
       # Will be modified by the SRE
       version: "1.28.7"
       kubeAPIServer:
-        ## spec.shoot.kubernetes.kubeAPIServer.oidcConfig is required
+        # spec.shoot.kubernetes.kubeAPIServer.oidcConfig is required
         oidcConfig:
           clientID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
           groupsClaim: groups
@@ -47,7 +49,7 @@ spec:
             usernameClaim: sub
             usernamePrefix: 'someother'
     provider:
-      ## spec.shoot.provider.type is required
+      # spec.shoot.provider.type is required
       type: aws
       # spec.shoot.provider.controlPlaneConfig is required
       controlPlaneConfig:

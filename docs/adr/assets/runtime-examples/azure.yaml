@@ -20,6 +20,8 @@ spec:
     name: shoot-name
     # spec.shoot.purpose is required
     purpose: production
+    # spec.shoot.seedName is optional, default=nil
+    seedName: az-ha-us2
     # spec.shoot.region is required
     region: eastus
     # spec.shoot.secretBindingName is required
@@ -28,7 +30,7 @@ spec:
       # spec.shoot.kubernetes.version is optional, when not provided default will be used
       version: "1.28.7"
       kubeAPIServer:
-        ## spec.shoot.kubernetes.kubeAPIServer.oidcConfig is required
+        # spec.shoot.kubernetes.kubeAPIServer.oidcConfig is required
         oidcConfig:
           clientID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
           groupsClaim: groups
@@ -36,7 +38,7 @@ spec:
           signingAlgs:
             - RS256
           usernameClaim: sub
-        ## spec.shoot.kubernetes.kubeAPIServer.additionalOidcConfig is optional, not implemented in the first KIM release
+        # spec.shoot.kubernetes.kubeAPIServer.additionalOidcConfig is optional, not implemented in the first KIM release
         additionalOidcConfig:
           - clientID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
             groupsClaim: groups
@@ -47,6 +49,7 @@ spec:
             usernamePrefix: 'someother'
     # spec.shoot.provider is required
     provider:
+      # spec.shoot.provider.type is required
       type: azure
       # spec.shoot.provider.controlPlaneConfig is required
       controlPlaneConfig:
