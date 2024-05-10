@@ -165,7 +165,7 @@ spec:
 
 There are some additional optional fields that could be specified:
 - `spec.shoot.seedName` ; if not provided `nil` value will be used
-- `spec.shoot.seedName.licenceType` ; if not provided `nil` value will be used 
+- `spec.shoot.licenceType` ; if not provided `nil` value will be used 
 - `spec.shoot.kubernetes.version` ; if not provided, the default value will be read by the KIM from the configuration
 - `spec.shoot.kubernetes.kubeAPIServer.additionalOidcConfig` ; if not provided, no additional OIDC provider will be configured
 - `spec.shoot.workers.machine.image` ; if not provided, the default value will be read by the KIM from the configuration
