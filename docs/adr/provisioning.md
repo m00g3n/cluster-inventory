@@ -1,7 +1,10 @@
-# Introduction
+# Context
 This document defines the architecture and API for the Gardener cluster provisioning functionality.
 
-# Target architecture
+# Status
+Proposed
+
+# Decision
 
 The following diagram shows the proposed architecture:
 ![](./assets/keb-kim-target-arch.drawio.svg)
@@ -45,9 +48,9 @@ Kyma Environment Broker has the following responsibilities:
  - Apply the audit log configuration on the shoot resource
  - Generate the kubeconfig
 
-# API proposal
+## API proposal
 
-## CR examples
+### CR examples
 
 MInd that the Runtime CR must contain the following labels:
 ```yaml
