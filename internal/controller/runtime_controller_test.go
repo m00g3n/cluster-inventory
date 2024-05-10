@@ -20,8 +20,8 @@ import (
 	"context"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	. "github.com/onsi/ginkgo/v2" //nolint:revive
-	. "github.com/onsi/gomega"    //nolint:revive
+	//nolint:revive
+	//nolint:revive
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -50,7 +50,7 @@ var _ = Describe("Runtime Controller", func() {
 						Namespace: "default",
 					},
 					Spec: imv1.RuntimeSpec{
-						Networking: imv1.RuntimeSecurityNetworking{
+						Networking: imv1.Networking{
 							Administrators: []string{
 								"test.me@plz",
 							},
