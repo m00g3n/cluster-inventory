@@ -53,7 +53,7 @@ func getKubernetesVersion(kubernetes imv1.Kubernetes) string {
 	}
 
 	// Determine the default Kubernetes version
-	// TODO: it must be read from the configuration (please refer to KEB)
+	// it must be read from the configuration (please refer to KEB)
 	return ""
 }
 
