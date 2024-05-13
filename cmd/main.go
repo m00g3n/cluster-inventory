@@ -19,7 +19,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/kyma-project/infrastructure-manager/internal/gardener/kubeconfig"
 	"os"
 	"time"
 
@@ -29,6 +28,7 @@ import (
 	"github.com/kyma-project/infrastructure-manager/internal/controller"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/kubeconfig"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
