@@ -9,6 +9,7 @@ import (
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"log"
 	"os"
 	"sigs.k8s.io/yaml"
@@ -60,46 +61,70 @@ func main() {
 				ManagedFields:              nil, // deliberately left empty "This is mostly for internal housekeeping, and users typically shouldn't need to set or understand this field."
 			},
 			Spec: v1.RuntimeSpec{
-				Name:    shoot.Name, //TODO: What to pass he? Should it be the same as ObjectMetadata.Name?
-				Purpose: string(*shoot.Spec.Purpose),
-				Kubernetes: v1.RuntimeKubernetes{
-					Version: &shoot.Spec.Kubernetes.Version,
-					KubeAPIServer: &v1.RuntimeAPIServer{
-						OidcConfig: v1beta1.OIDCConfig{
-							CABundle:             nil, //deliberately left empty
-							ClientAuthentication: shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.ClientAuthentication,
-							ClientID:             shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.ClientID,
-							GroupsClaim:          shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.GroupsClaim,
-							GroupsPrefix:         shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.GroupsPrefix,
-							IssuerURL:            shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.IssuerURL,
-							RequiredClaims:       shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.RequiredClaims,
-							SigningAlgs:          shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.SigningAlgs,
-							UsernameClaim:        shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.UsernameClaim,
-							UsernamePrefix:       shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.UsernamePrefix,
-						},
-						AdditionalOidcConfig: nil, //deliberately left empty for now
-					},
-				},
-				Provider: v1.RuntimeProvider{
-					Type:              shoot.Spec.Provider.Type,
+				Shoot: v1.RuntimeShoot{
+					Name:              shoot.Name, //TODO: What to pass he? Should it be the same as ObjectMetadata.Name?
+					Purpose:           *shoot.Spec.Purpose,
 					Region:            shoot.Spec.Region,
+					LicenceType:       nil, //TODO: what's that?
 					SecretBindingName: *shoot.Spec.SecretBindingName,
-				},
-				Networking: v1.RuntimeSecurityNetworking{
-					Filtering: v1.RuntimeSecurityNetworkingFiltering{
-						Ingress: v1.RuntimeSecurityNetworkingFilteringIngress{
-							Enabled: false, //TODO: fixme
-						},
-						Egress: v1.RuntimeSecurityNetworkingFilteringEgress{
-							Enabled: false, //TODO: fixme
+					Kubernetes: v1.Kubernetes{
+						Version: &shoot.Spec.Kubernetes.Version,
+						KubeAPIServer: v1.APIServer{
+							OidcConfig: v1beta1.OIDCConfig{
+								CABundle:             nil, //deliberately left empty
+								ClientAuthentication: shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.ClientAuthentication,
+								ClientID:             shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.ClientID,
+								GroupsClaim:          shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.GroupsClaim,
+								GroupsPrefix:         shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.GroupsPrefix,
+								IssuerURL:            shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.IssuerURL,
+								RequiredClaims:       shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.RequiredClaims,
+								SigningAlgs:          shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.SigningAlgs,
+								UsernameClaim:        shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.UsernameClaim,
+								UsernamePrefix:       shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.UsernamePrefix,
+							},
+							AdditionalOidcConfig: nil, //deliberately left empty for now
 						},
 					},
-					//TODO: (!) made it nullable with omitempty. Finding specific cluster-role-bindings would be needed to fill this list (username field)
-					// Why do we need that after provisioning?
-					// A: data consistency reasons
-					Administrators: nil, //TODO: https://github.com/kyma-project/infrastructure-manager/issues/198
+					Provider: v1.Provider{
+						Type: shoot.Spec.Provider.Type,
+						ControlPlaneConfig: runtime.RawExtension{
+							Raw:    shoot.Spec.Provider.ControlPlaneConfig.Raw,
+							Object: shoot.Spec.Provider.ControlPlaneConfig.Object,
+						},
+						InfrastructureConfig: runtime.RawExtension{
+							Raw:    shoot.Spec.Provider.InfrastructureConfig.Raw,
+							Object: shoot.Spec.Provider.InfrastructureConfig.Object,
+						},
+						Workers: shoot.Spec.Provider.Workers,
+					},
+					Networking: v1.Networking{
+						Pods:     *shoot.Spec.Networking.Pods,
+						Nodes:    *shoot.Spec.Networking.Nodes,
+						Services: *shoot.Spec.Networking.Services,
+					},
+					ControlPlane: v1beta1.ControlPlane{
+						HighAvailability: &v1beta1.HighAvailability{
+							FailureTolerance: v1beta1.FailureTolerance{
+								Type: "", //TODO: verify if needed/present shoot.Spec.ControlPlane.HighAvailability.FailureTolerance.Type
+							},
+						},
+					},
 				},
-				Workers: shoot.Spec.Provider.Workers, //TODO: shouldn't that be part of the Provider?
+				Security: v1.Security{
+					//TODO: (!) made it nullable with omitempty. Finding specific cluster-role-bindings would be needed to fill this list (username field)
+					// Q: Why do we need that after provisioning? A: data consistency reasons
+					Administrators: nil, //TODO: https://github.com/kyma-project/infrastructure-manager/issues/198
+					Networking: v1.NetworkingSecurity{
+						Filter: v1.Filter{
+							Ingress: &v1.Ingress{
+								Enabled: false, //TODO: fixme
+							},
+							Egress: v1.Egress{
+								Enabled: false, //TODO: fixme
+							},
+						},
+					},
+				},
 			},
 			Status: v1.RuntimeStatus{
 				State:      "",  //deliberately left empty by our migrator to show that controller has not picked it yet
