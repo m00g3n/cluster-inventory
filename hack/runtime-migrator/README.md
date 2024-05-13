@@ -2,7 +2,7 @@
 The `runtime-migrator` script
 1. connects to a gardener project
 2. retrieves all existing shoot specifications
-3. migrates the shoot specs to the new Runtime custom resource
+3. migrates the shoot specs to the new Runtime custom resource (Runtime CRs created with this migrator have the `operator.kyma-project.io/created-by-migrator=true` label)
 4. saves the new Runtime custom resources to files
 
 ## Usage

@@ -5,13 +5,17 @@ import (
 	"flag"
 	"fmt"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
+	gardener_types "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"os"
 	"sigs.k8s.io/yaml"
+)
+
+const (
+	migratorLabel = "operator.kyma-project.io/created-by-migrator"
 )
 
 func main() {
@@ -40,21 +44,16 @@ func main() {
 	for _, shoot := range list.Items {
 		var runtime = v1.Runtime{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "",
-				APIVersion: "",
+				Kind:       "Runtime",
+				APIVersion: "infrastructuremanager.kyma-project.io/v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:                       shoot.Name,
 				GenerateName:               shoot.GenerateName,
-				Namespace:                  shoot.Namespace,
-				SelfLink:                   shoot.SelfLink,          //TODO: do we need to fill that?
-				UID:                        shoot.UID,               //TODO: do we need to fill that?
-				ResourceVersion:            shoot.ResourceVersion,   //TODO: do we need to fill that?
-				Generation:                 shoot.Generation,        //TODO: do we need to fill that?
-				CreationTimestamp:          shoot.CreationTimestamp, //TODO: do we need to fill that?
-				DeletionTimestamp:          shoot.DeletionTimestamp, //TODO: do we need to fill that?
+				Namespace:                  "kcp-system",
+				DeletionTimestamp:          shoot.DeletionTimestamp,
 				DeletionGracePeriodSeconds: shoot.DeletionGracePeriodSeconds,
-				Labels:                     shoot.Labels,
+				Labels:                     appendMigratorLabel(shoot.Labels),
 				Annotations:                shoot.Annotations,
 				OwnerReferences:            shoot.OwnerReferences,
 				Finalizers:                 shoot.Finalizers,
@@ -62,12 +61,12 @@ func main() {
 			},
 			Spec: v1.RuntimeSpec{
 				Name:    shoot.Name, //TODO: What to pass he? Should it be the same as ObjectMetadata.Name?
-				Purpose: "",         //TODO: fixme
+				Purpose: string(*shoot.Spec.Purpose),
 				Kubernetes: v1.RuntimeKubernetes{
-					Version: nil, //TODO: shoot.Spec.Kubernetes.Version?
+					Version: &shoot.Spec.Kubernetes.Version,
 					KubeAPIServer: &v1.RuntimeAPIServer{
 						OidcConfig: v1beta1.OIDCConfig{
-							CABundle:             nil,
+							CABundle:             nil, //deliberately left empty
 							ClientAuthentication: shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.ClientAuthentication,
 							ClientID:             shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.ClientID,
 							GroupsClaim:          shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.GroupsClaim,
@@ -78,13 +77,13 @@ func main() {
 							UsernameClaim:        shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.UsernameClaim,
 							UsernamePrefix:       shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.UsernamePrefix,
 						},
-						AdditionalOidcConfig: nil, //TODO: fixme
+						AdditionalOidcConfig: nil, //deliberately left empty for now
 					},
 				},
 				Provider: v1.RuntimeProvider{
 					Type:              shoot.Spec.Provider.Type,
-					Region:            "", //TODO fixme
-					SecretBindingName: "", //TODO fixme
+					Region:            shoot.Spec.Region,
+					SecretBindingName: *shoot.Spec.SecretBindingName,
 				},
 				Networking: v1.RuntimeSecurityNetworking{
 					Filtering: v1.RuntimeSecurityNetworkingFiltering{
@@ -95,19 +94,31 @@ func main() {
 							Enabled: false, //TODO: fixme
 						},
 					},
-					Administrators: nil, //TODO: fixme
+					//TODO: (!) made it nullable with omitempty. Finding specific cluster-role-bindings would be needed to fill this list (username field)
+					// Why do we need that after provisioning?
+					// A: data consistency reasons
+					Administrators: nil, //TODO: https://github.com/kyma-project/infrastructure-manager/issues/198
 				},
-				Workers: nil, //TODO: fixme
+				Workers: shoot.Spec.Provider.Workers, //TODO: shouldn't that be part of the Provider?
 			},
 			Status: v1.RuntimeStatus{
-				State:      "",  //TODO: how to determine out status?
-				Conditions: nil, //TODO: fixme shoot.Status.Conditions,
+				State:      "",  //deliberately left empty by our migrator to show that controller has not picked it yet
+				Conditions: nil, //TODO: fixme. Shouldn't we use here metadata from Gardener instead of api-machinery?
 			},
 		}
 
 		shootAsYaml, err := getYamlSpec(runtime)
 		writeSpecToFile(outputPath, shoot, err, shootAsYaml)
 	}
+}
+
+func appendMigratorLabel(shootLabels map[string]string) map[string]string {
+	labels := map[string]string{}
+	for k, v := range shootLabels {
+		labels[k] = v
+	}
+	labels[migratorLabel] = "true"
+	return labels
 }
 
 func getYamlSpec(shoot v1.Runtime) ([]byte, error) {
@@ -126,14 +137,14 @@ func writeSpecToFile(outputPath string, shoot v1beta1.Shoot, err error, shootAsY
 	log.Printf("%s created\n", fileName)
 }
 
-func setupGardenerShootClient(kubeconfigPath, gardenerNamespace string) gardener_apis.ShootInterface {
+func setupGardenerShootClient(kubeconfigPath, gardenerNamespace string) gardener_types.ShootInterface {
 	//TODO: use the same client factory as in the main code
 	restConfig, err := gardener.NewRestConfigFromFile(kubeconfigPath)
 	if err != nil {
 		return nil
 	}
 
-	gardenerClientSet, err := gardener_apis.NewForConfig(restConfig)
+	gardenerClientSet, err := gardener_types.NewForConfig(restConfig)
 	if err != nil {
 		return nil
 	}
