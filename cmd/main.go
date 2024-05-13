@@ -159,20 +159,20 @@ func main() {
 	}
 }
 
-func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, expirationTime time.Duration) (kubeconfig.KubeconfigProvider, error) {
+func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, expirationTime time.Duration) (kubeconfig.Provider, error) {
 	restConfig, err := gardener.NewRestConfigFromFile(kubeconfigPath)
 	if err != nil {
-		return kubeconfig.KubeconfigProvider{}, err
+		return kubeconfig.Provider{}, err
 	}
 
 	gardenerClientSet, err := gardener_apis.NewForConfig(restConfig)
 	if err != nil {
-		return kubeconfig.KubeconfigProvider{}, err
+		return kubeconfig.Provider{}, err
 	}
 
 	gardenerClient, err := client.New(restConfig, client.Options{})
 	if err != nil {
-		return kubeconfig.KubeconfigProvider{}, err
+		return kubeconfig.Provider{}, err
 	}
 
 	shootClient := gardenerClientSet.Shoots(namespace)
@@ -180,7 +180,7 @@ func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, 
 
 	err = v1beta1.AddToScheme(gardenerClient.Scheme())
 	if err != nil {
-		return kubeconfig.KubeconfigProvider{}, errors.Wrap(err, "failed to register Gardener schema")
+		return kubeconfig.Provider{}, errors.Wrap(err, "failed to register Gardener schema")
 	}
 
 	return kubeconfig.NewKubeconfigProvider(shootClient,
