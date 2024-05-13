@@ -19,28 +19,8 @@ package v1
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
-
-// RuntimeSpec defines the desired state of Runtime
-type RuntimeSpec struct {
-	Name       string                    `json:"name"`
-	Purpose    string                    `json:"purpose"`
-	Kubernetes RuntimeKubernetes         `json:"kubernetes"`
-	Provider   RuntimeProvider           `json:"provider"`
-	Networking RuntimeSecurityNetworking `json:"networking"`
-	Workers    []gardener.Worker         `json:"workers,omitempty"`
-}
-
-// RuntimeStatus defines the observed state of Runtime
-type RuntimeStatus struct {
-	// State signifies current state of Runtime
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=Processing;Deleting;Ready;Error
-	State State `json:"state,omitempty"`
-
-	// List of status conditions to indicate the status of a ServiceInstance.
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
@@ -66,40 +46,80 @@ type RuntimeList struct {
 	Items           []Runtime `json:"items"`
 }
 
+// RuntimeSpec defines the desired state of Runtime
+type RuntimeSpec struct {
+	Shoot    RuntimeShoot `json:"shoot"`
+	Security Security     `json:"security"`
+}
+
+// RuntimeStatus defines the observed state of Runtime
+type RuntimeStatus struct {
+	// State signifies current state of Runtime
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=Processing;Deleting;Ready;Error
+	State State `json:"state,omitempty"`
+
+	// List of status conditions to indicate the status of a ServiceInstance.
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+}
+
+type RuntimeShoot struct {
+	Name              string                `json:"name"`
+	Purpose           gardener.ShootPurpose `json:"purpose"`
+	Region            string                `json:"region"`
+	LicenceType       *string               `json:"licenceType,omitempty"`
+	SecretBindingName string                `json:"secretBindingName"`
+	Kubernetes        Kubernetes            `json:"kubernetes"`
+	Provider          Provider              `json:"provider"`
+	Networking        Networking            `json:"networking"`
+	ControlPlane      gardener.ControlPlane `json:"controlPlane"`
+}
+
+type Kubernetes struct {
+	Version       *string   `json:"version,omitempty"`
+	KubeAPIServer APIServer `json:"kubeAPIServer,omitempty"`
+}
+
+type APIServer struct {
+	OidcConfig           gardener.OIDCConfig    `json:"oidcConfig"`
+	AdditionalOidcConfig *[]gardener.OIDCConfig `json:"additionalOidcConfig,omitempty"`
+}
+
+type Provider struct {
+	Type                 string               `json:"type"`
+	ControlPlaneConfig   runtime.RawExtension `json:"controlPlaneConfig"`
+	InfrastructureConfig runtime.RawExtension `json:"infrastructureConfig"`
+	Workers              []gardener.Worker    `json:"workers"`
+}
+
+type Networking struct {
+	Pods     string `json:"pods"`
+	Nodes    string `json:"nodes"`
+	Services string `json:"services"`
+}
+
+type Security struct {
+	Administrators []string           `json:"administrators"`
+	Networking     NetworkingSecurity `json:"networking"`
+}
+
+type NetworkingSecurity struct {
+	Filter Filter `json:"filter"`
+}
+
+type Filter struct {
+	Ingress *Ingress `json:"ingress,omitempty"`
+	Egress  Egress   `json:"egress"`
+}
+
+type Ingress struct {
+	Enabled bool `json:"enabled"`
+}
+
+type Egress struct {
+	Enabled bool `json:"enabled"`
+}
+
 func init() {
 	SchemeBuilder.Register(&Runtime{}, &RuntimeList{})
-}
-
-type RuntimeAPIServer struct {
-	OidcConfig           gardener.OIDCConfig    `json:"oidcConfig"`
-	AdditionalOidcConfig *[]gardener.OIDCConfig `json:"additionalOidcConfig"`
-}
-
-type RuntimeKubernetes struct {
-	Version       *string           `json:"version,omitempty"`
-	KubeAPIServer *RuntimeAPIServer `json:"kubeAPIServer,omitempty"`
-}
-
-type RuntimeSecurityNetworking struct {
-	Filtering      RuntimeSecurityNetworkingFiltering `json:"filiering"`
-	Administrators []string                           `json:"administrators"`
-}
-
-type RuntimeSecurityNetworkingFiltering struct {
-	Ingress RuntimeSecurityNetworkingFilteringIngress `json:"ingress"`
-	Egress  RuntimeSecurityNetworkingFilteringEgress  `json:"egress"`
-}
-
-type RuntimeSecurityNetworkingFilteringIngress struct {
-	Enabled bool `json:"enabled"`
-}
-
-type RuntimeSecurityNetworkingFilteringEgress struct {
-	Enabled bool `json:"enabled"`
-}
-
-type RuntimeProvider struct {
-	Type              string `json:"type"`
-	Region            string `json:"region"`
-	SecretBindingName string `json:"secretBindingName"`
 }

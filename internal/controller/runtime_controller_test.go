@@ -19,11 +19,13 @@ package controller
 import (
 	"context"
 
+	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apimachneryruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -50,10 +52,16 @@ var _ = Describe("Runtime Controller", func() {
 						Namespace: "default",
 					},
 					Spec: imv1.RuntimeSpec{
-						Networking: imv1.RuntimeSecurityNetworking{
-							Administrators: []string{
-								"test.me@plz",
+						Shoot: imv1.RuntimeShoot{
+							Networking: imv1.Networking{},
+							Provider: imv1.Provider{
+								ControlPlaneConfig:   apimachneryruntime.RawExtension{Raw: []byte("{}")},
+								InfrastructureConfig: apimachneryruntime.RawExtension{Raw: []byte("{}")},
+								Workers:              []gardener.Worker{},
 							},
+						},
+						Security: imv1.Security{
+							Administrators: []string{},
 						},
 					},
 				}
