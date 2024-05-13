@@ -18,11 +18,11 @@ func ToShoot(runtime imv1.Runtime) gardenerv1beta.Shoot {
 	}
 }
 
-func getLabels(runtime imv1.Runtime) map[string]string {
+func getLabels(_ imv1.Runtime) map[string]string {
 	return map[string]string{}
 }
 
-func getAnnotations(runtime imv1.Runtime) map[string]string {
+func getAnnotations(_ imv1.Runtime) map[string]string {
 	return map[string]string{}
 }
 
