@@ -55,23 +55,6 @@ spec:
           # spec.shoot.workers.maxUnavailable is required in the first release.
           # It can be optional in the future, as it is always set to 0
           maxUnavailable: 0
-      # spec.shoot.controlPlaneConfig is required
-      controlPlaneConfig:
-        apiVersion: azure.provider.extensions.gardener.cloud/v1alpha1
-        kind: ControlPlaneConfig
-      # spec.shoot.provider.infrastructureConfig is required
-      infrastructureConfig:
-        apiVersion: azure.provider.extensions.gardener.cloud/v1alpha1
-        kind: InfrastructureConfig
-        networks:
-          vnet:
-            cidr: 10.250.0.0/19
-          zones:
-            - cidr: 10.250.0.0/24
-              name: 1
-              natGateway:
-                enabled: true
-                idleConnectionTimeoutMinutes: 4
     # spec.shoot.Networking is required
     networking:
       pods: 10.96.0.0/13

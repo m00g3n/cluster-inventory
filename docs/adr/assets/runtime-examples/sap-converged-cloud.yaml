@@ -77,18 +77,6 @@ spec:
           # spec.shoot.workers.maxUnavailable is required in the first release.
           # It can be optional in the future, as it is always set to 0
           maxUnavailable: 0
-      # spec.shoot.provider.controlPlaneConfig is required
-      controlPlaneConfig:
-        apiVersion: openstack.provider.extensions.gardener.cloud/v1alpha1
-        kind: ControlPlaneConfig
-        loadBalancerProvider: f5
-      # spec.shoot.provider.infrastructureConfig is required
-      infrastructureConfig:
-        apiVersion: openstack.provider.extensions.gardener.cloud/v1alpha1
-        floatingPoolName: FloatingIP-external-kyma-01
-        kind: InfrastructureConfig
-        networks:
-          workers: 10.180.0.0/16
     # spec.shoot.Networking is required
     networking:
       pods: 10.96.0.0/13

@@ -57,22 +57,6 @@ spec:
           # spec.shoot.workers.maxUnavailable is required in the first release.
           # It can be optional in the future, as it is always set to 0
           maxUnavailable: 0
-      # spec.shoot.provider.controlPlaneConfig is required
-      controlPlaneConfig:
-        apiVersion: aws.provider.extensions.gardener.cloud/v1alpha1
-        kind: ControlPlaneConfig
-      # spec.shoot.provider.infrastructureConfig is required
-      infrastructureConfig:
-        kind: InfrastructureConfig
-        apiVersion: aws.provider.extensions.gardener.cloud/v1alpha1
-        networks:
-          vpc:
-            cidr: 10.250.0.0/22
-          zones:
-            - name: eu-central-1b
-              internal: 10.250.0.192/26
-              public: 10.250.0.128/26
-              workers: 10.250.0.0/25
     # spec.shoot.Networking is required
     networking:
       pods: 10.96.0.0/13

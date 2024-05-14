@@ -24,7 +24,6 @@ Kyma Environment Broker has the following responsibilities:
 - Create Runtime CR containing the following data:
     - Provider config (type, region, and secret with credentials for hyperscaler)
     - Worker pool specification
-    - Provider specific config
     - Cluster networking settings (nodes, pods, and services API ranges)
     - OIDC settings
     - Cluster administrators list
@@ -44,6 +43,7 @@ Kyma Environment Broker has the following responsibilities:
      - configuring DNS extension 
      - configuring Certificates extension
      - providing maintenance settings (Kubernetes, and image autoupdates)
+     - creating provider specific config
  - Upgrade and delete shoots for the corresponding `Runtime` CRs
  - Apply the audit log configuration on the shoot resource
  - Create cluster role bindings for administrators
@@ -119,30 +119,6 @@ spec:
           # spec.shoot.workers.maxUnavailable is required in the first release.
           # It can be optional in the future, as it is always set to 0
           maxUnavailable: 0
-      # spec.shoot.provider.controlPlaneConfig is required
-      controlPlaneConfig:
-        apiVersion: aws.provider.extensions.gardener.cloud/v1alpha1
-        kind: ControlPlaneConfig
-      # spec.shoot.provider.infrastructureConfig is required
-      infrastructureConfig:
-        apiVersion: aws.provider.extensions.gardener.cloud/v1alpha1
-        kind: InfrastructureConfig
-        networks:
-          vpc:
-            cidr: 10.250.0.0/16
-          zones:
-            - internal: 10.250.48.0/20
-              name: eu-central-1c
-              public: 10.250.32.0/20
-              workers: 10.250.0.0/19
-            - internal: 10.250.112.0/20
-              name: eu-central-1b
-              public: 10.250.96.0/20
-              workers: 10.250.64.0/19
-            - internal: 10.250.176.0/20
-              name: eu-central-1a
-              public: 10.250.160.0/20
-              workers: 10.250.128.0/19
     # spec.shoot.Networking is required
     networking:
       pods: 100.64.0.0/12
@@ -247,30 +223,6 @@ spec:
           # spec.shoot.workers.maxUnavailable is required in the first release.
           # It can be optional in the future, as it is always set to 0
           maxUnavailable: 0
-      # spec.shoot.provider.controlPlaneConfig is required
-      controlPlaneConfig:
-        apiVersion: aws.provider.extensions.gardener.cloud/v1alpha1
-        kind: ControlPlaneConfig
-      # spec.shoot.provider.infrastructureConfig is required
-      infrastructureConfig:
-        apiVersion: aws.provider.extensions.gardener.cloud/v1alpha1
-        kind: InfrastructureConfig
-        networks:
-          vpc:
-            cidr: 10.250.0.0/16
-          zones:
-            - internal: 10.250.48.0/20
-              name: eu-central-1c
-              public: 10.250.32.0/20
-              workers: 10.250.0.0/19
-            - internal: 10.250.112.0/20
-              name: eu-central-1b
-              public: 10.250.96.0/20
-              workers: 10.250.64.0/19
-            - internal: 10.250.176.0/20
-              name: eu-central-1a
-              public: 10.250.160.0/20
-              workers: 10.250.128.0/19
     # spec.shoot.Networking is required
     networking:
       pods: 100.64.0.0/12
@@ -306,43 +258,61 @@ Please see the following examples to understand what CRs must be created for par
 ## API structures
 
 ```go
-package v2
+package v1
 
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// Runtime is the Schema for the runtimes API
 type Runtime struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   RuntimeSpec   `json:"spec"`
+	Spec   RuntimeSpec   `json:"spec,omitempty"`
 	Status RuntimeStatus `json:"status,omitempty"`
 }
 
+// RuntimeSpec defines the desired state of Runtime
 type RuntimeSpec struct {
-	Shoot    Shoot    `json:"spec"`
-	Security Security `json:"security"`
+	Shoot    RuntimeShoot `json:"shoot"`
+	Security Security     `json:"security"`
 }
 
-type Shoot struct {
-	Name              string             `json:"name"`
-	Purpose           string             `json:"purpose"`
-	Region            string             `json:"region"`
-	LicenceType       *string            `json:"licenceType,omitempty"`
-	SecretBindingName string             `json:"secretBindingName"`
-	Kubernetes        Kubernetes         `json:"kubernetes"`
-	Provider          Provider           `json:"provider"`
-	Networking        Networking         `json:"networking"`
+// RuntimeStatus defines the observed state of Runtime
+type RuntimeStatus struct {
+	// State signifies current state of Runtime
+	State State `json:"state,omitempty"`
+	// List of status conditions to indicate the status of a ServiceInstance.
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+}
+
+type RuntimeShoot struct {
+	Name              string                `json:"name"`
+	Purpose           gardener.ShootPurpose `json:"purpose"`
+	Region            string                `json:"region"`
+	LicenceType       *string               `json:"licenceType,omitempty"`
+	SecretBindingName string                `json:"secretBindingName"`
+	Kubernetes        Kubernetes            `json:"kubernetes"`
+	Provider          Provider              `json:"provider"`
+	Networking        Networking            `json:"networking"`
+	ControlPlane      gardener.ControlPlane `json:"controlPlane"`
+}
+
+type Kubernetes struct {
+	Version       *string   `json:"version,omitempty"`
+	KubeAPIServer APIServer `json:"kubeAPIServer,omitempty"`
+}
+
+type APIServer struct {
+	OidcConfig           gardener.OIDCConfig    `json:"oidcConfig"`
+	AdditionalOidcConfig *[]gardener.OIDCConfig `json:"additionalOidcConfig,omitempty"`
 }
 
 type Provider struct {
-	Type                 string                `json:"type"`
-	ControlPlaneConfig   runtime.RawExtension `json:"controlPlaneConfig"`
-	InfrastructureConfig runtime.RawExtension `json:"infrastructureConfig"`
-        Workers              []gardener.Worker     `json:"workers"`
+	Type    string            `json:"type"`
+	Workers []gardener.Worker `json:"workers"`
 }
 
 type Networking struct {
@@ -351,19 +321,9 @@ type Networking struct {
 	Services string `json:"services"`
 }
 
-type Kubernetes struct {
-	Version       *string    `json:"version,omitempty"`
-	KubeAPIServer APIServer  `json:"kubeAPIServer"`
-}
-
-type APIServer struct {
-	OidcConfig           gardener.OIDCConfig    `json:"oidcConfig"`
-	AdditionalOidcConfig *[]gardener.OIDCConfig `json:"additionalOidcConfig""`
-}
-
 type Security struct {
 	Administrators []string           `json:"administrators"`
-	Networking     NetworkingSecurity `json:"networking""`
+	Networking     NetworkingSecurity `json:"networking"`
 }
 
 type NetworkingSecurity struct {
@@ -382,22 +342,5 @@ type Ingress struct {
 type Egress struct {
 	Enabled bool `json:"enabled"`
 }
-
-type State string
-
-// +kubebuilder:object:root=true
-// RuntimeStatus defines the observed state of Runtime
-type RuntimeStatus struct {
-	// State signifies current state of Runtime.
-	// Value can be one of ("Ready", "Processing", "Error", "Deleting").
-	State State `json:"state,omitempty"`
-
-	// List of status conditions to indicate the status of a ServiceInstance.
-	// +optional
-	// +listType=map
-	// +listMapKey=type
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-
 
 ```
