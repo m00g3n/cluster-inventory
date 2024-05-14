@@ -99,16 +99,16 @@ spec:
     provider:
       # spec.shoot.provider.type is required
       type: aws
+      # spec.shoot.provider.zones is required
+      zones:
+        - eu-central-1a
+        - eu-central-1b
+        - eu-central-1c
       # spec.shoot.provider.workers is required
       workers:
         - machine:
-            # spec.shoot.workers.machine.type is required
-            type: m6i.large
-          # spec.shoot.workers.zones is required
-          zones:
-            - eu-central-1a
-            - eu-central-1b
-            - eu-central-1c
+          # spec.shoot.workers.machine.type is required
+          type: m6i.large
           # spec.shoot.workers.minimum is required
           minimum: 3
           # spec.shoot.workers.maximum is required
@@ -191,6 +191,11 @@ spec:
     provider:
       # spec.shoot.provider.type is required
       type: aws
+      # spec.shoot.provider.zones is required
+      zones:
+        - eu-central-1a
+        - eu-central-1b
+        - eu-central-1c
       # spec.shoot.provider.workers is required
       workers:
         - machine:
@@ -206,7 +211,7 @@ spec:
           volume:
             type: gp2
             size: 50Gi
-          # spec.shoot.workers.zones is required
+          # spec.shoot.workers.zones is optional
           zones:
             - eu-central-1a
             - eu-central-1b
@@ -312,6 +317,7 @@ type APIServer struct {
 
 type Provider struct {
 	Type    string            `json:"type"`
+	Zones   []string          `json:"workers"`
 	Workers []gardener.Worker `json:"workers"`
 }
 

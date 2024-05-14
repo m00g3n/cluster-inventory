@@ -49,6 +49,11 @@ spec:
     provider:
       # spec.shoot.provider.type is required
       type: openstack
+      # spec.shoot.workers.zones is required
+      zones:
+        - eu-de-1a
+        - eu-de-1b
+        - eu-de-1d
       # spec.shoot.provider.workers is required
       workers:
         - machine:
@@ -60,7 +65,7 @@ spec:
               name: gardenlinux
               version: 1312.3.0
           # Note: KEB doesn't specify the volume, Gardener defaults used
-          # spec.shoot.workers.zones is provided by the KEB, required
+          # spec.shoot.workers.zones is optional
           zones:
             - eu-de-1a
             - eu-de-1b

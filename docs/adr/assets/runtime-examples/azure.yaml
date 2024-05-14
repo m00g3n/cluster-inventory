@@ -49,6 +49,11 @@ spec:
     provider:
       # spec.shoot.provider.type is required
       type: azure
+      # spec.shoot.provider.zones is required
+      zones:
+        - eastus1
+        - eastus2
+        - eastus3
       # spec.shoot.provider.workers is required
       workers:
         - machine:
@@ -64,7 +69,7 @@ spec:
           volume:
             type: Standard_LRS
             size: 50Gi
-          # spec.shoot.workers.zones is required
+          # spec.shoot.workers.zones is optional
           zones:
             - eastus1
             - eastus2
