@@ -8,11 +8,17 @@ import (
 	gardener_types "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/kubeconfig"
+	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 	"log"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
+	"time"
 )
 
 const (
@@ -42,7 +48,13 @@ func main() {
 		log.Fatal(err)
 	}
 
+	provider, err := setupKubernetesKubeconfigProvider(gardenerKubeconfigPath, gardenerNamespace, 60*time.Minute)
+	if err != nil {
+		log.Fatal("Failed to create kubeconfig provider")
+	}
+
 	for _, shoot := range list.Items {
+		var subjects = getAdministratorsList(provider, shoot.Name)
 		var runtime = v1.Runtime{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Runtime",
@@ -62,10 +74,11 @@ func main() {
 			},
 			Spec: v1.RuntimeSpec{
 				Shoot: v1.RuntimeShoot{
-					Name:              shoot.Name, //TODO: What to pass he? Should it be the same as ObjectMetadata.Name?
-					Purpose:           *shoot.Spec.Purpose,
-					Region:            shoot.Spec.Region,
-					LicenceType:       nil, //TODO: what's that?
+					Name:    shoot.Name, //TODO: What to pass he? Should it be the same as ObjectMetadata.Name?
+					Purpose: *shoot.Spec.Purpose,
+					Region:  shoot.Spec.Region,
+
+					LicenceType:       nil, //TODO: what's that? should be taken from label if exist, set it based on label, if not, do nothing()
 					SecretBindingName: *shoot.Spec.SecretBindingName,
 					Kubernetes: v1.Kubernetes{
 						Version: &shoot.Spec.Kubernetes.Version,
@@ -106,6 +119,7 @@ func main() {
 						HighAvailability: &v1beta1.HighAvailability{
 							FailureTolerance: v1beta1.FailureTolerance{
 								Type: "", //TODO: verify if needed/present shoot.Spec.ControlPlane.HighAvailability.FailureTolerance.Type
+								//TODO: check on prod
 							},
 						},
 					},
@@ -113,7 +127,7 @@ func main() {
 				Security: v1.Security{
 					//TODO: (!) made it nullable with omitempty. Finding specific cluster-role-bindings would be needed to fill this list (username field)
 					// Q: Why do we need that after provisioning? A: data consistency reasons
-					Administrators: nil, //TODO: https://github.com/kyma-project/infrastructure-manager/issues/198
+					Administrators: subjects, //TODO: https://github.com/kyma-project/infrastructure-manager/issues/198
 					Networking: v1.NetworkingSecurity{
 						Filter: v1.Filter{
 							Ingress: &v1.Ingress{
@@ -128,13 +142,43 @@ func main() {
 			},
 			Status: v1.RuntimeStatus{
 				State:      "",  //deliberately left empty by our migrator to show that controller has not picked it yet
-				Conditions: nil, //TODO: fixme. Shouldn't we use here metadata from Gardener instead of api-machinery?
+				Conditions: nil, //deliberately left nil by our migrator to show that controller has not picked it yet
 			},
 		}
 
 		shootAsYaml, err := getYamlSpec(runtime)
 		writeSpecToFile(outputPath, shoot, err, shootAsYaml)
 	}
+}
+
+func getAdministratorsList(provider kubeconfig.Provider, shootName string) []string {
+	var kubeconfig, _ = provider.Fetch(context.Background(), shootName)
+	if kubeconfig == "" {
+		log.Fatal("failed to get dynamic kubeconfig")
+	}
+
+	restClientConfig, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
+	if err != nil {
+		log.Fatal("failed to create REST client from kubeconfig")
+	}
+
+	clientset, err := kubernetes.NewForConfig(restClientConfig)
+	if err != nil {
+		log.Fatal("failed to create clientset from restconfig")
+	}
+
+	var clusterRoleBindings, _ = clientset.RbacV1().ClusterRoleBindings().List(context.Background(), metav1.ListOptions{
+		LabelSelector: "reconciler.kyma-project.io/managed-by=reconciler,app=kyma",
+	})
+
+	var subjects = []string{}
+	for _, clusterRoleBinding := range clusterRoleBindings.Items {
+		for _, subject := range clusterRoleBinding.Subjects {
+			subjects = append(subjects, subject.Name)
+		}
+	}
+
+	return subjects
 }
 
 func appendMigratorLabel(shootLabels map[string]string) map[string]string {
@@ -177,4 +221,34 @@ func setupGardenerShootClient(kubeconfigPath, gardenerNamespace string) gardener
 	shootClient := gardenerClientSet.Shoots(gardenerNamespace)
 
 	return shootClient
+}
+
+func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, expirationTime time.Duration) (kubeconfig.Provider, error) {
+	restConfig, err := gardener.NewRestConfigFromFile(kubeconfigPath)
+	if err != nil {
+		return kubeconfig.Provider{}, err
+	}
+
+	gardenerClientSet, err := gardener_types.NewForConfig(restConfig)
+	if err != nil {
+		return kubeconfig.Provider{}, err
+	}
+
+	gardenerClient, err := client.New(restConfig, client.Options{})
+	if err != nil {
+		return kubeconfig.Provider{}, err
+	}
+
+	shootClient := gardenerClientSet.Shoots(namespace)
+	dynamicKubeconfigAPI := gardenerClient.SubResource("adminkubeconfig")
+
+	err = v1beta1.AddToScheme(gardenerClient.Scheme())
+	if err != nil {
+		return kubeconfig.Provider{}, errors.Wrap(err, "failed to register Gardener schema")
+	}
+
+	return kubeconfig.NewKubeconfigProvider(shootClient,
+		dynamicKubeconfigAPI,
+		namespace,
+		int64(expirationTime.Seconds())), nil
 }
