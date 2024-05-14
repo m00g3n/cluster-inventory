@@ -55,6 +55,10 @@ func main() {
 
 	for _, shoot := range list.Items {
 		var subjects = getAdministratorsList(provider, shoot.Name)
+		var licenceType = shoot.Annotations["kcp.provisioner.kyma-project.io/licence-type"]
+		var nginxIngressEnabled = isNginxIngressEnabled(shoot)
+		var hAFailureToleranceType = getFailureToleranceType(shoot)
+
 		var runtime = v1.Runtime{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Runtime",
@@ -74,11 +78,10 @@ func main() {
 			},
 			Spec: v1.RuntimeSpec{
 				Shoot: v1.RuntimeShoot{
-					Name:    shoot.Name, //TODO: What to pass he? Should it be the same as ObjectMetadata.Name?
-					Purpose: *shoot.Spec.Purpose,
-					Region:  shoot.Spec.Region,
-
-					LicenceType:       nil, //TODO: what's that? should be taken from label if exist, set it based on label, if not, do nothing()
+					Name:              shoot.Name,
+					Purpose:           *shoot.Spec.Purpose,
+					Region:            shoot.Spec.Region,
+					LicenceType:       &licenceType, //TODO: consult if this is a valid approach
 					SecretBindingName: *shoot.Spec.SecretBindingName,
 					Kubernetes: v1.Kubernetes{
 						Version: &shoot.Spec.Kubernetes.Version,
@@ -118,23 +121,21 @@ func main() {
 					ControlPlane: v1beta1.ControlPlane{
 						HighAvailability: &v1beta1.HighAvailability{
 							FailureTolerance: v1beta1.FailureTolerance{
-								Type: "", //TODO: verify if needed/present shoot.Spec.ControlPlane.HighAvailability.FailureTolerance.Type
+								Type: hAFailureToleranceType, //TODO: verify if needed/present shoot.Spec.ControlPlane.HighAvailability.FailureTolerance.Type
 								//TODO: check on prod
 							},
 						},
 					},
 				},
 				Security: v1.Security{
-					//TODO: (!) made it nullable with omitempty. Finding specific cluster-role-bindings would be needed to fill this list (username field)
-					// Q: Why do we need that after provisioning? A: data consistency reasons
-					Administrators: subjects, //TODO: https://github.com/kyma-project/infrastructure-manager/issues/198
+					Administrators: subjects,
 					Networking: v1.NetworkingSecurity{
 						Filter: v1.Filter{
 							Ingress: &v1.Ingress{
-								Enabled: false, //TODO: fixme
+								Enabled: nginxIngressEnabled, //TODO: consult if this is a valid approach
 							},
 							Egress: v1.Egress{
-								Enabled: false, //TODO: fixme
+								Enabled: false, //TODO: fix me
 							},
 						},
 					},
@@ -149,6 +150,19 @@ func main() {
 		shootAsYaml, err := getYamlSpec(runtime)
 		writeSpecToFile(outputPath, shoot, err, shootAsYaml)
 	}
+}
+
+func isNginxIngressEnabled(shoot v1beta1.Shoot) bool {
+	return shoot.Spec.Addons.NginxIngress != nil && shoot.Spec.Addons.NginxIngress.Enabled
+}
+
+func getFailureToleranceType(shoot v1beta1.Shoot) v1beta1.FailureToleranceType {
+	if shoot.Spec.ControlPlane != nil {
+		if shoot.Spec.ControlPlane.HighAvailability != nil {
+			return shoot.Spec.ControlPlane.HighAvailability.FailureTolerance.Type
+		}
+	}
+	return ""
 }
 
 func getAdministratorsList(provider kubeconfig.Provider, shootName string) []string {
