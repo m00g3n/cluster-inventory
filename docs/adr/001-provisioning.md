@@ -53,7 +53,8 @@ Kyma Environment Broker has the following responsibilities:
 
 ### CR examples
 
-MInd that the Runtime CR must contain the following labels:
+Mind that the Runtime CR must be labeled to make searching easier. 
+The proposed list of labels to be added to the Runtime CR:
 ```yaml
  kyma-project.io/instance-id: instance-id
  kyma-project.io/runtime-id: runtime-id
@@ -63,7 +64,6 @@ MInd that the Runtime CR must contain the following labels:
  kyma-project.io/subaccount-id: subAccount-id
  kyma-project.io/shoot-name: shoot-name
  kyma-project.io/region: region
- kyma-project.io/platform-region: platform-region
  operator.kyma-project.io/kyma-name: kymaName
 ```
 
@@ -84,6 +84,8 @@ spec:
     purpose: production
     # spec.shoot.region is required
     region: eu-central-1
+    # spec.shoot.platformRegion is required
+    platformRegion: "cd-eu11"
     # spec.shoot.secretBindingName is required
     secretBindingName: "hyperscaler secret"
     kubernetes:
@@ -141,7 +143,6 @@ spec:
 ```
 
 There are some additional optional fields that could be specified:
-- `spec.shoot.seedName` ; if not provided `nil` value will be used
 - `spec.shoot.licenceType` ; if not provided `nil` value will be used 
 - `spec.shoot.kubernetes.version` ; if not provided, the default value will be read by the KIM from the configuration
 - `spec.shoot.kubernetes.kubeAPIServer.additionalOidcConfig` ; if not provided, no additional OIDC provider will be configured
@@ -164,6 +165,8 @@ spec:
     purpose: production
     # spec.shoot.region is required
     region: eu-central-1
+    # spec.shoot.platformRegion is required
+    platformRegion: "cd-eu11"
     # spec.shoot.secretBindingName is required
     secretBindingName: "hyperscaler secret"
     kubernetes:
@@ -296,6 +299,7 @@ type RuntimeStatus struct {
 type RuntimeShoot struct {
 	Name              string                `json:"name"`
 	Purpose           gardener.ShootPurpose `json:"purpose"`
+	PlatformRegion    string                `json:"platformRegion"` 
 	Region            string                `json:"region"`
 	LicenceType       *string               `json:"licenceType,omitempty"`
 	SecretBindingName string                `json:"secretBindingName"`

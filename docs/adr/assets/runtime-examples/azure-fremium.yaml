@@ -22,6 +22,8 @@ spec:
     purpose: evaluation
     # spec.shoot.region is required
     region: eu-central-1
+    # spec.shoot.platformRegion is required
+    platformRegion: "cd-us11"
     # spec.shoot.secretBindingName is required
     secretBindingName: "hyperscaler secret"
     kubernetes:
