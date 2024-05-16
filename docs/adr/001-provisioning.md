@@ -53,7 +53,7 @@ Kyma Environment Broker has the following responsibilities:
 
 ### CR examples
 
-Mind that the Runtime CR must be labeled to make searching easier. 
+Mind that the Runtime CR must be labeled to make searching for a particular instance easier. 
 The proposed list of labels to be added to the Runtime CR:
 ```yaml
  kyma-project.io/instance-id: instance-id
@@ -85,7 +85,7 @@ spec:
     # spec.shoot.region is required
     region: eu-central-1
     # spec.shoot.platformRegion is required
-    platformRegion: "cd-eu11"
+    platformRegion: "cf-eu11"
     # spec.shoot.secretBindingName is required
     secretBindingName: "hyperscaler secret"
     kubernetes:
@@ -101,16 +101,16 @@ spec:
     provider:
       # spec.shoot.provider.type is required
       type: aws
-      # spec.shoot.provider.zones is required
-      zones:
-        - eu-central-1a
-        - eu-central-1b
-        - eu-central-1c
       # spec.shoot.provider.workers is required
       workers:
         - machine:
           # spec.shoot.workers.machine.type is required
           type: m6i.large
+          # spec.shoot.workers.zones is required
+          zones:
+            - eu-central-1a
+            - eu-central-1b
+            - eu-central-1c
           # spec.shoot.workers.minimum is required
           minimum: 3
           # spec.shoot.workers.maximum is required
@@ -155,6 +155,17 @@ The following example shows the Runtime CR that must be created to provision a c
 apiVersion: infrastructuremanager.kyma-project.io/v1alpha1
 kind: Runtime
 metadata:
+  labels:
+    kyma-project.io/instance-id: instance-id
+    kyma-project.io/runtime-id: runtime-id
+    kyma-project.io/broker-plan-id: plan-id
+    kyma-project.io/broker-plan-name: plan-name
+    kyma-project.io/global-account-id: global-account-id
+    kyma-project.io/subaccount-id: subAccount-id
+    kyma-project.io/shoot-name: shoot-name
+    kyma-project.io/region: region
+    kyma-project.io/platform-region: platform-region
+    operator.kyma-project.io/kyma-name: kymaName
   name: runtime-id
   namespace: kcp-system
 spec:
@@ -194,11 +205,6 @@ spec:
     provider:
       # spec.shoot.provider.type is required
       type: aws
-      # spec.shoot.provider.zones is required
-      zones:
-        - eu-central-1a
-        - eu-central-1b
-        - eu-central-1c
       # spec.shoot.provider.workers is required
       workers:
         - machine:
@@ -214,7 +220,7 @@ spec:
           volume:
             type: gp2
             size: 50Gi
-          # spec.shoot.workers.zones is optional
+          # spec.shoot.workers.zones is required
           zones:
             - eu-central-1a
             - eu-central-1b
@@ -321,7 +327,6 @@ type APIServer struct {
 
 type Provider struct {
 	Type    string            `json:"type"`
-	Zones   []string          `json:"workers"`
 	Workers []gardener.Worker `json:"workers"`
 }
 

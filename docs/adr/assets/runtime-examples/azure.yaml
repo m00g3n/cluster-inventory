@@ -10,7 +10,6 @@ metadata:
     kyma-project.io/subaccount-id: subAccount-id
     kyma-project.io/shoot-name: shoot-name
     kyma-project.io/region: region
-    kyma-project.io/platform-region: platform-region
     operator.kyma-project.io/kyma-name: kymaName
   name: runtime-id
   namespace: kcp-system
@@ -23,7 +22,7 @@ spec:
     # spec.shoot.region is required
     region: eastus
     # spec.shoot.platformRegion is required
-    platformRegion: "cd-us11"
+    platformRegion: "cf-us10"
     # spec.shoot.secretBindingName is required
     secretBindingName: "hyperscaler secret"
     kubernetes:
@@ -51,11 +50,6 @@ spec:
     provider:
       # spec.shoot.provider.type is required
       type: azure
-      # spec.shoot.provider.zones is required
-      zones:
-        - eastus1
-        - eastus2
-        - eastus3
       # spec.shoot.provider.workers is required
       workers:
         - machine:
@@ -71,7 +65,7 @@ spec:
           volume:
             type: Standard_LRS
             size: 50Gi
-          # spec.shoot.workers.zones is optional
+          # spec.shoot.workers.zones is required
           zones:
             - eastus1
             - eastus2

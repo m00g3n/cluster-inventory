@@ -10,7 +10,6 @@ metadata:
     kyma-project.io/subaccount-id: subAccount-id
     kyma-project.io/shoot-name: shoot-name
     kyma-project.io/region: region
-    kyma-project.io/platform-region: platform-region
     operator.kyma-project.io/kyma-name: kymaName
   name: runtime-id
   namespace: kcp-system
@@ -25,7 +24,7 @@ spec:
     # spec.shoot.region is required
     region: eu-central-1
     # spec.shoot.platformRegion is required
-    platformRegion: "cd-eu11"
+    platformRegion: "cf-eu11"
     # spec.shoot.secretBindingName is required
     secretBindingName: "hyperscaler secret"
     kubernetes:
@@ -41,14 +40,14 @@ spec:
     provider:
       # spec.shoot.provider.type is required
       type: aws
-      # spec.shoot.provider.zones is required
-      zones:
-        - eu-central-1b
       # spec.shoot.provider.workers is required
       workers:
         - machine:
             # spec.shoot.workers.machine.type is required
             type: mx5.large
+          # spec.shoot.workers.zones is required
+          zones:
+            - eu-central-1b
           # spec.shoot.workers.minimum is required
           minimum: 1
           # spec.shoot.workers.maximum is required
