@@ -17,7 +17,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"log"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	client "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 	"time"
 )
@@ -28,22 +28,18 @@ const (
 
 func main() {
 	cfg := migrator.NewConfig()
-	migrator.PrintConfig(cfg)
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.GardenerProjectName)
 
-	gardenerShootClient := setupGardenerShootClient(cfg.GardenerKubeconfigPath, gardenerNamespace)
-	list, err := gardenerShootClient.List(context.Background(), metav1.ListOptions{})
-	//k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
-
-	if err != nil {
-		log.Fatal(err)
-	}
+	list := getShootList(cfg, gardenerNamespace)
 
 	provider, err := setupKubernetesKubeconfigProvider(cfg.GardenerKubeconfigPath, gardenerNamespace, 60*time.Minute)
 	if err != nil {
-		log.Fatal("Failed to create kubeconfig provider")
+		log.Fatal("failed to create kubeconfig provider")
 	}
+
+	//k8sClient, _ = migrator.CreateKcpClient(&cfg)
+	kcpClient, err := migrator.CreateKcpClient(&cfg)
 
 	for _, shoot := range list.Items {
 		var subjects = getAdministratorsList(provider, shoot.Name)
@@ -52,97 +48,130 @@ func main() {
 		var nginxIngressEnabled = isNginxIngressEnabled(shoot)
 		var hAFailureToleranceType = getFailureToleranceType(shoot)
 
-		var runtime = v1.Runtime{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Runtime",
-				APIVersion: "infrastructuremanager.kyma-project.io/v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:                       shoot.Name,
-				GenerateName:               shoot.GenerateName,
-				Namespace:                  "kcp-system",
-				DeletionTimestamp:          shoot.DeletionTimestamp,
-				DeletionGracePeriodSeconds: shoot.DeletionGracePeriodSeconds,
-				Labels:                     getAllRuntimeLabels(shoot, cfg.Client),
-				Annotations:                shoot.Annotations,
-				OwnerReferences:            shoot.OwnerReferences,
-				Finalizers:                 shoot.Finalizers,
-				ManagedFields:              nil, // deliberately left empty "This is mostly for migrator housekeeping, and users typically shouldn't need to set or understand this field."
-			},
-			Spec: v1.RuntimeSpec{
-				Shoot: v1.RuntimeShoot{
-					Name:              shoot.Name,
-					Purpose:           *shoot.Spec.Purpose,
-					Region:            shoot.Spec.Region,
-					LicenceType:       &licenceType, //TODO: consult if this is a valid approach
-					SecretBindingName: *shoot.Spec.SecretBindingName,
-					Kubernetes: v1.Kubernetes{
-						Version: &shoot.Spec.Kubernetes.Version,
-						KubeAPIServer: v1.APIServer{
-							OidcConfig: v1beta1.OIDCConfig{
-								CABundle:             nil, //deliberately left empty
-								ClientAuthentication: shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.ClientAuthentication,
-								ClientID:             shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.ClientID,
-								GroupsClaim:          shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.GroupsClaim,
-								GroupsPrefix:         shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.GroupsPrefix,
-								IssuerURL:            shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.IssuerURL,
-								RequiredClaims:       shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.RequiredClaims,
-								SigningAlgs:          shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.SigningAlgs,
-								UsernameClaim:        shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.UsernameClaim,
-								UsernamePrefix:       shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.UsernamePrefix,
-							},
-							AdditionalOidcConfig: nil, //deliberately left empty for now
-						},
-					},
-					Provider: v1.Provider{
-						Type: shoot.Spec.Provider.Type,
-						ControlPlaneConfig: runtime.RawExtension{
-							Raw:    shoot.Spec.Provider.ControlPlaneConfig.Raw,
-							Object: shoot.Spec.Provider.ControlPlaneConfig.Object,
-						},
-						InfrastructureConfig: runtime.RawExtension{
-							Raw:    shoot.Spec.Provider.InfrastructureConfig.Raw,
-							Object: shoot.Spec.Provider.InfrastructureConfig.Object,
-						},
-						Workers: shoot.Spec.Provider.Workers,
-					},
-					Networking: v1.Networking{
-						Pods:     *shoot.Spec.Networking.Pods,
-						Nodes:    *shoot.Spec.Networking.Nodes,
-						Services: *shoot.Spec.Networking.Services,
-					},
-					ControlPlane: v1beta1.ControlPlane{
-						HighAvailability: &v1beta1.HighAvailability{
-							FailureTolerance: v1beta1.FailureTolerance{
-								Type: hAFailureToleranceType, //TODO: verify if needed/present shoot.Spec.ControlPlane.HighAvailability.FailureTolerance.Type
-								//TODO: check on prod
-							},
-						},
-					},
-				},
-				Security: v1.Security{
-					Administrators: subjects,
-					Networking: v1.NetworkingSecurity{
-						Filter: v1.Filter{
-							Ingress: &v1.Ingress{
-								Enabled: nginxIngressEnabled, //TODO: consult if this is a valid approach
-							},
-							Egress: v1.Egress{
-								Enabled: false, //TODO: fix me
-							},
-						},
-					},
-				},
-			},
-			Status: v1.RuntimeStatus{
-				State:      "",  //deliberately left empty by our migrator to show that controller has not picked it yet
-				Conditions: nil, //deliberately left nil by our migrator to show that controller has not picked it yet
-			},
+		runtime := createRuntime(shoot, cfg, licenceType, hAFailureToleranceType, subjects, nginxIngressEnabled)
+		err := saveRuntime(cfg, runtime, kcpClient)
+		if err != nil {
+			log.Fatal(err)
 		}
 
 		shootAsYaml, err := getYamlSpec(runtime)
 		writeSpecToFile(cfg.OutputPath, shoot, err, shootAsYaml)
 	}
+}
+
+func saveRuntime(cfg migrator.Config, runtime v1.Runtime, getClient client.Client) error {
+	if !cfg.IsDryRun {
+		err := getClient.Create(context.Background(), &runtime)
+
+		if err != nil {
+			log.Fatal("Failed to create runtime CR")
+		}
+	}
+	return nil
+}
+
+func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, licenceType string, hAFailureToleranceType v1beta1.FailureToleranceType, subjects []string, nginxIngressEnabled bool) v1.Runtime {
+	var runtime = v1.Runtime{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Runtime",
+			APIVersion: "infrastructuremanager.kyma-project.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:                       shoot.Name,
+			GenerateName:               shoot.GenerateName,
+			Namespace:                  "kcp-system",
+			DeletionTimestamp:          shoot.DeletionTimestamp,
+			DeletionGracePeriodSeconds: shoot.DeletionGracePeriodSeconds,
+			Labels:                     getAllRuntimeLabels(shoot, cfg.Client),
+			Annotations:                shoot.Annotations,
+			OwnerReferences:            nil, //deliberately left empty, as without that we will not be able to delete Runtime CRs
+			Finalizers:                 nil, //deliberately left empty, as without that we will not be able to delete Runtime CRs
+			ManagedFields:              nil, // deliberately left empty "This is mostly for migrator housekeeping, and users typically shouldn't need to set or understand this field."
+		},
+		Spec: v1.RuntimeSpec{
+			Shoot: v1.RuntimeShoot{
+				Name:              shoot.Name,
+				Purpose:           *shoot.Spec.Purpose,
+				Region:            shoot.Spec.Region,
+				LicenceType:       &licenceType, //TODO: consult if this is a valid approach
+				SecretBindingName: *shoot.Spec.SecretBindingName,
+				Kubernetes: v1.Kubernetes{
+					Version: &shoot.Spec.Kubernetes.Version,
+					KubeAPIServer: v1.APIServer{
+						OidcConfig: v1beta1.OIDCConfig{
+							CABundle:             nil, //deliberately left empty
+							ClientAuthentication: shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.ClientAuthentication,
+							ClientID:             shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.ClientID,
+							GroupsClaim:          shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.GroupsClaim,
+							GroupsPrefix:         shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.GroupsPrefix,
+							IssuerURL:            shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.IssuerURL,
+							RequiredClaims:       shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.RequiredClaims,
+							SigningAlgs:          shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.SigningAlgs,
+							UsernameClaim:        shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.UsernameClaim,
+							UsernamePrefix:       shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.UsernamePrefix,
+						},
+						AdditionalOidcConfig: nil, //deliberately left empty for now
+					},
+				},
+				Provider: v1.Provider{
+					Type: shoot.Spec.Provider.Type,
+					ControlPlaneConfig: runtime.RawExtension{
+						Raw:    shoot.Spec.Provider.ControlPlaneConfig.Raw,
+						Object: shoot.Spec.Provider.ControlPlaneConfig.Object,
+					},
+					InfrastructureConfig: runtime.RawExtension{
+						Raw:    shoot.Spec.Provider.InfrastructureConfig.Raw,
+						Object: shoot.Spec.Provider.InfrastructureConfig.Object,
+					},
+					Workers: shoot.Spec.Provider.Workers,
+				},
+				Networking: v1.Networking{
+					Pods:     *shoot.Spec.Networking.Pods,
+					Nodes:    *shoot.Spec.Networking.Nodes,
+					Services: *shoot.Spec.Networking.Services,
+				},
+				ControlPlane: v1beta1.ControlPlane{
+					HighAvailability: &v1beta1.HighAvailability{
+						FailureTolerance: v1beta1.FailureTolerance{
+							Type: hAFailureToleranceType, //TODO: verify if needed/present shoot.Spec.ControlPlane.HighAvailability.FailureTolerance.Type
+							//TODO: check on prod
+						},
+					},
+				},
+			},
+			Security: v1.Security{
+				Administrators: subjects,
+				Networking: v1.NetworkingSecurity{
+					Filter: v1.Filter{
+						Ingress: &v1.Ingress{
+							Enabled: nginxIngressEnabled, //TODO: consult if this is a valid approach
+						},
+						Egress: v1.Egress{
+							Enabled: false, //TODO: fix me
+						},
+					},
+				},
+			},
+		},
+		Status: v1.RuntimeStatus{
+			State:      "",  //deliberately left empty by our migrator to show that controller has not picked it yet
+			Conditions: nil, //deliberately left nil by our migrator to show that controller has not picked it yet
+		},
+	}
+	return runtime
+}
+
+func getShootList(cfg migrator.Config, gardenerNamespace string) *v1beta1.ShootList {
+	gardenerShootClient := setupGardenerShootClient(cfg.GardenerKubeconfigPath, gardenerNamespace)
+	list, err := gardenerShootClient.List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err != nil {
+		log.Fatal("Failed to create kubeconfig provider")
+	}
+	return list
 }
 
 func isNginxIngressEnabled(shoot v1beta1.Shoot) bool {
@@ -261,6 +290,7 @@ func getAllRuntimeLabels(shoot v1beta1.Shoot, getClient migrator.GetClient) map[
 
 	// add agreed labels from the GardenerCluster CR
 	k8sClient, err := getClient()
+
 	if err != nil {
 		log.Fatal(err)
 	}
