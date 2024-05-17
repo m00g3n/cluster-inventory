@@ -2,16 +2,17 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	migrator "github.com/kyma-project/infrastructure-manager/hack/runtime-migrator/internal"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/kubeconfig"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"log"
@@ -26,35 +27,27 @@ const (
 )
 
 func main() {
-	var gardenerKubeconfigPath string
-	var gardenerProjectName string
-	var outputPath string
+	cfg := migrator.NewConfig()
+	migrator.PrintConfig(cfg)
 
-	flag.StringVar(&gardenerKubeconfigPath, "gardener-kubeconfig-path", "/gardener/kubeconfig/kubeconfig", "Kubeconfig file for Gardener cluster")
-	flag.StringVar(&gardenerProjectName, "gardener-project-name", "gardener-project", "Name of the Gardener project")
-	flag.StringVar(&outputPath, "output-path", "", "Path where generated yamls will be saved. Directory has to exist")
-	flag.Parse()
+	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.GardenerProjectName)
 
-	log.Println("gardener-kubeconfig-path:", gardenerKubeconfigPath)
-	log.Println("gardener-project-name:", gardenerProjectName)
-	log.Println("output-path:", outputPath)
-
-	gardenerNamespace := fmt.Sprintf("garden-%s", gardenerProjectName)
-
-	gardenerShootClient := setupGardenerShootClient(gardenerKubeconfigPath, gardenerNamespace)
+	gardenerShootClient := setupGardenerShootClient(cfg.GardenerKubeconfigPath, gardenerNamespace)
 	list, err := gardenerShootClient.List(context.Background(), metav1.ListOptions{})
+	//k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	provider, err := setupKubernetesKubeconfigProvider(gardenerKubeconfigPath, gardenerNamespace, 60*time.Minute)
+	provider, err := setupKubernetesKubeconfigProvider(cfg.GardenerKubeconfigPath, gardenerNamespace, 60*time.Minute)
 	if err != nil {
 		log.Fatal("Failed to create kubeconfig provider")
 	}
 
 	for _, shoot := range list.Items {
 		var subjects = getAdministratorsList(provider, shoot.Name)
+
 		var licenceType = shoot.Annotations["kcp.provisioner.kyma-project.io/licence-type"]
 		var nginxIngressEnabled = isNginxIngressEnabled(shoot)
 		var hAFailureToleranceType = getFailureToleranceType(shoot)
@@ -70,11 +63,11 @@ func main() {
 				Namespace:                  "kcp-system",
 				DeletionTimestamp:          shoot.DeletionTimestamp,
 				DeletionGracePeriodSeconds: shoot.DeletionGracePeriodSeconds,
-				Labels:                     appendMigratorLabel(shoot.Labels),
+				Labels:                     getAllRuntimeLabels(shoot, cfg.Client),
 				Annotations:                shoot.Annotations,
 				OwnerReferences:            shoot.OwnerReferences,
 				Finalizers:                 shoot.Finalizers,
-				ManagedFields:              nil, // deliberately left empty "This is mostly for internal housekeeping, and users typically shouldn't need to set or understand this field."
+				ManagedFields:              nil, // deliberately left empty "This is mostly for migrator housekeeping, and users typically shouldn't need to set or understand this field."
 			},
 			Spec: v1.RuntimeSpec{
 				Shoot: v1.RuntimeShoot{
@@ -148,7 +141,7 @@ func main() {
 		}
 
 		shootAsYaml, err := getYamlSpec(runtime)
-		writeSpecToFile(outputPath, shoot, err, shootAsYaml)
+		writeSpecToFile(cfg.OutputPath, shoot, err, shootAsYaml)
 	}
 }
 
@@ -193,15 +186,6 @@ func getAdministratorsList(provider kubeconfig.Provider, shootName string) []str
 	}
 
 	return subjects
-}
-
-func appendMigratorLabel(shootLabels map[string]string) map[string]string {
-	labels := map[string]string{}
-	for k, v := range shootLabels {
-		labels[k] = v
-	}
-	labels[migratorLabel] = "true"
-	return labels
 }
 
 func getYamlSpec(shoot v1.Runtime) ([]byte, error) {
@@ -265,4 +249,37 @@ func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, 
 		dynamicKubeconfigAPI,
 		namespace,
 		int64(expirationTime.Seconds())), nil
+}
+
+func getAllRuntimeLabels(shoot v1beta1.Shoot, getClient migrator.GetClient) map[string]string {
+	enrichedRuntimeLabels := map[string]string{}
+
+	// add all labels from the shoot
+	for labelKey, labelValue := range shoot.Labels {
+		enrichedRuntimeLabels[labelKey] = labelValue
+	}
+
+	// add agreed labels from the GardenerCluster CR
+	k8sClient, err := getClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+	gardenerCluster := v1.GardenerCluster{}
+	shootKey := types.NamespacedName{Name: "runtime-id", Namespace: "kcp-system"}
+	k8sClient.Get(context.Background(), shootKey, &gardenerCluster)
+
+	enrichedRuntimeLabels["kyma-project.io/broker-plan-id"] = gardenerCluster.Labels["kyma-project.io/broker-plan-id"]
+	enrichedRuntimeLabels["kyma-project.io/runtime-id"] = gardenerCluster.Labels["kyma-project.io/runtime-id"]
+	enrichedRuntimeLabels["kyma-project.io/subaccount-id"] = gardenerCluster.Labels["kyma-project.io/subaccount-id"]
+	enrichedRuntimeLabels["kyma-project.io/broker-plan-name"] = gardenerCluster.Labels["kyma-project.io/broker-plan-name"]
+	enrichedRuntimeLabels["kyma-project.io/global-account-id"] = gardenerCluster.Labels["kyma-project.io/global-account-id"]
+	enrichedRuntimeLabels["kyma-project.io/instance-id"] = gardenerCluster.Labels["kyma-project.io/instance-id"]
+	enrichedRuntimeLabels["kyma-project.io/region"] = gardenerCluster.Labels["kyma-project.io/region"]
+	enrichedRuntimeLabels["kyma-project.io/shoot-name"] = gardenerCluster.Labels["kyma-project.io/shoot-name"]
+	enrichedRuntimeLabels["operator.kyma-project.io/kyma-name"] = gardenerCluster.Labels["operator.kyma-project.io/kyma-name"]
+
+	// add custom label for the migrator
+	enrichedRuntimeLabels[migratorLabel] = "true"
+
+	return enrichedRuntimeLabels
 }
