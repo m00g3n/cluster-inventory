@@ -25,6 +25,8 @@ spec:
     platformRegion: "cd-eu11"
     # spec.shoot.secretBindingName is required
     secretBindingName: "hyperscaler secret"
+    # spec.shoot.enforceSeedLocation is optional ; it allows to make sure the seed cluster will be located in the same region as the runtime
+    enforceSeedLocation: "true"
     kubernetes:
       # spec.shoot.kubernetes.version is optional, when not provided default will be used
       # Will be modified by the SRE

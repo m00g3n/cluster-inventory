@@ -143,11 +143,12 @@ spec:
 ```
 
 There are some additional optional fields that could be specified:
-- `spec.shoot.licenceType` ; if not provided `nil` value will be used 
+- `spec.shoot.enforceSeedLocation` ; if not provided `false` value will be used
+- `spec.shoot.licenceType` ; if not provided `nil` value will be used
 - `spec.shoot.kubernetes.version` ; if not provided, the default value will be read by the KIM from the configuration
 - `spec.shoot.kubernetes.kubeAPIServer.additionalOidcConfig` ; if not provided, no additional OIDC provider will be configured
+- `spec.shoot.workers.name` ; if not provided, a Gardener default will be used
 - `spec.shoot.workers.machine.image` ; if not provided, the default value will be read by the KIM from the configuration
-- `spec.shoot.workers.name` ; if not provided, a hardcoded name will be used
 - `spec.security.networking.filtering.ingress.enabled` ; if not provided, the `false` value will be used
 
 The following example shows the Runtime CR that must be created to provision a cluster with an additional OIDC provider and to enable ingress network filtering:
@@ -155,17 +156,6 @@ The following example shows the Runtime CR that must be created to provision a c
 apiVersion: infrastructuremanager.kyma-project.io/v1alpha1
 kind: Runtime
 metadata:
-  labels:
-    kyma-project.io/instance-id: instance-id
-    kyma-project.io/runtime-id: runtime-id
-    kyma-project.io/broker-plan-id: plan-id
-    kyma-project.io/broker-plan-name: plan-name
-    kyma-project.io/global-account-id: global-account-id
-    kyma-project.io/subaccount-id: subAccount-id
-    kyma-project.io/shoot-name: shoot-name
-    kyma-project.io/region: region
-    kyma-project.io/platform-region: platform-region
-    operator.kyma-project.io/kyma-name: kymaName
   name: runtime-id
   namespace: kcp-system
 spec:
@@ -180,6 +170,8 @@ spec:
     platformRegion: "cd-eu11"
     # spec.shoot.secretBindingName is required
     secretBindingName: "hyperscaler secret"
+    # spec.shoot.enforceSeedLocation is optional ; it allows to make sure the seed cluster will be located in the same region as the shoot cluster
+    enforceSeedLocation: "true"
     kubernetes:
       # spec.shoot.kubernetes.version is optional, when not provided default will be used
       # Will be modified by the SRE
@@ -303,16 +295,17 @@ type RuntimeStatus struct {
 }
 
 type RuntimeShoot struct {
-	Name              string                `json:"name"`
-	Purpose           gardener.ShootPurpose `json:"purpose"`
-	PlatformRegion    string                `json:"platformRegion"` 
-	Region            string                `json:"region"`
-	LicenceType       *string               `json:"licenceType,omitempty"`
-	SecretBindingName string                `json:"secretBindingName"`
-	Kubernetes        Kubernetes            `json:"kubernetes"`
-	Provider          Provider              `json:"provider"`
-	Networking        Networking            `json:"networking"`
-	ControlPlane      gardener.ControlPlane `json:"controlPlane"`
+	Name                string                `json:"name"`
+	Purpose             gardener.ShootPurpose `json:"purpose"`
+	PlatformRegion      string                `json:"platformRegion"` 
+	Region              string                `json:"region"`
+	LicenceType         *string               `json:"licenceType,omitempty"`
+	SecretBindingName   string                `json:"secretBindingName"`
+	EnforceSeedLocation *bool                 `json:"enforceSeedLocation,omitempty"`
+	Kubernetes          Kubernetes            `json:"kubernetes"`
+	Provider            Provider              `json:"provider"`
+	Networking          Networking            `json:"networking"`
+	ControlPlane        gardener.ControlPlane `json:"controlPlane"`
 }
 
 type Kubernetes struct {
