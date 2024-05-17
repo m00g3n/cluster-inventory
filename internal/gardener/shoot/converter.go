@@ -73,10 +73,8 @@ func getOIDCConfig(oidcConfig gardenerv1beta.OIDCConfig) *gardenerv1beta.OIDCCon
 
 func getProvider(runtimeProvider imv1.Provider) gardenerv1beta.Provider {
 	return gardenerv1beta.Provider{
-		Type:                 runtimeProvider.Type,
-		ControlPlaneConfig:   &runtimeProvider.ControlPlaneConfig,
-		InfrastructureConfig: &runtimeProvider.InfrastructureConfig,
-		Workers:              runtimeProvider.Workers,
+		Type:    runtimeProvider.Type,
+		Workers: runtimeProvider.Workers,
 	}
 }
 
