@@ -18,6 +18,7 @@ func TestAWSControlPlaneConfig(t *testing.T) {
 
 		var controlPlaneConfig ControlPlaneConfig
 		err = json.Unmarshal(controlPlaneConfigBytes, &controlPlaneConfig)
+		assert.NoError(t, err)
 	})
 }
 

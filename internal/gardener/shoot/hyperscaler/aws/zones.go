@@ -5,6 +5,9 @@ import (
 	"net/netip"
 )
 
+const workersBits = 3
+const lastBitNumber = 31
+
 /*
 *
 generateAWSZones - creates a list of AWSZoneInput objects which contains a proper IP ranges.
@@ -27,7 +30,7 @@ func generateAWSZones(workerCidr string, zoneNames []string) []Zone {
 	var zones []Zone
 
 	cidr, _ := netip.ParsePrefix(workerCidr)
-	workerPrefixLength := cidr.Bits() + 3
+	workerPrefixLength := cidr.Bits() + workersBits
 	workerPrefix, _ := cidr.Addr().Prefix(workerPrefixLength)
 
 	// delta - it is the difference between "public" and "internal" CIDRs, for example:
@@ -36,7 +39,7 @@ func generateAWSZones(workerCidr string, zoneNames []string) []Zone {
 	//    InternalCidr: "10.250.48.0/20",
 	// 4 * delta  - difference between two worker (zone) CIDRs
 	delta := big.NewInt(1)
-	delta.Lsh(delta, uint(31-workerPrefixLength))
+	delta.Lsh(delta, uint(lastBitNumber-workerPrefixLength))
 
 	// base - it is an integer, which is based on IP bytes
 	base := new(big.Int).SetBytes(workerPrefix.Addr().AsSlice())
