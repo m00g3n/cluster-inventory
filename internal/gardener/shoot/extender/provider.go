@@ -1,4 +1,4 @@
-package shoot
+package extender
 
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func providerExtender(runtimeShoot imv1.RuntimeShoot, shoot *gardener.Shoot) error {
+func ProviderExtender(runtimeShoot imv1.RuntimeShoot, shoot *gardener.Shoot) error {
 	provider := &shoot.Spec.Provider
 	provider.Type = runtimeShoot.Provider.Type
 	provider.Workers = runtimeShoot.Provider.Workers

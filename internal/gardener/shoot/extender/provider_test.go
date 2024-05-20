@@ -1,4 +1,4 @@
-package shoot
+package extender
 
 import (
 	"testing"
@@ -37,7 +37,7 @@ func TestProviderExtender(t *testing.T) {
 			shoot := fixEmptyGardenerShoot("cluster", "kcp-system")
 
 			// when
-			err := providerExtender(runtimeShoot, &shoot)
+			err := ProviderExtender(runtimeShoot, &shoot)
 
 			// then
 			require.NoError(t, err)
@@ -61,7 +61,7 @@ func TestProviderExtender(t *testing.T) {
 		}
 
 		// when
-		err := providerExtender(runtimeShoot, &shoot)
+		err := ProviderExtender(runtimeShoot, &shoot)
 
 		// then
 		require.Error(t, err)

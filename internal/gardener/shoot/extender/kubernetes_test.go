@@ -1,6 +1,7 @@
-package shoot
+package extender
 
 import (
+	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"testing"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -12,18 +13,31 @@ func TestOidcExtender(t *testing.T) {
 	t.Run("Create kubernetes config", func(t *testing.T) {
 		// given
 		kubernetesVersion := "1.28"
+		clientID := "client-id"
+		groupsClaim := "groups"
+		issuerURL := "https://my.cool.tokens.com"
+		usernameClaim := "sub"
+
 		shoot := fixEmptyGardenerShoot("test", "kcp-system")
 		runtimeShoot := imv1.RuntimeShoot{
 			Kubernetes: imv1.Kubernetes{
 				Version: &kubernetesVersion,
 				KubeAPIServer: imv1.APIServer{
-					OidcConfig: fixGardenerOidcConfig(),
+					OidcConfig: gardener.OIDCConfig{
+						ClientID:    &clientID,
+						GroupsClaim: &groupsClaim,
+						IssuerURL:   &issuerURL,
+						SigningAlgs: []string{
+							"RS256",
+						},
+						UsernameClaim: &usernameClaim,
+					},
 				},
 			},
 		}
 
 		// when
-		extender := newKubernetesExtender("")
+		extender := NewKubernetesExtender("")
 		err := extender(runtimeShoot, &shoot)
 
 		// then

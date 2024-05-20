@@ -39,6 +39,10 @@ func fixConverterConfig() ConverterConfig {
 
 func fixRuntime() imv1.Runtime {
 	kubernetesVersion := "1.28"
+	clientID := "client-id"
+	groupsClaim := "groups"
+	issuerURL := "https://my.cool.tokens.com"
+	usernameClaim := "sub"
 
 	return imv1.Runtime{
 		ObjectMeta: v1.ObjectMeta{
@@ -71,7 +75,15 @@ func fixRuntime() imv1.Runtime {
 				Kubernetes: imv1.Kubernetes{
 					Version: &kubernetesVersion,
 					KubeAPIServer: imv1.APIServer{
-						OidcConfig: fixGardenerOidcConfig(),
+						OidcConfig: gardener.OIDCConfig{
+							ClientID:    &clientID,
+							GroupsClaim: &groupsClaim,
+							IssuerURL:   &issuerURL,
+							SigningAlgs: []string{
+								"RS256",
+							},
+							UsernameClaim: &usernameClaim,
+						},
 					},
 				},
 				Networking: imv1.Networking{
@@ -88,32 +100,5 @@ func fixRuntime() imv1.Runtime {
 				},
 			},
 		},
-	}
-}
-
-func fixGardenerOidcConfig() gardener.OIDCConfig {
-	clientID := "client-id"
-	groupsClaim := "groups"
-	issuerURL := "https://my.cool.tokens.com"
-	usernameClaim := "sub"
-
-	return gardener.OIDCConfig{
-		ClientID:    &clientID,
-		GroupsClaim: &groupsClaim,
-		IssuerURL:   &issuerURL,
-		SigningAlgs: []string{
-			"RS256",
-		},
-		UsernameClaim: &usernameClaim,
-	}
-}
-
-func fixEmptyGardenerShoot(name, namespace string) gardener.Shoot {
-	return gardener.Shoot{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Spec: gardener.ShootSpec{},
 	}
 }

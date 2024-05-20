@@ -3,14 +3,13 @@ package shoot
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/extender"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type Converter struct {
-	extenders []extender
+	extenders []extender.Extender
 }
-
-type extender func(imv1.RuntimeShoot, *gardener.Shoot) error
 
 type ConverterConfig struct {
 	DefaultKubernetesVersion string
@@ -20,12 +19,12 @@ type ConverterConfig struct {
 }
 
 func NewConverter(config ConverterConfig) Converter {
-	extenders := []extender{
-		annotationsExtender,
-		newKubernetesExtender(config.DefaultKubernetesVersion),
-		networkingExtender,
-		providerExtender,
-		newDNSExtender(config.DNSSecretName, config.DomainPrefix, config.DNSProviderType),
+	extenders := []extender.Extender{
+		extender.AnnotationsExtender,
+		extender.NewKubernetesExtender(config.DefaultKubernetesVersion),
+		extender.NetworkingExtender,
+		extender.ProviderExtender,
+		extender.NewDNSExtender(config.DNSSecretName, config.DomainPrefix, config.DNSProviderType),
 	}
 
 	return Converter{
@@ -47,8 +46,8 @@ func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
 		},
 	}
 
-	for _, extender := range c.extenders {
-		if err := extender(runtime.Spec.Shoot, &shoot); err != nil {
+	for _, extend := range c.extenders {
+		if err := extend(runtime.Spec.Shoot, &shoot); err != nil {
 			return gardener.Shoot{}, err
 		}
 	}

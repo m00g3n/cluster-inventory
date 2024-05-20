@@ -1,7 +1,9 @@
-package shoot
+package extender
 
 import (
 	"encoding/json"
+	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -19,7 +21,7 @@ func TestDNSExtender(t *testing.T) {
 		runtimeShoot := imv1.RuntimeShoot{
 			Name: "myshoot",
 		}
-		extender := newDNSExtender(secretName, domainPrefix, dnsProviderType)
+		extender := NewDNSExtender(secretName, domainPrefix, dnsProviderType)
 		shoot := fixEmptyGardenerShoot("test", "dev")
 
 		// when
@@ -45,4 +47,14 @@ func assertExtensionConfig(t *testing.T, rawExtension *runtime.RawExtension) {
 	assert.Equal(t, "DNSConfig", extension.Kind)
 	assert.Equal(t, "service.dns.extensions.gardener.cloud/v1alpha1", extension.APIVersion)
 	assert.Equal(t, true, extension.DNSProviderReplication.Enabled)
+}
+
+func fixEmptyGardenerShoot(name, namespace string) gardener.Shoot {
+	return gardener.Shoot{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: gardener.ShootSpec{},
+	}
 }

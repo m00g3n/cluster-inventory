@@ -1,4 +1,4 @@
-package shoot
+package extender
 
 import (
 	"testing"
@@ -21,7 +21,7 @@ func TestNetworkingExtender(t *testing.T) {
 		}
 
 		// when
-		err := networkingExtender(runtimeShoot, &shoot)
+		err := NetworkingExtender(runtimeShoot, &shoot)
 
 		// then
 		require.NoError(t, err)

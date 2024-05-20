@@ -1,9 +1,8 @@
-package shoot
+package extender
 
 import (
 	"encoding/json"
 	"fmt"
-
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
@@ -31,7 +30,7 @@ func newDNSExtensionConfig() *DNSExtensionProviderConfig {
 	}
 }
 
-func newDNSExtender(secretName, domainPrefix, dnsProviderType string) extender {
+func NewDNSExtender(secretName, domainPrefix, dnsProviderType string) Extender {
 	return func(runtime imv1.RuntimeShoot, shoot *gardener.Shoot) error {
 		domain := fmt.Sprintf("%s.%s", runtime.Name, domainPrefix)
 		isPrimary := true
