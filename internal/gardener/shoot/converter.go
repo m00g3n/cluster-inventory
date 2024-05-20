@@ -33,6 +33,9 @@ func NewConverter(config ConverterConfig) Converter {
 }
 
 func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
+	// The original implementation in the Provisioner: https://github.com/kyma-project/control-plane/blob/3dd257826747384479986d5d79eb20f847741aa6/components/provisioner/internal/model/gardener_config.go#L127
+	// Note: shoot.Spec.ExposureClassNames field is ignored as KEB didn't send this field to the Provisioner
+
 	shoot := gardener.Shoot{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      runtime.Spec.Shoot.Name,
