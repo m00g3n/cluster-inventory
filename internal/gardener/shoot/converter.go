@@ -12,13 +12,20 @@ type Converter struct {
 
 type extender func(imv1.RuntimeShoot, *gardenerv1beta.Shoot) error
 
-func NewConverter(defaultKubernetesVersion string) Converter {
+type ConverterConfig struct {
+	DefaultKubernetesVersion string
+	DNSSecretName            string
+	DomainPrefix             string
+	DNSProviderType          string
+}
+
+func NewConverter(config ConverterConfig) Converter {
 	extenders := []extender{
 		annotationsExtender,
-		newKubernetesExtender(defaultKubernetesVersion),
+		newKubernetesExtender(config.DefaultKubernetesVersion),
 		networkingExtender,
 		providerExtender,
-		dnsExtender,
+		newDNSExtender(config.DNSSecretName, config.DomainPrefix, config.DNSProviderType),
 	}
 
 	return Converter{

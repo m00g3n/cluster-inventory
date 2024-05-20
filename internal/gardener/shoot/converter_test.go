@@ -13,7 +13,8 @@ func TestConverter(t *testing.T) {
 	t.Run("Create shoot from Runtime", func(t *testing.T) {
 		// given
 		runtime := fixRuntime()
-		converter := NewConverter("1.28")
+		converterConfig := fixConverterConfig()
+		converter := NewConverter(converterConfig)
 
 		// when
 		shoot, err := converter.ToShoot(runtime)
@@ -25,6 +26,14 @@ func TestConverter(t *testing.T) {
 		assert.Equal(t, runtime.Spec.Shoot.SecretBindingName, *shoot.Spec.SecretBindingName)
 		assert.Equal(t, runtime.Spec.Shoot.ControlPlane, *shoot.Spec.ControlPlane)
 	})
+}
+
+func fixConverterConfig() ConverterConfig {
+	return ConverterConfig{
+		DefaultKubernetesVersion: "1.29",
+		DNSSecretName:            "dns-secret",
+		DomainPrefix:             "dev.mydomain.com",
+	}
 }
 
 func fixRuntime() imv1.Runtime {
