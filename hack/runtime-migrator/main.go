@@ -24,17 +24,15 @@ import (
 )
 
 const (
-	migratorLabel  = "operator.kyma-project.io/created-by-migrator"
-	expirationTime = 60 * time.Minute
+	migratorLabel                      = "operator.kyma-project.io/created-by-migrator"
+	expirationTime                     = 60 * time.Minute
+	ShootNetworkingFilterExtensionType = "shoot-networking-filter"
 )
 
 func main() {
 	cfg := migrator.NewConfig()
-
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.GardenerProjectName)
-
 	list := getShootList(cfg, gardenerNamespace)
-
 	provider, err := setupKubernetesKubeconfigProvider(cfg.GardenerKubeconfigPath, gardenerNamespace, expirationTime)
 	if err != nil {
 		log.Fatal("failed to create kubeconfig provider")
@@ -46,16 +44,13 @@ func main() {
 	}
 
 	for _, shoot := range list.Items {
-		var subjects = getAdministratorsList(provider, shoot.Name)
-
-		var licenceType = shoot.Annotations["kcp.provisioner.kyma-project.io/licence-type"]
-		var nginxIngressEnabled = isNginxIngressEnabled(shoot)
-		var hAFailureToleranceType = getFailureToleranceType(shoot)
-
-		runtime := createRuntime(shoot, cfg, licenceType, hAFailureToleranceType, subjects, nginxIngressEnabled)
+		runtime := createRuntime(shoot, cfg, provider)
+		failedShootNames := []string{}
 		err := saveRuntime(cfg, runtime, kcpClient)
 		if err != nil {
-			log.Fatal(err)
+			log.Println("Failed to create runtime CR, %w", err)
+			failedShootNames = append(failedShootNames, shoot.Name)
+			continue
 		}
 
 		shootAsYaml, err := getYamlSpec(runtime)
@@ -71,14 +66,22 @@ func saveRuntime(cfg migrator.Config, runtime v1.Runtime, getClient client.Clien
 		err := getClient.Create(context.Background(), &runtime)
 
 		if err != nil {
-			log.Fatal("Failed to create runtime CR")
 			return err
 		}
+
+		log.Printf("Runtime CR %s created\n", runtime.Name)
 	}
 	return nil
 }
 
-func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, licenceType string, hAFailureToleranceType v1beta1.FailureToleranceType, subjects []string, nginxIngressEnabled bool) v1.Runtime {
+func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, provider kubeconfig.Provider) v1.Runtime {
+	var subjects = getAdministratorsList(provider, shoot.Name)
+	var nginxIngressEnabled = isNginxIngressEnabled(shoot)
+	var hAFailureToleranceType = getFailureToleranceType(shoot)
+	var licenceType = shoot.Annotations["kcp.provisioner.kyma-project.io/licence-type"]
+
+	var isShootNetworkFilteringEnabled = checkIfShootNetworkFilteringEnabled(shoot)
+
 	var runtime = v1.Runtime{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Runtime",
@@ -141,8 +144,7 @@ func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, licenceType string,
 				ControlPlane: v1beta1.ControlPlane{
 					HighAvailability: &v1beta1.HighAvailability{
 						FailureTolerance: v1beta1.FailureTolerance{
-							Type: hAFailureToleranceType, //TODO: verify if needed/present shoot.Spec.ControlPlane.HighAvailability.FailureTolerance.Type
-							//TODO: check on prod
+							Type: hAFailureToleranceType, //TODO: verify if needed/present (check on prod?)
 						},
 					},
 				},
@@ -155,7 +157,7 @@ func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, licenceType string,
 							Enabled: nginxIngressEnabled, //TODO: consult if this is a valid approach
 						},
 						Egress: v1.Egress{
-							Enabled: false, //TODO: fix me
+							Enabled: isShootNetworkFilteringEnabled, //TODO: verify if valid approach ( https://gardener.cloud/docs/extensions/others/gardener-extension-shoot-networking-filter/shoot-networking-filter/ )
 						},
 					},
 				},
@@ -167,6 +169,15 @@ func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, licenceType string,
 		},
 	}
 	return runtime
+}
+
+func checkIfShootNetworkFilteringEnabled(shoot v1beta1.Shoot) bool {
+	for _, extension := range shoot.Spec.Extensions {
+		if extension.Type == ShootNetworkingFilterExtensionType {
+			return !(*extension.Disabled)
+		}
+	}
+	return false
 }
 
 func getShootList(cfg migrator.Config, gardenerNamespace string) *v1beta1.ShootList {
@@ -239,7 +250,7 @@ func writeSpecToFile(outputPath string, shoot v1beta1.Shoot, shootAsYaml []byte)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("%s created\n", fileName)
+	log.Printf("Runtime CR has been saved to %s\n", fileName)
 }
 
 func setupGardenerShootClient(kubeconfigPath, gardenerNamespace string) gardener_types.ShootInterface {
