@@ -104,7 +104,7 @@ func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, provider kubeconfig
 				Name:              shoot.Name,
 				Purpose:           *shoot.Spec.Purpose,
 				Region:            shoot.Spec.Region,
-				LicenceType:       &licenceType, //TODO: consult if this is a valid approach
+				LicenceType:       &licenceType,
 				SecretBindingName: *shoot.Spec.SecretBindingName,
 				Kubernetes: v1.Kubernetes{
 					Version: &shoot.Spec.Kubernetes.Version,
@@ -144,7 +144,7 @@ func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, provider kubeconfig
 				ControlPlane: v1beta1.ControlPlane{
 					HighAvailability: &v1beta1.HighAvailability{
 						FailureTolerance: v1beta1.FailureTolerance{
-							Type: hAFailureToleranceType, //TODO: verify if needed/present (check on prod?)
+							Type: hAFailureToleranceType,
 						},
 					},
 				},
@@ -154,10 +154,10 @@ func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, provider kubeconfig
 				Networking: v1.NetworkingSecurity{
 					Filter: v1.Filter{
 						Ingress: &v1.Ingress{
-							Enabled: nginxIngressEnabled, //TODO: consult if this is a valid approach
+							// deliberately left empty for now, as it was a feature implemented in the Provisioner
 						},
 						Egress: v1.Egress{
-							Enabled: isShootNetworkFilteringEnabled, //TODO: verify if valid approach ( https://gardener.cloud/docs/extensions/others/gardener-extension-shoot-networking-filter/shoot-networking-filter/ )
+							Enabled: isShootNetworkFilteringEnabled,
 						},
 					},
 				},
