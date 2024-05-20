@@ -2,11 +2,12 @@ package shoot
 
 import (
 	"encoding/json"
+	"testing"
+
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
-	"testing"
 )
 
 func TestDNSExtender(t *testing.T) {

@@ -12,7 +12,6 @@ import (
 )
 
 func providerExtender(runtimeShoot imv1.RuntimeShoot, shoot *gardenerv1beta.Shoot) error {
-
 	provider := &shoot.Spec.Provider
 	provider.Type = runtimeShoot.Provider.Type
 	provider.Workers = runtimeShoot.Provider.Workers
@@ -27,7 +26,6 @@ type InfrastructureProviderFunc func(workersCidr string, zones []string) ([]byte
 type ControlPlaneProviderFunc func() ([]byte, error)
 
 func getProviderSpecificConfig(runtimeShoot imv1.RuntimeShoot) (infrastructureConfig *runtime.RawExtension, controlPlaneConfig *runtime.RawExtension, err error) {
-
 	getConfig := func(runtimeShoot imv1.RuntimeShoot, infrastructureConfigFunc InfrastructureProviderFunc, controlPlaneConfigFunc ControlPlaneProviderFunc) (*runtime.RawExtension, *runtime.RawExtension, error) {
 		infrastructureConfigBytes, err := infrastructureConfigFunc(runtimeShoot.Networking.Nodes, runtimeShoot.Provider.Workers[0].Zones)
 		if err != nil {

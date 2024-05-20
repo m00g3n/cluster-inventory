@@ -1,15 +1,15 @@
 package shoot
 
 import (
+	"testing"
+
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestProviderExtender(t *testing.T) {
-
 	for tname, runtimeShoot := range map[string]imv1.RuntimeShoot{
 		"Create provider specific config for AWS": {
 			Provider: imv1.Provider{

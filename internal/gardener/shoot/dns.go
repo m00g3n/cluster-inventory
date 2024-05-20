@@ -3,13 +3,13 @@ package shoot
 import (
 	"encoding/json"
 	"fmt"
+
 	gardenerv1beta "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
 )
 
 func dnsExtender(runtime imv1.RuntimeShoot, shoot *gardenerv1beta.Shoot) error {
-
 	return nil
 }
 
