@@ -25,6 +25,7 @@ func printConfig(cfg Config) {
 	log.Println("kcp-kubeconfig-path:", cfg.KcpKubeconfigPath)
 	log.Println("gardener-project-name:", cfg.GardenerProjectName)
 	log.Println("output-path:", cfg.OutputPath)
+	log.Println("dry-run:", cfg.IsDryRun)
 }
 
 // newConfig - creates new application configuration base on passed flags
@@ -34,7 +35,7 @@ func NewConfig() Config {
 	flag.StringVar(&result.GardenerKubeconfigPath, "gardener-kubeconfig-path", "/gardener/kubeconfig/kubeconfig", "Kubeconfig file for Gardener cluster")
 	flag.StringVar(&result.GardenerProjectName, "gardener-project-name", "gardener-project", "Name of the Gardener project")
 	flag.StringVar(&result.OutputPath, "output-path", "", "Path where generated yamls will be saved. Directory has to exist")
-	flag.StringVar(&result.OutputPath, "dry-run", "true", "Dry-run flag. Has to be set to 'false' otherwise it will not save the CRs on cluster.")
+	flag.BoolVar(&result.IsDryRun, "dry-run", true, "Dry-run flag. Has to be set to 'false' otherwise it will not save the CRs on cluster.")
 
 	flag.Parse()
 
