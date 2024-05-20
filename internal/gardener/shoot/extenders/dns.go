@@ -1,4 +1,4 @@
-package extender
+package extenders
 
 import (
 	"encoding/json"
@@ -30,7 +30,7 @@ func newDNSExtensionConfig() *DNSExtensionProviderConfig {
 	}
 }
 
-func NewDNSExtender(secretName, domainPrefix, dnsProviderType string) Extender {
+func NewExtendWithDNS(secretName, domainPrefix, dnsProviderType string) Extend {
 	return func(runtime imv1.RuntimeShoot, shoot *gardener.Shoot) error {
 		domain := fmt.Sprintf("%s.%s", runtime.Name, domainPrefix)
 		isPrimary := true

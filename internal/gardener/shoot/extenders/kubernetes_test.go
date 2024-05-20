@@ -1,4 +1,4 @@
-package extender
+package extenders
 
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -37,7 +37,7 @@ func TestOidcExtender(t *testing.T) {
 		}
 
 		// when
-		extender := NewKubernetesExtender("")
+		extender := NewExtendWithKubernetes("")
 		err := extender(runtimeShoot, &shoot)
 
 		// then

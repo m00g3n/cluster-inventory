@@ -1,11 +1,11 @@
-package extender
+package extenders
 
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 )
 
-func NewKubernetesExtender(defaultKubernetesVersion string) Extender {
+func NewExtendWithKubernetes(defaultKubernetesVersion string) Extend {
 	return func(runtime imv1.RuntimeShoot, shoot *gardener.Shoot) error {
 		kubernetesVersion := runtime.Kubernetes.Version
 		if kubernetesVersion == nil || *kubernetesVersion == "" {

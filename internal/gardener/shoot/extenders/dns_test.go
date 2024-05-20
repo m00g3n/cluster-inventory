@@ -1,4 +1,4 @@
-package extender
+package extenders
 
 import (
 	"encoding/json"
@@ -21,7 +21,7 @@ func TestDNSExtender(t *testing.T) {
 		runtimeShoot := imv1.RuntimeShoot{
 			Name: "myshoot",
 		}
-		extender := NewDNSExtender(secretName, domainPrefix, dnsProviderType)
+		extender := NewExtendWithDNS(secretName, domainPrefix, dnsProviderType)
 		shoot := fixEmptyGardenerShoot("test", "dev")
 
 		// when
