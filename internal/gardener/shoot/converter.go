@@ -3,12 +3,12 @@ package shoot
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/extenders"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/extender"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type Converter struct {
-	extenders []extenders.Extend
+	extenders []extender.Extend
 }
 
 type ConverterConfig struct {
@@ -19,12 +19,12 @@ type ConverterConfig struct {
 }
 
 func NewConverter(config ConverterConfig) Converter {
-	extenders := []extenders.Extend{
-		extenders.ExtendWithAnnotations,
-		extenders.NewExtendWithKubernetes(config.DefaultKubernetesVersion),
-		extenders.ExtendWithNetworking,
-		extenders.ExtendWithProvider,
-		extenders.NewExtendWithDNS(config.DNSSecretName, config.DomainPrefix, config.DNSProviderType),
+	extenders := []extender.Extend{
+		extender.ExtendWithAnnotations,
+		extender.NewExtendWithKubernetes(config.DefaultKubernetesVersion),
+		extender.ExtendWithNetworking,
+		extender.ExtendWithProvider,
+		extender.NewExtendWithDNS(config.DNSSecretName, config.DomainPrefix, config.DNSProviderType),
 	}
 
 	return Converter{

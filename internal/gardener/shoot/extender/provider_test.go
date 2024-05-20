@@ -1,4 +1,4 @@
-package extenders
+package extender
 
 import (
 	"testing"

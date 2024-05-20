@@ -1,4 +1,4 @@
-package extenders
+package extender
 
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
