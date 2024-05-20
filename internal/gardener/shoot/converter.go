@@ -1,87 +1,59 @@
 package shoot
 
 import (
-	gardenerv1beta "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/extender"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func ToShoot(runtime imv1.Runtime) gardenerv1beta.Shoot {
-	return gardenerv1beta.Shoot{
+type Converter struct {
+	extenders []extender.Extend
+}
+
+type ConverterConfig struct {
+	DefaultKubernetesVersion string
+	DNSSecretName            string
+	DomainPrefix             string
+	DNSProviderType          string
+}
+
+func NewConverter(config ConverterConfig) Converter {
+	extenders := []extender.Extend{
+		extender.ExtendWithAnnotations,
+		extender.NewExtendWithKubernetes(config.DefaultKubernetesVersion),
+		extender.ExtendWithNetworking,
+		extender.ExtendWithProvider,
+		extender.NewExtendWithDNS(config.DNSSecretName, config.DomainPrefix, config.DNSProviderType),
+	}
+
+	return Converter{
+		extenders: extenders,
+	}
+}
+
+func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
+	// The original implementation in the Provisioner: https://github.com/kyma-project/control-plane/blob/3dd257826747384479986d5d79eb20f847741aa6/components/provisioner/internal/model/gardener_config.go#L127
+	// Note: shoot.Spec.ExposureClassNames field is ignored as KEB didn't send this field to the Provisioner
+
+	shoot := gardener.Shoot{
 		ObjectMeta: v1.ObjectMeta{
-			Name:        runtime.Spec.Shoot.Name,
-			Namespace:   runtime.Namespace,
-			Labels:      getLabels(runtime),
-			Annotations: getAnnotations(runtime),
+			Name:      runtime.Spec.Shoot.Name,
+			Namespace: runtime.Namespace,
 		},
-		Spec: getShootSpec(runtime.Spec.Shoot),
-	}
-}
-
-func getLabels(_ imv1.Runtime) map[string]string {
-	return map[string]string{}
-}
-
-func getAnnotations(_ imv1.Runtime) map[string]string {
-	return map[string]string{}
-}
-
-func getShootSpec(runtimeShoot imv1.RuntimeShoot) gardenerv1beta.ShootSpec {
-	return gardenerv1beta.ShootSpec{
-		Purpose:           &runtimeShoot.Purpose,
-		Region:            runtimeShoot.Region,
-		SecretBindingName: &runtimeShoot.SecretBindingName,
-		Kubernetes:        getKubernetes(runtimeShoot.Kubernetes),
-		Networking:        getNetworking(runtimeShoot.Networking),
-		Provider:          getProvider(runtimeShoot.Provider),
-		ControlPlane:      &runtimeShoot.ControlPlane,
-	}
-}
-
-func getKubernetes(kubernetes imv1.Kubernetes) gardenerv1beta.Kubernetes {
-	return gardenerv1beta.Kubernetes{
-		Version: getKubernetesVersion(kubernetes),
-		KubeAPIServer: &gardenerv1beta.KubeAPIServerConfig{
-			OIDCConfig: getOIDCConfig(kubernetes.KubeAPIServer.OidcConfig),
+		Spec: gardener.ShootSpec{
+			Purpose:           &runtime.Spec.Shoot.Purpose,
+			Region:            runtime.Spec.Shoot.Region,
+			SecretBindingName: &runtime.Spec.Shoot.SecretBindingName,
+			ControlPlane:      &runtime.Spec.Shoot.ControlPlane,
 		},
 	}
-}
 
-func getKubernetesVersion(kubernetes imv1.Kubernetes) string {
-	if kubernetes.Version != nil {
-		return *kubernetes.Version
+	for _, extend := range c.extenders {
+		if err := extend(runtime.Spec.Shoot, &shoot); err != nil {
+			return gardener.Shoot{}, err
+		}
 	}
 
-	// Determine the default Kubernetes version
-	// it must be read from the configuration (please refer to KEB)
-	return ""
-}
-
-func getOIDCConfig(oidcConfig gardenerv1beta.OIDCConfig) *gardenerv1beta.OIDCConfig {
-	return &gardenerv1beta.OIDCConfig{
-		CABundle:       oidcConfig.CABundle,
-		ClientID:       oidcConfig.ClientID,
-		GroupsClaim:    oidcConfig.GroupsClaim,
-		GroupsPrefix:   oidcConfig.GroupsPrefix,
-		IssuerURL:      oidcConfig.IssuerURL,
-		RequiredClaims: oidcConfig.RequiredClaims,
-		SigningAlgs:    oidcConfig.SigningAlgs,
-		UsernameClaim:  oidcConfig.UsernameClaim,
-		UsernamePrefix: oidcConfig.UsernamePrefix,
-	}
-}
-
-func getProvider(runtimeProvider imv1.Provider) gardenerv1beta.Provider {
-	return gardenerv1beta.Provider{
-		Type:    runtimeProvider.Type,
-		Workers: runtimeProvider.Workers,
-	}
-}
-
-func getNetworking(runtimeNetworking imv1.Networking) *gardenerv1beta.Networking {
-	return &gardenerv1beta.Networking{
-		Nodes:    &runtimeNetworking.Nodes,
-		Pods:     &runtimeNetworking.Pods,
-		Services: &runtimeNetworking.Services,
-	}
+	return shoot, nil
 }
