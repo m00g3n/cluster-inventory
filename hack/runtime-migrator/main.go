@@ -3,6 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
+	"time"
+
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -15,15 +19,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"log"
-	"os"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
-	"time"
 )
 
 const (
-	migratorLabel = "operator.kyma-project.io/created-by-migrator"
+	migratorLabel  = "operator.kyma-project.io/created-by-migrator"
+	expirationTime = 60 * time.Minute
 )
 
 func main() {
@@ -33,13 +35,15 @@ func main() {
 
 	list := getShootList(cfg, gardenerNamespace)
 
-	provider, err := setupKubernetesKubeconfigProvider(cfg.GardenerKubeconfigPath, gardenerNamespace, 60*time.Minute)
+	provider, err := setupKubernetesKubeconfigProvider(cfg.GardenerKubeconfigPath, gardenerNamespace, expirationTime)
 	if err != nil {
 		log.Fatal("failed to create kubeconfig provider")
 	}
 
-	//k8sClient, _ = migrator.CreateKcpClient(&cfg)
 	kcpClient, err := migrator.CreateKcpClient(&cfg)
+	if err != nil {
+		log.Fatal("failed to create kcp client")
+	}
 
 	for _, shoot := range list.Items {
 		var subjects = getAdministratorsList(provider, shoot.Name)
@@ -55,7 +59,10 @@ func main() {
 		}
 
 		shootAsYaml, err := getYamlSpec(runtime)
-		writeSpecToFile(cfg.OutputPath, shoot, err, shootAsYaml)
+		if err != nil {
+			log.Fatal(err)
+		}
+		writeSpecToFile(cfg.OutputPath, shoot, shootAsYaml)
 	}
 }
 
@@ -65,6 +72,7 @@ func saveRuntime(cfg migrator.Config, runtime v1.Runtime, getClient client.Clien
 
 		if err != nil {
 			log.Fatal("Failed to create runtime CR")
+			return err
 		}
 	}
 	return nil
@@ -84,8 +92,8 @@ func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, licenceType string,
 			DeletionGracePeriodSeconds: shoot.DeletionGracePeriodSeconds,
 			Labels:                     getAllRuntimeLabels(shoot, cfg.Client),
 			Annotations:                shoot.Annotations,
-			OwnerReferences:            nil, //deliberately left empty, as without that we will not be able to delete Runtime CRs
-			Finalizers:                 nil, //deliberately left empty, as without that we will not be able to delete Runtime CRs
+			OwnerReferences:            nil, // deliberately left empty, as without that we will not be able to delete Runtime CRs
+			Finalizers:                 nil, // deliberately left empty, as without that we will not be able to delete Runtime CRs
 			ManagedFields:              nil, // deliberately left empty "This is mostly for migrator housekeeping, and users typically shouldn't need to set or understand this field."
 		},
 		Spec: v1.RuntimeSpec{
@@ -99,7 +107,7 @@ func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, licenceType string,
 					Version: &shoot.Spec.Kubernetes.Version,
 					KubeAPIServer: v1.APIServer{
 						OidcConfig: v1beta1.OIDCConfig{
-							CABundle:             nil, //deliberately left empty
+							CABundle:             nil, // deliberately left empty
 							ClientAuthentication: shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.ClientAuthentication,
 							ClientID:             shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.ClientID,
 							GroupsClaim:          shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.GroupsClaim,
@@ -110,7 +118,7 @@ func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, licenceType string,
 							UsernameClaim:        shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.UsernameClaim,
 							UsernamePrefix:       shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.UsernamePrefix,
 						},
-						AdditionalOidcConfig: nil, //deliberately left empty for now
+						AdditionalOidcConfig: nil, // deliberately left empty for now
 					},
 				},
 				Provider: v1.Provider{
@@ -154,8 +162,8 @@ func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, licenceType string,
 			},
 		},
 		Status: v1.RuntimeStatus{
-			State:      "",  //deliberately left empty by our migrator to show that controller has not picked it yet
-			Conditions: nil, //deliberately left nil by our migrator to show that controller has not picked it yet
+			State:      "",  // deliberately left empty by our migrator to show that controller has not picked it yet
+			Conditions: nil, // deliberately left nil by our migrator to show that controller has not picked it yet
 		},
 	}
 	return runtime
@@ -222,10 +230,11 @@ func getYamlSpec(shoot v1.Runtime) ([]byte, error) {
 	return shootAsYaml, err
 }
 
-func writeSpecToFile(outputPath string, shoot v1beta1.Shoot, err error, shootAsYaml []byte) {
+func writeSpecToFile(outputPath string, shoot v1beta1.Shoot, shootAsYaml []byte) {
 	var fileName = fmt.Sprintf("%sshoot-%s.yaml", outputPath, shoot.Name)
 
-	err = os.WriteFile(fileName, shootAsYaml, 0644)
+	const writePermissions = 0644
+	err := os.WriteFile(fileName, shootAsYaml, writePermissions)
 
 	if err != nil {
 		log.Fatal(err)
@@ -289,14 +298,17 @@ func getAllRuntimeLabels(shoot v1beta1.Shoot, getClient migrator.GetClient) map[
 	}
 
 	// add agreed labels from the GardenerCluster CR
-	k8sClient, err := getClient()
+	k8sClient, clientErr := getClient()
 
-	if err != nil {
-		log.Fatal(err)
+	if clientErr != nil {
+		log.Fatal(clientErr)
 	}
 	gardenerCluster := v1.GardenerCluster{}
 	shootKey := types.NamespacedName{Name: "runtime-id", Namespace: "kcp-system"}
-	k8sClient.Get(context.Background(), shootKey, &gardenerCluster)
+	getGardenerCRerr := k8sClient.Get(context.Background(), shootKey, &gardenerCluster)
+	if getGardenerCRerr != nil {
+		log.Fatal(getGardenerCRerr)
+	}
 
 	enrichedRuntimeLabels["kyma-project.io/broker-plan-id"] = gardenerCluster.Labels["kyma-project.io/broker-plan-id"]
 	enrichedRuntimeLabels["kyma-project.io/runtime-id"] = gardenerCluster.Labels["kyma-project.io/runtime-id"]

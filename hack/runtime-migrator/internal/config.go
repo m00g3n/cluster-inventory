@@ -3,11 +3,12 @@ package internal
 import (
 	"flag"
 	"fmt"
+	"log"
+
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
-	"log"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -48,9 +49,8 @@ func addToScheme(s *runtime.Scheme) error {
 		v1.AddToScheme,
 	} {
 		if err := add(s); err != nil {
-			return fmt.Errorf("unable to add scheme: %s", err)
+			return fmt.Errorf("unable to add scheme: %w", err)
 		}
-
 	}
 	return nil
 }
