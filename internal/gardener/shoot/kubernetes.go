@@ -1,12 +1,12 @@
 package shoot
 
 import (
-	gardenerv1beta "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 )
 
 func newKubernetesExtender(defaultKubernetesVersion string) extender {
-	return func(runtime imv1.RuntimeShoot, shoot *gardenerv1beta.Shoot) error {
+	return func(runtime imv1.RuntimeShoot, shoot *gardener.Shoot) error {
 		kubernetesVersion := runtime.Kubernetes.Version
 		if kubernetesVersion == nil || *kubernetesVersion == "" {
 			kubernetesVersion = &defaultKubernetesVersion
@@ -17,10 +17,10 @@ func newKubernetesExtender(defaultKubernetesVersion string) extender {
 		oidcConfig := runtime.Kubernetes.KubeAPIServer.OidcConfig
 
 		if shoot.Spec.Kubernetes.KubeAPIServer == nil {
-			shoot.Spec.Kubernetes.KubeAPIServer = &gardenerv1beta.KubeAPIServerConfig{}
+			shoot.Spec.Kubernetes.KubeAPIServer = &gardener.KubeAPIServerConfig{}
 		}
 
-		shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig = &gardenerv1beta.OIDCConfig{
+		shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig = &gardener.OIDCConfig{
 			CABundle:       oidcConfig.CABundle,
 			ClientID:       oidcConfig.ClientID,
 			GroupsClaim:    oidcConfig.GroupsClaim,

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	gardenerv1beta "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -32,15 +32,15 @@ func newDNSExtensionConfig() *DNSExtensionProviderConfig {
 }
 
 func newDNSExtender(secretName, domainPrefix, dnsProviderType string) extender {
-	return func(runtime imv1.RuntimeShoot, shoot *gardenerv1beta.Shoot) error {
+	return func(runtime imv1.RuntimeShoot, shoot *gardener.Shoot) error {
 		domain := fmt.Sprintf("%s.%s", runtime.Name, domainPrefix)
 		isPrimary := true
 
-		shoot.Spec.DNS = &gardenerv1beta.DNS{
+		shoot.Spec.DNS = &gardener.DNS{
 			Domain: &domain,
-			Providers: []gardenerv1beta.DNSProvider{
+			Providers: []gardener.DNSProvider{
 				{
-					Domains: &gardenerv1beta.DNSIncludeExclude{
+					Domains: &gardener.DNSIncludeExclude{
 						Include: []string{
 							domain,
 						},
@@ -57,7 +57,7 @@ func newDNSExtender(secretName, domainPrefix, dnsProviderType string) extender {
 			return err
 		}
 
-		dnsExtension := gardenerv1beta.Extension{
+		dnsExtension := gardener.Extension{
 			Type: "shoot-dns-service",
 			ProviderConfig: &apimachineryruntime.RawExtension{
 				Raw: extensionJSON,

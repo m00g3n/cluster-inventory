@@ -1,7 +1,7 @@
 package shoot
 
 import (
-	gardenerv1beta "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/aws"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/azure"
@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func providerExtender(runtimeShoot imv1.RuntimeShoot, shoot *gardenerv1beta.Shoot) error {
+func providerExtender(runtimeShoot imv1.RuntimeShoot, shoot *gardener.Shoot) error {
 	provider := &shoot.Spec.Provider
 	provider.Type = runtimeShoot.Provider.Type
 	provider.Workers = runtimeShoot.Provider.Workers
