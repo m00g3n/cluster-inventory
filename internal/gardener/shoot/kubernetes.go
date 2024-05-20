@@ -8,13 +8,17 @@ import (
 func newKubernetesExtender(defaultKubernetesVersion string) extender {
 	return func(runtime imv1.RuntimeShoot, shoot *gardenerv1beta.Shoot) error {
 		kubernetesVersion := runtime.Kubernetes.Version
-		if kubernetesVersion != nil && *kubernetesVersion != "" {
+		if kubernetesVersion == nil || *kubernetesVersion == "" {
 			kubernetesVersion = &defaultKubernetesVersion
 		}
 
 		shoot.Spec.Kubernetes.Version = *kubernetesVersion
 
 		oidcConfig := runtime.Kubernetes.KubeAPIServer.OidcConfig
+
+		if shoot.Spec.Kubernetes.KubeAPIServer == nil {
+			shoot.Spec.Kubernetes.KubeAPIServer = &gardenerv1beta.KubeAPIServerConfig{}
+		}
 
 		shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig = &gardenerv1beta.OIDCConfig{
 			CABundle:       oidcConfig.CABundle,

@@ -12,7 +12,7 @@ type Converter struct {
 
 type extender func(imv1.RuntimeShoot, *gardenerv1beta.Shoot) error
 
-func NewConverter(defaultKubernetesVersion, defaultImage string) Converter {
+func NewConverter(defaultKubernetesVersion string) Converter {
 	extenders := []extender{
 		annotationsExtender,
 		newKubernetesExtender(defaultKubernetesVersion),
