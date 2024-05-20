@@ -2,9 +2,10 @@ package aws
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestAWSControlPlaneConfig(t *testing.T) {
