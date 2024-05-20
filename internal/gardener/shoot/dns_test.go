@@ -43,6 +43,6 @@ func assertExtensionConfig(t *testing.T, rawExtension *runtime.RawExtension) {
 
 	require.NoError(t, err)
 	assert.Equal(t, "DNSConfig", extension.Kind)
-	assert.Equal(t, "service.dns.extensions.gardener.cloud/v1alpha1", extension.ApiVersion)
+	assert.Equal(t, "service.dns.extensions.gardener.cloud/v1alpha1", extension.APIVersion)
 	assert.Equal(t, true, extension.DNSProviderReplication.Enabled)
 }

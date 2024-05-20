@@ -9,13 +9,9 @@ import (
 	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
 )
 
-func dnsExtender(runtime imv1.RuntimeShoot, shoot *gardenerv1beta.Shoot) error {
-	return nil
-}
-
 type DNSExtensionProviderConfig struct {
-	// ApiVersion is gardener extension api version
-	ApiVersion string `json:"apiVersion"`
+	// APIVersion is gardener extension api version
+	APIVersion string `json:"apiVersion"`
 	// DnsProviderReplication indicates whether dnsProvider replication is on
 	DNSProviderReplication *DNSProviderReplication `json:"dnsProviderReplication,omitempty"`
 	// Kind is extension type
@@ -29,7 +25,7 @@ type DNSProviderReplication struct {
 
 func newDNSExtensionConfig() *DNSExtensionProviderConfig {
 	return &DNSExtensionProviderConfig{
-		ApiVersion:             "service.dns.extensions.gardener.cloud/v1alpha1",
+		APIVersion:             "service.dns.extensions.gardener.cloud/v1alpha1",
 		DNSProviderReplication: &DNSProviderReplication{Enabled: true},
 		Kind:                   "DNSConfig",
 	}

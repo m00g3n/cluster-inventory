@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 )
 
-func GetInfrastructureConfig(workersCidr string, zones []string) ([]byte, error) {
+func GetInfrastructureConfig(_ string, _ []string) ([]byte, error) {
 	return json.Marshal("{}")
 }
 
