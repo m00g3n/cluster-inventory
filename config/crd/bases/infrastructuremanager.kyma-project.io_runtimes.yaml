@@ -103,6 +103,8 @@ spec:
                         - failureTolerance
                         type: object
                     type: object
+                  enforceSeedLocation:
+                    type: boolean
                   kubernetes:
                     properties:
                       kubeAPIServer:
@@ -295,14 +297,10 @@ spec:
                     - pods
                     - services
                     type: object
+                  platformRegion:
+                    type: string
                   provider:
                     properties:
-                      controlPlaneConfig:
-                        type: object
-                        x-kubernetes-preserve-unknown-fields: true
-                      infrastructureConfig:
-                        type: object
-                        x-kubernetes-preserve-unknown-fields: true
                       type:
                         type: string
                       workers:
@@ -1001,8 +999,6 @@ spec:
                           type: object
                         type: array
                     required:
-                    - controlPlaneConfig
-                    - infrastructureConfig
                     - type
                     - workers
                     type: object
@@ -1018,6 +1014,7 @@ spec:
                 - kubernetes
                 - name
                 - networking
+                - platformRegion
                 - provider
                 - purpose
                 - region
