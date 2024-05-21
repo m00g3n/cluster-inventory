@@ -1,4 +1,4 @@
-package gardener
+package kubeconfig
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	gardenerClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type KubeconfigProvider struct {
+type Provider struct {
 	shootNamespace       string
 	shootClient          ShootClient
 	dynamicKubeconfigAPI DynamicKubeconfigAPI
@@ -29,8 +29,8 @@ func NewKubeconfigProvider(
 	shootClient ShootClient,
 	dynamicKubeconfigAPI DynamicKubeconfigAPI,
 	shootNamespace string,
-	expirationInSeconds int64) KubeconfigProvider {
-	return KubeconfigProvider{
+	expirationInSeconds int64) Provider {
+	return Provider{
 		shootClient:          shootClient,
 		dynamicKubeconfigAPI: dynamicKubeconfigAPI,
 		shootNamespace:       shootNamespace,
@@ -38,7 +38,7 @@ func NewKubeconfigProvider(
 	}
 }
 
-func (kp KubeconfigProvider) Fetch(ctx context.Context, shootName string) (string, error) {
+func (kp Provider) Fetch(ctx context.Context, shootName string) (string, error) {
 	shoot, err := kp.shootClient.Get(ctx, shootName, v1.GetOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get shoot")

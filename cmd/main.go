@@ -28,12 +28,11 @@ import (
 	"github.com/kyma-project/infrastructure-manager/internal/controller"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/kubeconfig"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -122,8 +121,23 @@ func main() {
 
 	rotationPeriod := time.Duration(minimalRotationTimeRatio*expirationTime.Minutes()) * time.Minute
 	metrics := metrics.NewMetrics()
-	if err = (controller.NewGardenerClusterController(mgr, kubeconfigProvider, logger, rotationPeriod, minimalRotationTimeRatio, metrics)).SetupWithManager(mgr); err != nil {
+	if err = controller.NewGardenerClusterController(
+		mgr,
+		kubeconfigProvider,
+		logger,
+		rotationPeriod,
+		minimalRotationTimeRatio,
+		metrics,
+	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GardenerCluster")
+		os.Exit(1)
+	}
+
+	if err = (&controller.RuntimeReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Runtime")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
@@ -145,20 +159,20 @@ func main() {
 	}
 }
 
-func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, expirationTime time.Duration) (gardener.KubeconfigProvider, error) {
+func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, expirationTime time.Duration) (kubeconfig.Provider, error) {
 	restConfig, err := gardener.NewRestConfigFromFile(kubeconfigPath)
 	if err != nil {
-		return gardener.KubeconfigProvider{}, err
+		return kubeconfig.Provider{}, err
 	}
 
 	gardenerClientSet, err := gardener_apis.NewForConfig(restConfig)
 	if err != nil {
-		return gardener.KubeconfigProvider{}, err
+		return kubeconfig.Provider{}, err
 	}
 
 	gardenerClient, err := client.New(restConfig, client.Options{})
 	if err != nil {
-		return gardener.KubeconfigProvider{}, err
+		return kubeconfig.Provider{}, err
 	}
 
 	shootClient := gardenerClientSet.Shoots(namespace)
@@ -166,10 +180,10 @@ func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, 
 
 	err = v1beta1.AddToScheme(gardenerClient.Scheme())
 	if err != nil {
-		return gardener.KubeconfigProvider{}, errors.Wrap(err, "failed to register Gardener schema")
+		return kubeconfig.Provider{}, errors.Wrap(err, "failed to register Gardener schema")
 	}
 
-	return gardener.NewKubeconfigProvider(shootClient,
+	return kubeconfig.NewKubeconfigProvider(shootClient,
 		dynamicKubeconfigAPI,
 		namespace,
 		int64(expirationTime.Seconds())), nil
