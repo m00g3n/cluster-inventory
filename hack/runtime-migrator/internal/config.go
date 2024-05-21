@@ -38,12 +38,12 @@ func printConfig(cfg Config) {
 // newConfig - creates new application configuration base on passed flags
 func NewConfig() Config {
 	result := Config{}
-	flag.StringVar(&result.KcpKubeconfigPath, "kcp-kubeconfig-path", "", "Kubeconfig file for KCP cluster")
-	flag.StringVar(&result.GardenerKubeconfigPath, "gardener-kubeconfig-path", "/gardener/kubeconfig/kubeconfig", "Kubeconfig file for Gardener cluster")
-	flag.StringVar(&result.GardenerProjectName, "gardener-project-name", "gardener-project", "Name of the Gardener project")
-	flag.StringVar(&result.OutputPath, "output-path", "", "Path where generated yamls will be saved. Directory has to exist")
-	flag.BoolVar(&result.IsDryRun, "dry-run", true, "Dry-run flag. Has to be set to 'false' otherwise it will not save the CRs on cluster.")
-	flag.StringVar(&result.InputType, "input-type", InputTypeJSON, "Type of input to be used. Possible values: all, json")
+	flag.StringVar(&result.KcpKubeconfigPath, "kcp-kubeconfig-path", "/path/to/kcp/kubeconfig", "Path to the Kubeconfig file of KCP cluster.")
+	flag.StringVar(&result.GardenerKubeconfigPath, "gardener-kubeconfig-path", "/path/to/gardener/kubeconfig", "Kubeconfig file for Gardener cluster.")
+	flag.StringVar(&result.GardenerProjectName, "gardener-project-name", "gardener-project-name", "Name of the Gardener project.")
+	flag.StringVar(&result.OutputPath, "output-path", "/tmp/", "Path where generated yamls will be saved. Directory has to exist.")
+	flag.BoolVar(&result.IsDryRun, "dry-run", true, "Dry-run flag. Has to be set to 'false' otherwise it will not apply the Custom Resources on the KCP cluster.")
+	flag.StringVar(&result.InputType, "input-type", InputTypeJSON, "Type of input to be used. Possible values: **all** (will migrate all gardener shoots), and **json** (will migrate only cluster whose runtimeIds were passed as an input, see the example hack/runtime-migrator/input/runtimeids_sample.json).")
 
 	flag.Parse()
 
