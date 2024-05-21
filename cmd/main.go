@@ -143,8 +143,9 @@ func main() {
 
 	if enableProvisioning {
 		if err = (&controller.RuntimeReconciler{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
+			Client:      mgr.GetClient(),
+			Scheme:      mgr.GetScheme(),
+			ShootClient: shootClient,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Runtime")
 			os.Exit(1)

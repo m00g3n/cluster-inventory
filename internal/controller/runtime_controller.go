@@ -29,14 +29,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-type GardenerClient interface {
+type ShootClient interface {
 	Create(ctx context.Context, shoot *gardener.Shoot, opts v1.CreateOptions) (*gardener.Shoot, error)
 }
 
 // RuntimeReconciler reconciles a Runtime object
 type RuntimeReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme      *runtime.Scheme
+	ShootClient ShootClient
 }
 
 //+kubebuilder:rbac:groups=infrastructuremanager.kyma-project.io,resources=runtimes,verbs=get;list;watch;create;update;patch;delete
