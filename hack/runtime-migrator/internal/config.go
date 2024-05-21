@@ -18,7 +18,13 @@ type Config struct {
 	GardenerProjectName    string
 	OutputPath             string
 	IsDryRun               bool
+	InputType              string
 }
+
+const (
+	InputTypeAll  = "all"
+	InputTypeJSON = "json"
+)
 
 func printConfig(cfg Config) {
 	log.Println("gardener-kubeconfig-path:", cfg.GardenerKubeconfigPath)
@@ -26,6 +32,7 @@ func printConfig(cfg Config) {
 	log.Println("gardener-project-name:", cfg.GardenerProjectName)
 	log.Println("output-path:", cfg.OutputPath)
 	log.Println("dry-run:", cfg.IsDryRun)
+	log.Println("input-type:", cfg.InputType)
 }
 
 // newConfig - creates new application configuration base on passed flags
@@ -36,6 +43,7 @@ func NewConfig() Config {
 	flag.StringVar(&result.GardenerProjectName, "gardener-project-name", "gardener-project", "Name of the Gardener project")
 	flag.StringVar(&result.OutputPath, "output-path", "", "Path where generated yamls will be saved. Directory has to exist")
 	flag.BoolVar(&result.IsDryRun, "dry-run", true, "Dry-run flag. Has to be set to 'false' otherwise it will not save the CRs on cluster.")
+	flag.StringVar(&result.InputType, "input-type", InputTypeJSON, "Type of input to be used. Possible values: all, json")
 
 	flag.Parse()
 
@@ -56,7 +64,6 @@ func addToScheme(s *runtime.Scheme) error {
 	return nil
 }
 
-// please explain what the below line does
 type GetClient = func() (client.Client, error)
 
 func (cfg *Config) Client() (client.Client, error) {

@@ -2,11 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"log"
-	"os"
-	"time"
-
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -14,51 +11,129 @@ import (
 	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/kubeconfig"
 	"github.com/pkg/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"log"
+	"os"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
+	"slices"
+	"time"
 )
 
 const (
 	migratorLabel                      = "operator.kyma-project.io/created-by-migrator"
 	expirationTime                     = 60 * time.Minute
 	ShootNetworkingFilterExtensionType = "shoot-networking-filter"
+	runtimeCrFullPath                  = "%sshoot-%s.yaml"
+	runtimeIdAnnotation                = "kcp.provisioner.kyma-project.io/runtime-id"
 )
 
 func main() {
 	cfg := migrator.NewConfig()
+
+	runtimeIds := getRuntimeIDsFromStdin(cfg)
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.GardenerProjectName)
 	list := getShootList(cfg, gardenerNamespace)
 	provider, err := setupKubernetesKubeconfigProvider(cfg.GardenerKubeconfigPath, gardenerNamespace, expirationTime)
 	if err != nil {
-		log.Fatal("failed to create kubeconfig provider")
+		log.Fatal("failed to create kubeconfig provider - %s", err)
 	}
 
 	kcpClient, err := migrator.CreateKcpClient(&cfg)
 	if err != nil {
-		log.Fatal("failed to create kcp client")
+		log.Fatal("failed to create kcp client - %s", kcpClient)
 	}
 
+	results := make([]migrator.MigrationResult, 0)
 	for _, shoot := range list.Items {
+		if cfg.InputType == migrator.InputTypeJSON {
+			var shootRuntimeID = shoot.Annotations[runtimeIdAnnotation]
+			if !slices.Contains(runtimeIds, shootRuntimeID) {
+				log.Printf("Skipping shoot %s, as it is not in the list of runtime IDs\n", shoot.Name)
+				appendToResults(&results,
+					migrator.MigrationResult{
+						RuntimeId: shootRuntimeID,
+						ShootName: shoot.Name,
+						Status:    migrator.StatusRuntimeIdNotFound})
+				continue
+			}
+			log.Printf("Shoot %s found, continuing with creation of Runtime CR \n", shoot.Name)
+		}
+
+		invalidShoot, validationErr := validateShoot(shoot)
+		if validationErr != nil {
+			results = append(results, invalidShoot)
+			log.Printf(validationErr.Error())
+			continue
+		}
 		runtime := createRuntime(shoot, cfg, provider)
-		failedShootNames := []string{}
 		err := saveRuntime(cfg, runtime, kcpClient)
 		if err != nil {
-			log.Println("Failed to create runtime CR, %w", err)
-			failedShootNames = append(failedShootNames, shoot.Name)
+			log.Printf("Failed to create runtime CR, %w\n", err)
+
+			status := migrator.StatusError
+			if k8serrors.IsAlreadyExists(err) {
+				status = migrator.StatusAlreadyExists
+			}
+			results = append(results, migrator.MigrationResult{
+				RuntimeId:    shoot.Annotations[runtimeIdAnnotation],
+				ShootName:    shoot.Name,
+				Status:       status,
+				ErrorMessage: err.Error(),
+			})
 			continue
 		}
 
 		shootAsYaml, err := getYamlSpec(runtime)
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("Failed to converte spec to yaml, %s", err)
 		}
 		writeSpecToFile(cfg.OutputPath, shoot, shootAsYaml)
+
+		results = append(results, migrator.MigrationResult{
+			RuntimeId:    shoot.Annotations[runtimeIdAnnotation],
+			ShootName:    shoot.Name,
+			Status:       migrator.StatusSuccess,
+			PathToCRYaml: fmt.Sprintf(runtimeCrFullPath, cfg.OutputPath, shoot.Name),
+		})
 	}
+	encoder := json.NewEncoder(os.Stdout)
+	if err := encoder.Encode(&results); err != nil {
+		log.Printf("Failed to convert migration results to json, %s", err)
+	}
+}
+
+func validateShoot(shoot v1beta1.Shoot) (migrator.MigrationResult, error) {
+	if shoot.Spec.Networking.Pods == nil {
+		return migrator.MigrationResult{
+			RuntimeId:    shoot.Annotations[runtimeIdAnnotation],
+			ShootName:    shoot.Name,
+			Status:       migrator.StatusError,
+			ErrorMessage: "Shoot networking pods is nil",
+		}, fmt.Errorf("Shoot networking pods is nil")
+	}
+	return migrator.MigrationResult{}, nil
+}
+
+func appendToResults(list *[]migrator.MigrationResult, result migrator.MigrationResult) {
+	*list = append(*list, result)
+}
+
+func getRuntimeIDsFromStdin(cfg migrator.Config) []string {
+	var runtimeIDs []string
+	if cfg.InputType == migrator.InputTypeJSON {
+		decoder := json.NewDecoder(os.Stdin)
+
+		if err := decoder.Decode(&runtimeIDs); err != nil {
+			log.Printf("Could not load list of RuntimeIds - %s", err)
+		}
+	}
+	return runtimeIDs
 }
 
 func saveRuntime(cfg migrator.Config, runtime v1.Runtime, getClient client.Client) error {
@@ -76,7 +151,6 @@ func saveRuntime(cfg migrator.Config, runtime v1.Runtime, getClient client.Clien
 
 func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, provider kubeconfig.Provider) v1.Runtime {
 	var subjects = getAdministratorsList(provider, shoot.Name)
-	var nginxIngressEnabled = isNginxIngressEnabled(shoot)
 	var hAFailureToleranceType = getFailureToleranceType(shoot)
 	var licenceType = shoot.Annotations["kcp.provisioner.kyma-project.io/licence-type"]
 
@@ -184,12 +258,9 @@ func getShootList(cfg migrator.Config, gardenerNamespace string) *v1beta1.ShootL
 	gardenerShootClient := setupGardenerShootClient(cfg.GardenerKubeconfigPath, gardenerNamespace)
 	list, err := gardenerShootClient.List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to retrieve shoots from Gardener - %s", err)
 	}
 
-	if err != nil {
-		log.Fatal("Failed to create kubeconfig provider")
-	}
 	return list
 }
 
@@ -207,19 +278,21 @@ func getFailureToleranceType(shoot v1beta1.Shoot) v1beta1.FailureToleranceType {
 }
 
 func getAdministratorsList(provider kubeconfig.Provider, shootName string) []string {
-	var kubeconfig, _ = provider.Fetch(context.Background(), shootName)
+	var kubeconfig, err = provider.Fetch(context.Background(), shootName)
 	if kubeconfig == "" {
-		log.Fatal("failed to get dynamic kubeconfig")
+		log.Printf("Failed to get dynamic kubeconfig for shoot %s, %s\n", shootName, err.Error())
+		return []string{}
 	}
 
 	restClientConfig, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
 	if err != nil {
-		log.Fatal("failed to create REST client from kubeconfig")
+		log.Printf("Failed to create REST client from kubeconfig - %s\n", err)
+		return []string{}
 	}
 
 	clientset, err := kubernetes.NewForConfig(restClientConfig)
 	if err != nil {
-		log.Fatal("failed to create clientset from restconfig")
+		log.Printf("Failed to create clientset from restconfig - %s\n", err)
 	}
 
 	var clusterRoleBindings, _ = clientset.RbacV1().ClusterRoleBindings().List(context.Background(), metav1.ListOptions{
@@ -242,13 +315,13 @@ func getYamlSpec(shoot v1.Runtime) ([]byte, error) {
 }
 
 func writeSpecToFile(outputPath string, shoot v1beta1.Shoot, shootAsYaml []byte) {
-	var fileName = fmt.Sprintf("%sshoot-%s.yaml", outputPath, shoot.Name)
+	var fileName = fmt.Sprintf(runtimeCrFullPath, outputPath, shoot.Name)
 
 	const writePermissions = 0644
 	err := os.WriteFile(fileName, shootAsYaml, writePermissions)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Failed to save %s - %s", runtimeCrFullPath, err)
 	}
 	log.Printf("Runtime CR has been saved to %s\n", fileName)
 }
@@ -312,13 +385,13 @@ func getAllRuntimeLabels(shoot v1beta1.Shoot, getClient migrator.GetClient) map[
 	k8sClient, clientErr := getClient()
 
 	if clientErr != nil {
-		log.Fatal(clientErr)
+		log.Printf("Failed to get GardenerClient for shoot %s - %s\n", shoot.Name, clientErr)
 	}
 	gardenerCluster := v1.GardenerCluster{}
 	shootKey := types.NamespacedName{Name: "runtime-id", Namespace: "kcp-system"}
 	getGardenerCRerr := k8sClient.Get(context.Background(), shootKey, &gardenerCluster)
 	if getGardenerCRerr != nil {
-		log.Fatal(getGardenerCRerr)
+		log.Printf("Failed to retrieve GardenerCluster CR for shoot %s - %s\n", shoot.Name, getGardenerCRerr)
 	}
 
 	enrichedRuntimeLabels["kyma-project.io/broker-plan-id"] = gardenerCluster.Labels["kyma-project.io/broker-plan-id"]
