@@ -49,8 +49,8 @@ func getShoot(i interface{}) (shoot v1beta1.Shoot, err error) {
 
 type matcher struct {
 	types.GomegaMatcher
-	path   string
-	actual interface{}
+	path     string
+	expected interface{}
 }
 
 func (m *Matcher) Match(actual interface{}) (success bool, err error) {
@@ -67,51 +67,51 @@ func (m *Matcher) Match(actual interface{}) (success bool, err error) {
 	for _, matcher := range []matcher{
 		{
 			GomegaMatcher: gomega.Equal(eShoot.TypeMeta),
-			actual:        aShoot.TypeMeta,
+			expected:      aShoot.TypeMeta,
 		},
 		{
 			GomegaMatcher: gomega.Equal(eShoot.Name),
-			actual:        aShoot.Name,
+			expected:      aShoot.Name,
 			path:          "metadata/name",
 		},
 		{
 			GomegaMatcher: gomega.Equal(eShoot.Namespace),
-			actual:        aShoot.Namespace,
+			expected:      aShoot.Namespace,
 			path:          "metadata/namespace",
 		},
 		{
 			GomegaMatcher: gomega.Equal(eShoot.Labels),
-			actual:        aShoot.Labels,
+			expected:      aShoot.Labels,
 			path:          "metadata/labels",
 		},
 		{
 			GomegaMatcher: gomega.Equal(eShoot.Annotations),
-			actual:        aShoot.Annotations,
+			expected:      aShoot.Annotations,
 			path:          "metadata/annotations",
 		},
 		{
 			GomegaMatcher: gomega.Equal(eShoot.OwnerReferences),
-			actual:        aShoot.OwnerReferences,
+			expected:      aShoot.OwnerReferences,
 			path:          "metadata/ownerReferences",
 		},
 		{
 			GomegaMatcher: gomega.Equal(eShoot.Finalizers),
-			actual:        aShoot.Finalizers,
+			expected:      aShoot.Finalizers,
 			path:          "metadata/finalizers",
 		},
 		{
 			GomegaMatcher: gomega.Equal(eShoot.Spec),
-			actual:        aShoot.Spec,
+			expected:      aShoot.Spec,
 			path:          "spec",
 		},
 	} {
-		ok, err := matcher.Match(matcher.actual)
+		ok, err := matcher.Match(matcher.expected)
 		if err != nil {
 			return false, err
 		}
 
 		if !ok {
-			msg := matcher.FailureMessage(matcher.actual)
+			msg := matcher.FailureMessage(matcher.expected)
 			if matcher.path != "" {
 				msg = fmt.Sprintf("%s: %s", matcher.path, msg)
 			}
