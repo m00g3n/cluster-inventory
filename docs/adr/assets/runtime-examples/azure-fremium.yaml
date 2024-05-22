@@ -45,7 +45,7 @@ spec:
           type: mx5.large
           # spec.shoot.worker.zones is required
           zones:
-            - eu-central-1a
+            - 1
           # spec.shoot.workers.minimum is required
           minimum: 1
           # spec.shoot.workers.maximum is required
