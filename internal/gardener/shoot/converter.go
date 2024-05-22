@@ -11,20 +11,33 @@ type Converter struct {
 	extenders []extender.Extend
 }
 
+type ProviderConfig struct {
+	EnableIMDSv2 bool
+}
+
+type DNSConfig struct {
+	SecretName   string
+	DomainPrefix string
+	ProviderType string
+}
+
+type KubernetesConfig struct {
+	DefaultVersion string
+}
+
 type ConverterConfig struct {
-	DefaultKubernetesVersion string
-	DNSSecretName            string
-	DomainPrefix             string
-	DNSProviderType          string
+	Kubernetes KubernetesConfig
+	DNS        DNSConfig
+	Provider   ProviderConfig
 }
 
 func NewConverter(config ConverterConfig) Converter {
 	extenders := []extender.Extend{
 		extender.ExtendWithAnnotations,
-		extender.NewExtendWithKubernetes(config.DefaultKubernetesVersion),
+		extender.NewExtendWithKubernetes(config.Kubernetes.DefaultVersion),
 		extender.ExtendWithNetworking,
-		extender.ExtendWithProvider,
-		extender.NewExtendWithDNS(config.DNSSecretName, config.DomainPrefix, config.DNSProviderType),
+		extender.NewProviderExtender(config.Provider.EnableIMDSv2),
+		extender.NewExtendWithDNS(config.DNS.SecretName, config.DNS.DomainPrefix, config.DNS.ProviderType),
 	}
 
 	return Converter{

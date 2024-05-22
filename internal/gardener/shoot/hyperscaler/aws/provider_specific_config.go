@@ -7,9 +7,12 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const apiVersion = "aws.provider.extensions.gardener.cloud/v1alpha1"
 const infrastructureConfigKind = "InfrastructureConfig"
 const controlPlaneConfigKind = "ControlPlaneConfig"
-const apiVersion = "aws.provider.extensions.gardener.cloud/v1alpha1"
+const workerConfigKind = "WorkerConfig"
+
+var awsIMDSv2HTTPPutResponseHopLimit int64 = 2
 
 func GetInfrastructureConfig(workersCidr string, zones []string) ([]byte, error) {
 	return json.Marshal(NewInfrastructureConfig(workersCidr, zones))
@@ -17,6 +20,10 @@ func GetInfrastructureConfig(workersCidr string, zones []string) ([]byte, error)
 
 func GetControlPlaneConfig() ([]byte, error) {
 	return json.Marshal(NewControlPlaneConfig())
+}
+
+func GetWorkerConfig() ([]byte, error) {
+	return json.Marshal(NewWorkerConfig())
 }
 
 func NewInfrastructureConfig(workersCidr string, zones []string) InfrastructureConfig {
@@ -39,6 +46,19 @@ func NewControlPlaneConfig() *ControlPlaneConfig {
 		TypeMeta: v1.TypeMeta{
 			Kind:       controlPlaneConfigKind,
 			APIVersion: apiVersion,
+		},
+	}
+}
+
+func NewWorkerConfig() *WorkerConfig {
+	return &WorkerConfig{
+		TypeMeta: v1.TypeMeta{
+			APIVersion: apiVersion,
+			Kind:       workerConfigKind,
+		},
+		InstanceMetadataOptions: &InstanceMetadataOptions{
+			HTTPTokens:              &HTTPTokensRequired,
+			HTTPPutResponseHopLimit: &awsIMDSv2HTTPPutResponseHopLimit,
 		},
 	}
 }

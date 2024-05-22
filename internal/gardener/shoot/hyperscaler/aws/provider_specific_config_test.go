@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAWSControlPlaneConfig(t *testing.T) {
-	t.Run("create Control Plane config", func(t *testing.T) {
+func TestControlPlaneConfig(t *testing.T) {
+	t.Run("Create Control Plane config", func(t *testing.T) {
 		// when
 		controlPlaneConfigBytes, err := GetControlPlaneConfig()
 
@@ -22,7 +22,7 @@ func TestAWSControlPlaneConfig(t *testing.T) {
 	})
 }
 
-func TestAWSInfrastructureConfig(t *testing.T) {
+func TestInfrastructureConfig(t *testing.T) {
 	for tname, tcase := range map[string]struct {
 		givenNodesCidr   string
 		givenZoneNames   []string
@@ -97,14 +97,31 @@ func TestAWSInfrastructureConfig(t *testing.T) {
 
 			assert.Equal(t, tcase.givenNodesCidr, *infrastructureConfig.Networks.VPC.CIDR)
 			for i, actualZone := range infrastructureConfig.Networks.Zones {
-				assertAWSIpRanges(t, tcase.expectedAwsZones[i], actualZone)
+				assertIPRanges(t, tcase.expectedAwsZones[i], actualZone)
 			}
 		})
 	}
 }
 
-func assertAWSIpRanges(t *testing.T, expectedZone Zone, actualZone Zone) {
+func assertIPRanges(t *testing.T, expectedZone Zone, actualZone Zone) {
 	assert.Equal(t, expectedZone.Internal, actualZone.Internal)
 	assert.Equal(t, expectedZone.Workers, actualZone.Workers)
 	assert.Equal(t, expectedZone.Public, actualZone.Public)
+}
+
+func TestWorkerConfig(t *testing.T) {
+	t.Run("Create worker config", func(t *testing.T) {
+		// when
+		configBytes, err := GetWorkerConfig()
+
+		// then
+		require.NoError(t, err)
+		var config WorkerConfig
+
+		err = json.Unmarshal(configBytes, &config)
+		require.NoError(t, err)
+
+		assert.Equal(t, awsIMDSv2HTTPPutResponseHopLimit, *config.InstanceMetadataOptions.HTTPPutResponseHopLimit)
+		assert.Equal(t, HTTPTokensRequired, *config.InstanceMetadataOptions.HTTPTokens)
+	})
 }

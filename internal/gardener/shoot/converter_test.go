@@ -31,9 +31,17 @@ func TestConverter(t *testing.T) {
 
 func fixConverterConfig() ConverterConfig {
 	return ConverterConfig{
-		DefaultKubernetesVersion: "1.29",
-		DNSSecretName:            "dns-secret",
-		DomainPrefix:             "dev.mydomain.com",
+		Kubernetes: KubernetesConfig{
+			DefaultVersion: "1.29",
+		},
+		DNS: DNSConfig{
+			SecretName:   "dns-secret",
+			DomainPrefix: "dev.mydomain.com",
+			ProviderType: "aws-route53",
+		},
+		Provider: ProviderConfig{
+			EnableIMDSv2: true,
+		},
 	}
 }
 
