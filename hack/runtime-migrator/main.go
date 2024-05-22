@@ -18,7 +18,6 @@ import (
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -200,15 +199,7 @@ func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, provider kubeconfig
 					},
 				},
 				Provider: v1.Provider{
-					Type: shoot.Spec.Provider.Type,
-					ControlPlaneConfig: runtime.RawExtension{
-						Raw:    shoot.Spec.Provider.ControlPlaneConfig.Raw,
-						Object: shoot.Spec.Provider.ControlPlaneConfig.Object,
-					},
-					InfrastructureConfig: runtime.RawExtension{
-						Raw:    shoot.Spec.Provider.InfrastructureConfig.Raw,
-						Object: shoot.Spec.Provider.InfrastructureConfig.Object,
-					},
+					Type:    shoot.Spec.Provider.Type,
 					Workers: shoot.Spec.Provider.Workers,
 				},
 				Networking: v1.Networking{
