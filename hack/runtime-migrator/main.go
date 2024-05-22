@@ -4,6 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"os"
+	"slices"
+	"time"
+
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -17,12 +22,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"log"
-	"os"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
-	"slices"
-	"time"
 )
 
 const (
@@ -30,36 +31,36 @@ const (
 	expirationTime                     = 60 * time.Minute
 	ShootNetworkingFilterExtensionType = "shoot-networking-filter"
 	runtimeCrFullPath                  = "%sshoot-%s.yaml"
-	runtimeIdAnnotation                = "kcp.provisioner.kyma-project.io/runtime-id"
+	runtimeIDAnnotation                = "kcp.provisioner.kyma-project.io/runtime-id"
 )
 
 func main() {
 	cfg := migrator.NewConfig()
 
-	runtimeIds := getRuntimeIDsFromStdin(cfg)
+	runtimeIDs := getRuntimeIDsFromStdin(cfg)
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.GardenerProjectName)
 	list := getShootList(cfg, gardenerNamespace)
 	provider, err := setupKubernetesKubeconfigProvider(cfg.GardenerKubeconfigPath, gardenerNamespace, expirationTime)
 	if err != nil {
-		log.Fatal("failed to create kubeconfig provider - %s", err)
+		log.Fatal("failed to create kubeconfig provider - ", err)
 	}
 
 	kcpClient, err := migrator.CreateKcpClient(&cfg)
 	if err != nil {
-		log.Fatal("failed to create kcp client - %s", kcpClient)
+		log.Fatal("failed to create kcp client - ", kcpClient)
 	}
 
 	results := make([]migrator.MigrationResult, 0)
 	for _, shoot := range list.Items {
 		if cfg.InputType == migrator.InputTypeJSON {
-			var shootRuntimeID = shoot.Annotations[runtimeIdAnnotation]
-			if !slices.Contains(runtimeIds, shootRuntimeID) {
+			var shootRuntimeID = shoot.Annotations[runtimeIDAnnotation]
+			if !slices.Contains(runtimeIDs, shootRuntimeID) {
 				log.Printf("Skipping shoot %s, as it is not in the list of runtime IDs\n", shoot.Name)
 				appendToResults(&results,
 					migrator.MigrationResult{
-						RuntimeId: shootRuntimeID,
+						RuntimeID: shootRuntimeID,
 						ShootName: shoot.Name,
-						Status:    migrator.StatusRuntimeIdNotFound})
+						Status:    migrator.StatusRuntimeIDNotFound})
 				continue
 			}
 			log.Printf("Shoot %s found, continuing with creation of Runtime CR \n", shoot.Name)
@@ -68,20 +69,20 @@ func main() {
 		invalidShoot, validationErr := validateShoot(shoot)
 		if validationErr != nil {
 			results = append(results, invalidShoot)
-			log.Printf(validationErr.Error())
+			log.Print(validationErr.Error())
 			continue
 		}
 		runtime := createRuntime(shoot, cfg, provider)
 		err := saveRuntime(cfg, runtime, kcpClient)
 		if err != nil {
-			log.Printf("Failed to create runtime CR, %w\n", err)
+			log.Printf("Failed to create runtime CR, %s\n", err)
 
 			status := migrator.StatusError
 			if k8serrors.IsAlreadyExists(err) {
 				status = migrator.StatusAlreadyExists
 			}
 			results = append(results, migrator.MigrationResult{
-				RuntimeId:    shoot.Annotations[runtimeIdAnnotation],
+				RuntimeID:    shoot.Annotations[runtimeIDAnnotation],
 				ShootName:    shoot.Name,
 				Status:       status,
 				ErrorMessage: err.Error(),
@@ -96,7 +97,7 @@ func main() {
 		writeSpecToFile(cfg.OutputPath, shoot, shootAsYaml)
 
 		results = append(results, migrator.MigrationResult{
-			RuntimeId:    shoot.Annotations[runtimeIdAnnotation],
+			RuntimeID:    shoot.Annotations[runtimeIDAnnotation],
 			ShootName:    shoot.Name,
 			Status:       migrator.StatusSuccess,
 			PathToCRYaml: fmt.Sprintf(runtimeCrFullPath, cfg.OutputPath, shoot.Name),
@@ -111,7 +112,7 @@ func main() {
 func validateShoot(shoot v1beta1.Shoot) (migrator.MigrationResult, error) {
 	if shoot.Spec.Networking.Pods == nil {
 		return migrator.MigrationResult{
-			RuntimeId:    shoot.Annotations[runtimeIdAnnotation],
+			RuntimeID:    shoot.Annotations[runtimeIDAnnotation],
 			ShootName:    shoot.Name,
 			Status:       migrator.StatusError,
 			ErrorMessage: "Shoot networking pods is nil",
@@ -258,14 +259,10 @@ func getShootList(cfg migrator.Config, gardenerNamespace string) *v1beta1.ShootL
 	gardenerShootClient := setupGardenerShootClient(cfg.GardenerKubeconfigPath, gardenerNamespace)
 	list, err := gardenerShootClient.List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		log.Fatal("Failed to retrieve shoots from Gardener - %s", err)
+		log.Fatal("Failed to retrieve shoots from Gardener - ", err)
 	}
 
 	return list
-}
-
-func isNginxIngressEnabled(shoot v1beta1.Shoot) bool {
-	return shoot.Spec.Addons.NginxIngress != nil && shoot.Spec.Addons.NginxIngress.Enabled
 }
 
 func getFailureToleranceType(shoot v1beta1.Shoot) v1beta1.FailureToleranceType {
@@ -327,7 +324,6 @@ func writeSpecToFile(outputPath string, shoot v1beta1.Shoot, shootAsYaml []byte)
 }
 
 func setupGardenerShootClient(kubeconfigPath, gardenerNamespace string) gardener_types.ShootInterface {
-	//TODO: use the same client factory as in the main code
 	restConfig, err := gardener.NewRestConfigFromFile(kubeconfigPath)
 	if err != nil {
 		return nil
