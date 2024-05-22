@@ -37,16 +37,19 @@ func TestInfrastructureConfig(t *testing.T) {
 			},
 			expectedAwsZones: []Zone{
 				{
+					Name:     "eu-central-1a",
 					Workers:  "10.250.0.0/19",
 					Public:   "10.250.32.0/20",
 					Internal: "10.250.48.0/20",
 				},
 				{
+					Name:     "eu-central-1b",
 					Workers:  "10.250.64.0/19",
 					Public:   "10.250.96.0/20",
 					Internal: "10.250.112.0/20",
 				},
 				{
+					Name:     "eu-central-1c",
 					Workers:  "10.250.128.0/19",
 					Public:   "10.250.160.0/20",
 					Internal: "10.250.176.0/20",
@@ -62,16 +65,19 @@ func TestInfrastructureConfig(t *testing.T) {
 			},
 			expectedAwsZones: []Zone{
 				{
+					Name:     "eu-central-1a",
 					Workers:  "10.180.0.0/26",
 					Public:   "10.180.0.64/27",
 					Internal: "10.180.0.96/27",
 				},
 				{
+					Name:     "eu-central-1b",
 					Workers:  "10.180.0.128/26",
 					Public:   "10.180.0.192/27",
 					Internal: "10.180.0.224/27",
 				},
 				{
+					Name:     "eu-central-1c",
 					Workers:  "10.180.1.0/26",
 					Public:   "10.180.1.64/27",
 					Internal: "10.180.1.96/27",
@@ -104,6 +110,7 @@ func TestInfrastructureConfig(t *testing.T) {
 }
 
 func assertIPRanges(t *testing.T, expectedZone Zone, actualZone Zone) {
+	assert.Equal(t, expectedZone.Name, actualZone.Name)
 	assert.Equal(t, expectedZone.Internal, actualZone.Internal)
 	assert.Equal(t, expectedZone.Workers, actualZone.Workers)
 	assert.Equal(t, expectedZone.Public, actualZone.Public)
