@@ -74,7 +74,7 @@ type WorkerConfig struct {
 // HTTPTokensValue is a constant for HTTPTokens values.
 type HTTPTokensValue string
 
-var (
+const (
 	// HTTPTokensRequired is a constant for requiring the use of tokens to access IMDS. Effectively disables access via
 	// the IMDSv1 endpoints.
 	HTTPTokensRequired HTTPTokensValue = "required"

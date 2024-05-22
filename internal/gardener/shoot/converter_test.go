@@ -40,7 +40,9 @@ func fixConverterConfig() ConverterConfig {
 			ProviderType: "aws-route53",
 		},
 		Provider: ProviderConfig{
-			EnableIMDSv2: true,
+			AWS: AWSConfig{
+				EnableIMDSv2: true,
+			},
 		},
 	}
 }

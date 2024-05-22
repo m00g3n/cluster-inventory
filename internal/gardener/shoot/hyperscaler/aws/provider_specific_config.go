@@ -12,7 +12,7 @@ const infrastructureConfigKind = "InfrastructureConfig"
 const controlPlaneConfigKind = "ControlPlaneConfig"
 const workerConfigKind = "WorkerConfig"
 
-var awsIMDSv2HTTPPutResponseHopLimit int64 = 2
+const awsIMDSv2HTTPPutResponseHopLimit int64 = 2
 
 func GetInfrastructureConfig(workersCidr string, zones []string) ([]byte, error) {
 	return json.Marshal(NewInfrastructureConfig(workersCidr, zones))
@@ -51,14 +51,17 @@ func NewControlPlaneConfig() *ControlPlaneConfig {
 }
 
 func NewWorkerConfig() *WorkerConfig {
+	httpTokens := HTTPTokensRequired
+	hopLimit := awsIMDSv2HTTPPutResponseHopLimit
+
 	return &WorkerConfig{
 		TypeMeta: v1.TypeMeta{
 			APIVersion: apiVersion,
 			Kind:       workerConfigKind,
 		},
 		InstanceMetadataOptions: &InstanceMetadataOptions{
-			HTTPTokens:              &HTTPTokensRequired,
-			HTTPPutResponseHopLimit: &awsIMDSv2HTTPPutResponseHopLimit,
+			HTTPTokens:              &httpTokens,
+			HTTPPutResponseHopLimit: &hopLimit,
 		},
 	}
 }

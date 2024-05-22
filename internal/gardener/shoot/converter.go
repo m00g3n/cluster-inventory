@@ -12,6 +12,10 @@ type Converter struct {
 }
 
 type ProviderConfig struct {
+	AWS AWSConfig
+}
+
+type AWSConfig struct {
 	EnableIMDSv2 bool
 }
 
@@ -36,7 +40,7 @@ func NewConverter(config ConverterConfig) Converter {
 		extender.ExtendWithAnnotations,
 		extender.NewExtendWithKubernetes(config.Kubernetes.DefaultVersion),
 		extender.ExtendWithNetworking,
-		extender.NewProviderExtender(config.Provider.EnableIMDSv2),
+		extender.NewProviderExtender(config.Provider.AWS.EnableIMDSv2),
 		extender.NewExtendWithDNS(config.DNS.SecretName, config.DNS.DomainPrefix, config.DNS.ProviderType),
 	}
 

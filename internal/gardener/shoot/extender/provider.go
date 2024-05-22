@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func NewProviderExtender(EnableIMDSv2 bool) Extend {
+func NewProviderExtender(enableIMDSv2 bool) Extend {
 	return func(runtimeShoot imv1.RuntimeShoot, shoot *gardener.Shoot) error {
 		provider := &shoot.Spec.Provider
 		provider.Type = runtimeShoot.Provider.Type
@@ -23,8 +23,8 @@ func NewProviderExtender(EnableIMDSv2 bool) Extend {
 			return err
 		}
 
-		if EnableIMDSv2 {
-			provider.Workers[0].ProviderConfig, err = getWorkerConfig(runtimeShoot)
+		if runtimeShoot.Provider.Type == "aws" && enableIMDSv2 {
+			provider.Workers[0].ProviderConfig, err = getAWSWorkerConfig()
 		}
 
 		return err
@@ -71,20 +71,11 @@ func getConfig(runtimeShoot imv1.RuntimeShoot) (infrastructureConfig *runtime.Ra
 	}
 }
 
-func getWorkerConfig(runtimeShoot imv1.RuntimeShoot) (*runtime.RawExtension, error) {
-	switch runtimeShoot.Provider.Type {
-	case "aws":
-		{
-			workerConfigBytes, err := aws.GetWorkerConfig()
-			if err != nil {
-				return nil, err
-			}
-
-			return &runtime.RawExtension{
-				Raw: workerConfigBytes,
-			}, nil
-		}
-	default:
-		return nil, nil
+func getAWSWorkerConfig() (*runtime.RawExtension, error) {
+	workerConfigBytes, err := aws.GetWorkerConfig()
+	if err != nil {
+		return nil, err
 	}
+
+	return &runtime.RawExtension{Raw: workerConfigBytes}, nil
 }
