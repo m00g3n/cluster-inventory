@@ -4,7 +4,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// This types are copied from https://github.com/gardener/gardener-extensions/blob/master/controllers/provider-azure/pkg/apis/azure/types_infrastructure.go as it does not contain json tags
+// This types are copied from Provisioner.
 
 // InfrastructureConfig infrastructure configuration resource
 type InfrastructureConfig struct {

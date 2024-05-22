@@ -19,6 +19,9 @@ func TestControlPlaneConfig(t *testing.T) {
 		var controlPlaneConfig ControlPlaneConfig
 		err = json.Unmarshal(controlPlaneConfigBytes, &controlPlaneConfig)
 		assert.NoError(t, err)
+
+		assert.Equal(t, apiVersion, controlPlaneConfig.TypeMeta.APIVersion)
+		assert.Equal(t, controlPlaneConfigKind, controlPlaneConfig.TypeMeta.Kind)
 	})
 }
 

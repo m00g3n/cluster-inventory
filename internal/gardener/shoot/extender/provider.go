@@ -72,7 +72,6 @@ func getConfig(runtimeShoot imv1.RuntimeShoot) (infrastructureConfig *runtime.Ra
 }
 
 func getWorkerConfig(runtimeShoot imv1.RuntimeShoot) (*runtime.RawExtension, error) {
-
 	switch runtimeShoot.Provider.Type {
 	case "aws":
 		{
