@@ -1,6 +1,6 @@
 # Runtime Migrator
 The `runtime-migrator` application
-1. connects to a gardener project
+1. connects to a Gardener project
 2. retrieves all existing shoot specifications
 3. migrates the shoot specs to the new Runtime custom resource (Runtime CRs created with this migrator have the `operator.kyma-project.io/created-by-migrator=true` label)
 4. saves the new Runtime custom resources to files
@@ -26,8 +26,8 @@ cat input/runtimeIds.json | ./runtime-migrator \
 
 The above **execution example** will: 
 1. take the stdin input (json with runtimeIds array)
-1. proceed only with Runtime Custom Resources creation for clustest listed in the input 
-1. save generated Runtime Custom Resources yamls in `/tmp/` directory. They will not be applied on the KCP cluster (`dry-run` mode)
+1. proceed only with Runtime CRs creation for clusters listed in the input 
+1. save generated Runtime CRs yamls in `/tmp/` directory. They will not be applied on the KCP cluster (`dry-run` mode)
 1. send logs and errors to `/tmp/stderr.txt`
 1. send json output to `/tmp/stdout.txt`
 
@@ -60,6 +60,6 @@ This table lists the configurable parameters, their descriptions, and default va
 | **gardener-kubeconfig-path** | Path to the Kubeconfig file of Gardener cluster.                                                                                                                                                                           | `/path/to/gardener/kubeconfig` |
 | **gardener-project-name** | Name of the Gardener project.                                                                                                                                                                                              | `gardener-project-name`        |
 | **output-path** | Path where generated yamls will be saved. Directory has to exist.                                                                                                                                                          | `/tmp/`                        |
-| **dry-run** | Dry-run flag. Has to be set to **false**, otherwise migrator will not apply the Custom Resources on the KCP cluster.                                                                                                       | `true`                         |
-| **input-type** | Type of input to be used. Possible values: **all** (will migrate all gardener shoots), and **json** (will migrate only cluster whose runtimeIds were passed as an input, [see the example](input/runtimeids_sample.json)). | `json`                         |
+| **dry-run** | Dry-run flag. Has to be set to **false**, otherwise migrator will not apply the CRs on the KCP cluster.                                                                                                       | `true`                         |
+| **input-type** | Type of input to be used. Possible values: **all** (will migrate all Gardener shoots), and **json** (will migrate only clusters whose runtimeIds were passed as an input, [see the example](input/runtimeids_sample.json)). | `json`                         |
 
