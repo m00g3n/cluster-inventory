@@ -55,7 +55,7 @@ func init() {
 
 const defaultMinimalRotationTimeRatio = 0.6
 const defaultExpirationTime = 24 * time.Hour
-const defaultProvisioningEnabled = false
+const defaultRuntimeReconcilerEnabled = false
 
 func main() {
 	var metricsAddr string
@@ -65,7 +65,7 @@ func main() {
 	var gardenerProjectName string
 	var minimalRotationTimeRatio float64
 	var expirationTime time.Duration
-	var enableProvisioning bool
+	var enableRuntimeReconciler bool
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -76,7 +76,7 @@ func main() {
 	flag.StringVar(&gardenerProjectName, "gardener-project-name", "gardener-project", "Name of the Gardener project")
 	flag.Float64Var(&minimalRotationTimeRatio, "minimal-rotation-time", defaultMinimalRotationTimeRatio, "The ratio determines what is the minimal time that needs to pass to rotate certificate.")
 	flag.DurationVar(&expirationTime, "kubeconfig-expiration-time", defaultExpirationTime, "Dynamic kubeconfig expiration time")
-	flag.BoolVar(&enableProvisioning, "provisioning-enabled", defaultProvisioningEnabled, "Feature flag for all provisioning functionalities")
+	flag.BoolVar(&enableRuntimeReconciler, "runtime-reconciler-enabled", defaultRuntimeReconcilerEnabled, "Feature flag for all runtime reconciler functionalities")
 
 	opts := zap.Options{
 		Development: true,
@@ -141,7 +141,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if enableProvisioning {
+	if enableRuntimeReconciler {
 		if err = (&controller.RuntimeReconciler{
 			Client:      mgr.GetClient(),
 			Scheme:      mgr.GetScheme(),
