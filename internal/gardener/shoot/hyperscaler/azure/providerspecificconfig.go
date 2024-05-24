@@ -28,6 +28,9 @@ func NewControlPlaneConfig() *ControlPlaneConfig {
 }
 
 func NewInfrastructureConfig(workerCIDR string, zones []string) InfrastructureConfig {
+	// All Azure shoots are zoned.
+	// No zones - the shoot configuration is invalid.
+	// We should validate the config before calling this function.
 	isZoned := len(zones) > 0
 
 	azureConfig := InfrastructureConfig{

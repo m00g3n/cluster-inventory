@@ -33,6 +33,9 @@ func generateAzureZones(workerCidr string, zoneNames []string) []Zone {
 			Name: name,
 			CIDR: zoneWorkerCidr.String(),
 			NatGateway: &NatGateway{
+				// There are existing Azure clusters which were created before NAT gateway support,
+				// and they were migrated to HA with all zones having enableNatGateway: false .
+				// But for new Azure runtimes, enableNatGateway for all zones is always true
 				Enabled:                      true,
 				IdleConnectionTimeoutMinutes: defaultConnectionTimeOutMinutes,
 			},
