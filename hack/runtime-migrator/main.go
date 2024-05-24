@@ -71,21 +71,22 @@ func main() {
 			log.Print(validationErr.Error())
 			continue
 		}
-		runtime := createRuntime(shoot, cfg, provider)
+
+		runtime, runtimeCrErr := createRuntime(shoot, cfg, provider)
+		if runtimeCrErr != nil {
+			results = appendResult(results, shoot, migrator.StatusFailedToCreateRuntimeCR, runtimeCrErr)
+			continue
+		}
+
 		err := saveRuntime(cfg, runtime, kcpClient)
 		if err != nil {
-			log.Printf("Failed to create runtime CR, %s\n", err)
+			log.Printf("Failed to apply runtime CR, %s\n", err)
 
 			status := migrator.StatusError
 			if k8serrors.IsAlreadyExists(err) {
 				status = migrator.StatusAlreadyExists
 			}
-			results = append(results, migrator.MigrationResult{
-				RuntimeID:    shoot.Annotations[runtimeIDAnnotation],
-				ShootName:    shoot.Name,
-				Status:       status,
-				ErrorMessage: err.Error(),
-			})
+			results = appendResult(results, shoot, status, err)
 			continue
 		}
 
@@ -106,6 +107,16 @@ func main() {
 	if err := encoder.Encode(&results); err != nil {
 		log.Printf("Failed to convert migration results to json, %s", err)
 	}
+}
+
+func appendResult(results []migrator.MigrationResult, shoot v1beta1.Shoot, status migrator.StatusType, err error) []migrator.MigrationResult {
+	results = append(results, migrator.MigrationResult{
+		RuntimeID:    shoot.Annotations[runtimeIDAnnotation],
+		ShootName:    shoot.Name,
+		Status:       status,
+		ErrorMessage: err.Error(),
+	})
+	return results
 }
 
 func validateShoot(shoot v1beta1.Shoot) (migrator.MigrationResult, error) {
@@ -149,11 +160,14 @@ func saveRuntime(cfg migrator.Config, runtime v1.Runtime, getClient client.Clien
 	return nil
 }
 
-func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, provider kubeconfig.Provider) v1.Runtime {
+func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, provider kubeconfig.Provider) (v1.Runtime, error) {
 	var subjects = getAdministratorsList(provider, shoot.Name)
 	var hAFailureToleranceType = getFailureToleranceType(shoot)
 	var licenceType = shoot.Annotations["kcp.provisioner.kyma-project.io/licence-type"]
-
+	labels, err := getAllRuntimeLabels(shoot, cfg.Client)
+	if err != nil {
+		return v1.Runtime{}, err
+	}
 	var isShootNetworkFilteringEnabled = checkIfShootNetworkFilteringEnabled(shoot)
 
 	var runtime = v1.Runtime{
@@ -167,7 +181,7 @@ func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, provider kubeconfig
 			Namespace:                  "kcp-system",
 			DeletionTimestamp:          shoot.DeletionTimestamp,
 			DeletionGracePeriodSeconds: shoot.DeletionGracePeriodSeconds,
-			Labels:                     getAllRuntimeLabels(shoot, cfg.Client),
+			Labels:                     labels,
 			Annotations:                shoot.Annotations,
 			OwnerReferences:            nil, // deliberately left empty, as without that we will not be able to delete Runtime CRs
 			Finalizers:                 nil, // deliberately left empty, as without that we will not be able to delete Runtime CRs
@@ -234,7 +248,7 @@ func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, provider kubeconfig
 			Conditions: nil, // deliberately left nil by our migrator to show that controller has not picked it yet
 		},
 	}
-	return runtime
+	return runtime, nil
 }
 
 func checkIfShootNetworkFilteringEnabled(shoot v1beta1.Shoot) bool {
@@ -360,8 +374,9 @@ func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, 
 		int64(expirationTime.Seconds())), nil
 }
 
-func getAllRuntimeLabels(shoot v1beta1.Shoot, getClient migrator.GetClient) map[string]string {
+func getAllRuntimeLabels(shoot v1beta1.Shoot, getClient migrator.GetClient) (map[string]string, error) {
 	enrichedRuntimeLabels := map[string]string{}
+	var err error
 
 	// add all labels from the shoot
 	for labelKey, labelValue := range shoot.Labels {
@@ -372,15 +387,15 @@ func getAllRuntimeLabels(shoot v1beta1.Shoot, getClient migrator.GetClient) map[
 	k8sClient, clientErr := getClient()
 
 	if clientErr != nil {
-		log.Printf("Failed to get GardenerClient for shoot %s - %s\n", shoot.Name, clientErr)
+		return map[string]string{}, errors.Wrap(clientErr, fmt.Sprintf("Failed to get GardenerClient for shoot %s - %s\n", shoot.Name, clientErr))
 	}
 	gardenerCluster := v1.GardenerCluster{}
-	shootKey := types.NamespacedName{Name: "runtime-id", Namespace: "kcp-system"}
+	shootKey := types.NamespacedName{Name: shoot.Name, Namespace: "kcp-system"}
 	getGardenerCRerr := k8sClient.Get(context.Background(), shootKey, &gardenerCluster)
 	if getGardenerCRerr != nil {
-		log.Printf("Failed to retrieve GardenerCluster CR for shoot %s - %s\n", shoot.Name, getGardenerCRerr)
+		var errMsg = fmt.Sprintf("Failed to retrieve GardenerCluster CR for shoot %s - %s\n", shoot.Name, getGardenerCRerr)
+		return map[string]string{}, errors.Wrap(getGardenerCRerr, errMsg)
 	}
-
 	enrichedRuntimeLabels["kyma-project.io/broker-plan-id"] = gardenerCluster.Labels["kyma-project.io/broker-plan-id"]
 	enrichedRuntimeLabels["kyma-project.io/runtime-id"] = gardenerCluster.Labels["kyma-project.io/runtime-id"]
 	enrichedRuntimeLabels["kyma-project.io/subaccount-id"] = gardenerCluster.Labels["kyma-project.io/subaccount-id"]
@@ -394,5 +409,5 @@ func getAllRuntimeLabels(shoot v1beta1.Shoot, getClient migrator.GetClient) map[
 	// add custom label for the migrator
 	enrichedRuntimeLabels[migratorLabel] = "true"
 
-	return enrichedRuntimeLabels
+	return enrichedRuntimeLabels, err
 }
