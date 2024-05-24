@@ -393,7 +393,7 @@ func getAllRuntimeLabels(shoot v1beta1.Shoot, getClient migrator.GetClient) (map
 	shootKey := types.NamespacedName{Name: shoot.Name, Namespace: "kcp-system"}
 	getGardenerCRerr := k8sClient.Get(context.Background(), shootKey, &gardenerCluster)
 	if getGardenerCRerr != nil {
-		var errMsg = fmt.Sprintf("Failed to retrieve GardenerCluster CR for shoot %s - %s\n", shoot.Name, getGardenerCRerr)
+		var errMsg = fmt.Sprintf("Failed to retrieve GardenerCluster CR for shoot %s\n", shoot.Name)
 		return map[string]string{}, errors.Wrap(getGardenerCRerr, errMsg)
 	}
 	enrichedRuntimeLabels["kyma-project.io/broker-plan-id"] = gardenerCluster.Labels["kyma-project.io/broker-plan-id"]
