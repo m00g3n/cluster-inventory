@@ -58,7 +58,7 @@ spec:
             size: 50Gi
           # spec.shoot.worker.zones is required
           zones:
-            - eastus1
+            - 1
           # spec.shoot.workers.name is optional, if not provided default will be used
           name: cpu-worker-0
           # spec.shoot.workers.minimum is required

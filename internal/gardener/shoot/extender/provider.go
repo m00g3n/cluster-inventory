@@ -56,6 +56,7 @@ func getConfig(runtimeShoot imv1.RuntimeShoot) (infrastructureConfig *runtime.Ra
 		}
 	case "azure":
 		{
+			// Azure shoots are all zoned, put probably it not be validated here.
 			return getConfigForProvider(runtimeShoot, azure.GetInfrastructureConfig, azure.GetControlPlaneConfig)
 		}
 	case "gcp":
