@@ -292,6 +292,8 @@ spec:
                         type: string
                       services:
                         type: string
+                      type:
+                        type: string
                     required:
                     - nodes
                     - pods
