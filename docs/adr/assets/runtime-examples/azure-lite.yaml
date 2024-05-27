@@ -1,0 +1,92 @@
+apiVersion: infrastructuremanager.kyma-project.io/v1alpha1
+kind: Runtime
+metadata:
+  labels:
+    kyma-project.io/instance-id: instance-id
+    kyma-project.io/runtime-id: runtime-id
+    kyma-project.io/broker-plan-id: plan-id
+    kyma-project.io/broker-plan-name: plan-name
+    kyma-project.io/global-account-id: global-account-id
+    kyma-project.io/subaccount-id: subAccount-id
+    kyma-project.io/shoot-name: shoot-name
+    kyma-project.io/region: region
+    operator.kyma-project.io/kyma-name: kymaName
+  name: runtime-id
+  namespace: kcp-system
+spec:
+  shoot:
+    # spec.shoot.name is required
+    name: shoot-name
+    # spec.shoot.purpose is required
+    purpose: production
+    # spec.shoot.region is required
+    region: eastus
+    # spec.shoot.platformRegion is required
+    platformRegion: "cf-us10"
+    # spec.shoot.licenceType is optional, default=nil
+    licenceType: "TestDevelopmentAndDemo"
+    # spec.shoot.secretBindingName is required
+    secretBindingName: "hyperscaler secret"
+    kubernetes:
+      kubeAPIServer:
+        # spec.shoot.kubernetes.kubeAPIServer.oidcConfig is required
+        oidcConfig:
+          clientID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+          groupsClaim: groups
+          issuerURL: https://my.cool.tokens.com
+          signingAlgs:
+          - RS256
+        usernameClaim: sub
+    # spec.shoot.provider is required
+    provider:
+      # spec.shoot.provider.type is required
+      type: azure
+      # spec.shoot.provider.workers is required
+      workers:
+        - machine:
+            # spec.shoot.workers.machine.type is required
+            type: Standard_D4s_v5
+            # spec.shoot.workers.machine.image is optional, when not provider default will be used
+            # Will be modified by the SRE
+            image:
+              name: gardenlinux
+              version: 1312.3.0
+          # spec.shoot.workers.volume is required for the first release
+          # Probably can be moved into KIM, as it is hardcoded in KEB, and not dependent on plan
+          volume:
+            type: Standard_LRS
+            size: 50Gi
+          # spec.shoot.worker.zones is required
+          zones:
+            - 1
+          # spec.shoot.workers.name is optional, if not provided default will be used
+          name: cpu-worker-0
+          # spec.shoot.workers.minimum is required
+          minimum: 2
+          # spec.shoot.workers.maximum is required
+          maximum: 10
+          # spec.shoot.workers.maxSurge is required in the first release.
+          # It can be optional in the future, as it equals to zone count
+          maxSurge: 1
+          # spec.shoot.workers.maxUnavailable is required in the first release.
+          # It can be optional in the future, as it is always set to 0
+          maxUnavailable: 0
+    # spec.shoot.Networking is required
+    networking:
+      pods: 10.96.0.0/13
+      nodes: 10.250.0.0/22
+      services: 10.104.0.0/13
+    # spec.shoot.controlPlane is optional, default=nil
+    controlPlane:
+      highAvailability:
+        failureTolerance:
+          type: node
+  security:
+    networking:
+      filter:
+        # spec.security.networking.filter.egress.enabled is required
+        egress:
+          enabled: false
+    # spec.security.administrators is required
+    administrators:
+      - admin@myorg.com
