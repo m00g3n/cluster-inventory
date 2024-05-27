@@ -19,7 +19,9 @@ package controller
 import (
 	"context"
 
+	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,18 +29,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
+type ShootClient interface {
+	Create(ctx context.Context, shoot *gardener.Shoot, opts v1.CreateOptions) (*gardener.Shoot, error)
+}
+
 // RuntimeReconciler reconciles a Runtime object
 type RuntimeReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme      *runtime.Scheme
+	ShootClient ShootClient
 }
 
 //+kubebuilder:rbac:groups=infrastructuremanager.kyma-project.io,resources=runtimes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=infrastructuremanager.kyma-project.io,resources=runtimes/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=infrastructuremanager.kyma-project.io,resources=runtimes/finalizers,verbs=update
 
-func (r *RuntimeReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+func (r *RuntimeReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
+	logger := log.FromContext(ctx)
+	logger.Info(request.String())
 
 	return ctrl.Result{}, nil
 }

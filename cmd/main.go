@@ -55,6 +55,7 @@ func init() {
 
 const defaultMinimalRotationTimeRatio = 0.6
 const defaultExpirationTime = 24 * time.Hour
+const defaultRuntimeReconcilerEnabled = false
 
 func main() {
 	var metricsAddr string
@@ -64,6 +65,7 @@ func main() {
 	var gardenerProjectName string
 	var minimalRotationTimeRatio float64
 	var expirationTime time.Duration
+	var enableRuntimeReconciler bool
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -74,6 +76,7 @@ func main() {
 	flag.StringVar(&gardenerProjectName, "gardener-project-name", "gardener-project", "Name of the Gardener project")
 	flag.Float64Var(&minimalRotationTimeRatio, "minimal-rotation-time", defaultMinimalRotationTimeRatio, "The ratio determines what is the minimal time that needs to pass to rotate certificate.")
 	flag.DurationVar(&expirationTime, "kubeconfig-expiration-time", defaultExpirationTime, "Dynamic kubeconfig expiration time")
+	flag.BoolVar(&enableRuntimeReconciler, "runtime-reconciler-enabled", defaultRuntimeReconcilerEnabled, "Feature flag for all runtime reconciler functionalities")
 
 	opts := zap.Options{
 		Development: true,
@@ -112,12 +115,17 @@ func main() {
 	}
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", gardenerProjectName)
-	kubeconfigProvider, err := setupKubernetesKubeconfigProvider(gardenerKubeconfigPath, gardenerNamespace, expirationTime)
+	shootClient, dynamicKubeconfigClient, err := initGardenerClients(gardenerKubeconfigPath, gardenerNamespace)
 
 	if err != nil {
-		setupLog.Error(err, "unable to initialize kubeconfig provider", "controller", "GardenerCluster")
+		setupLog.Error(err, "unable to initialize gardener clients", "controller", "GardenerCluster")
 		os.Exit(1)
 	}
+
+	kubeconfigProvider := kubeconfig.NewKubeconfigProvider(shootClient,
+		dynamicKubeconfigClient,
+		gardenerNamespace,
+		int64(expirationTime.Seconds()))
 
 	rotationPeriod := time.Duration(minimalRotationTimeRatio*expirationTime.Minutes()) * time.Minute
 	metrics := metrics.NewMetrics()
@@ -133,13 +141,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.RuntimeReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Runtime")
-		os.Exit(1)
+	if enableRuntimeReconciler {
+		if err = (&controller.RuntimeReconciler{
+			Client:      mgr.GetClient(),
+			Scheme:      mgr.GetScheme(),
+			ShootClient: shootClient,
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "Runtime")
+			os.Exit(1)
+		}
 	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -159,20 +171,20 @@ func main() {
 	}
 }
 
-func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, expirationTime time.Duration) (kubeconfig.Provider, error) {
+func initGardenerClients(kubeconfigPath string, namespace string) (gardener_apis.ShootInterface, client.SubResourceClient, error) {
 	restConfig, err := gardener.NewRestConfigFromFile(kubeconfigPath)
 	if err != nil {
-		return kubeconfig.Provider{}, err
+		return nil, nil, err
 	}
 
 	gardenerClientSet, err := gardener_apis.NewForConfig(restConfig)
 	if err != nil {
-		return kubeconfig.Provider{}, err
+		return nil, nil, err
 	}
 
 	gardenerClient, err := client.New(restConfig, client.Options{})
 	if err != nil {
-		return kubeconfig.Provider{}, err
+		return nil, nil, err
 	}
 
 	shootClient := gardenerClientSet.Shoots(namespace)
@@ -180,11 +192,8 @@ func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, 
 
 	err = v1beta1.AddToScheme(gardenerClient.Scheme())
 	if err != nil {
-		return kubeconfig.Provider{}, errors.Wrap(err, "failed to register Gardener schema")
+		return nil, nil, errors.Wrap(err, "failed to register Gardener schema")
 	}
 
-	return kubeconfig.NewKubeconfigProvider(shootClient,
-		dynamicKubeconfigAPI,
-		namespace,
-		int64(expirationTime.Seconds())), nil
+	return shootClient, dynamicKubeconfigAPI, nil
 }
