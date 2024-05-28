@@ -53,11 +53,11 @@ func (r *RuntimeReconciler) Reconcile(ctx context.Context, request ctrl.Request)
 
 	err := r.Get(ctx, request.NamespacedName, &runtime)
 
-	if err != nil {
+	if err == nil {
+		r.Log.Info("Reconciling Runtime", "Name", runtime.Name, "Namespace", runtime.Namespace)
+	} else {
 		r.Log.Error(err, "unable to fetch Runtime")
 		return ctrl.Result{}, err
-	} else {
-		r.Log.Info("Reconciling Runtime", "Name", runtime.Name, "Namespace", runtime.Namespace)
 	}
 
 	shoot := &gardener.Shoot{}
