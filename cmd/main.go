@@ -48,7 +48,6 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
 	utilruntime.Must(infrastructuremanagerv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
@@ -146,6 +145,7 @@ func main() {
 			Client:      mgr.GetClient(),
 			Scheme:      mgr.GetScheme(),
 			ShootClient: shootClient,
+			Log:         logger,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Runtime")
 			os.Exit(1)
@@ -163,7 +163,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	setupLog.Info("Starting Manager", "kubeconfigExpirationTime", expirationTime, "kubeconfigRotationPeriod", rotationPeriod)
+	setupLog.Info("Starting Manager", "kubeconfigExpirationTime", expirationTime, "kubeconfigRotationPeriod", rotationPeriod, "enableRuntimeReconciler", enableRuntimeReconciler)
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")

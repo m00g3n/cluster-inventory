@@ -1,6 +1,8 @@
 package shoot
 
 import (
+	"fmt"
+
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/extender"
@@ -56,13 +58,14 @@ func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
 	shoot := gardener.Shoot{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      runtime.Spec.Shoot.Name,
-			Namespace: runtime.Namespace,
+			Namespace: fmt.Sprintf("garden-%s", "kyma-dev"), //nolint:godox TODO: make it more dynamic - this should be the gardener project namespace
 		},
 		Spec: gardener.ShootSpec{
+			CloudProfileName:  "aws",
 			Purpose:           &runtime.Spec.Shoot.Purpose,
 			Region:            runtime.Spec.Shoot.Region,
 			SecretBindingName: &runtime.Spec.Shoot.SecretBindingName,
-			ControlPlane:      &runtime.Spec.Shoot.ControlPlane,
+			ControlPlane:      &runtime.Spec.Shoot.ControlPlane, //nolint:godox TODO: check HAavailability (also in migrator)
 		},
 	}
 
@@ -73,4 +76,8 @@ func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
 	}
 
 	return shoot, nil
+}
+
+func PtrTo[T any](v T) *T {
+	return &v
 }

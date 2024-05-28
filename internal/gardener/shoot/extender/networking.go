@@ -9,6 +9,7 @@ func ExtendWithNetworking(runtimeShoot imv1.RuntimeShoot, shoot *gardener.Shoot)
 	runtimeNetworking := runtimeShoot.Networking
 
 	shoot.Spec.Networking = &gardener.Networking{
+		Type:     runtimeNetworking.Type,
 		Nodes:    &runtimeNetworking.Nodes,
 		Pods:     &runtimeNetworking.Pods,
 		Services: &runtimeNetworking.Services,

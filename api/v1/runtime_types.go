@@ -92,9 +92,10 @@ type Provider struct {
 }
 
 type Networking struct {
-	Pods     string `json:"pods"`
-	Nodes    string `json:"nodes"`
-	Services string `json:"services"`
+	Type     *string `json:"type,omitempty"`
+	Pods     string  `json:"pods"`
+	Nodes    string  `json:"nodes"`
+	Services string  `json:"services"`
 }
 
 type Security struct {

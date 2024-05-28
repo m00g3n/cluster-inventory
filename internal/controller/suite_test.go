@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	metrics "github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/mocks"
@@ -86,12 +87,24 @@ var _ = BeforeSuite(func() {
 	setupKubeconfigProviderMock(kubeconfigProviderMock)
 	metrics := metrics.NewMetrics()
 
-	controller := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger, TestKubeconfigRotationPeriod, TestMinimalRotationTimeRatio, metrics)
+	gardenerClusterController := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger, TestKubeconfigRotationPeriod, TestMinimalRotationTimeRatio, metrics)
 
-	Expect(controller).NotTo(BeNil())
+	Expect(gardenerClusterController).NotTo(BeNil())
 
-	err = controller.SetupWithManager(mgr)
+	err = gardenerClusterController.SetupWithManager(mgr)
 	Expect(err).To(BeNil())
+
+	clientset := fake.NewSimpleClientset()
+	shootClient := clientset.CoreV1beta1().Shoots("default")
+
+	runtimeReconciler := &RuntimeReconciler{
+		Client:      mgr.GetClient(),
+		Scheme:      mgr.GetScheme(),
+		Log:         logger,
+		ShootClient: shootClient,
+	}
+	runtimeReconcilerSetupErr := (runtimeReconciler).SetupWithManager(mgr)
+	Expect(runtimeReconcilerSetupErr).To(BeNil())
 
 	//+kubebuilder:scaffold:scheme
 

@@ -20,12 +20,13 @@ import (
 	"context"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/go-logr/logr"
+	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
@@ -38,6 +39,7 @@ type RuntimeReconciler struct {
 	client.Client
 	Scheme      *runtime.Scheme
 	ShootClient ShootClient
+	Log         logr.Logger
 }
 
 //+kubebuilder:rbac:groups=infrastructuremanager.kyma-project.io,resources=runtimes,verbs=get;list;watch;create;update;patch;delete
@@ -45,16 +47,67 @@ type RuntimeReconciler struct {
 //+kubebuilder:rbac:groups=infrastructuremanager.kyma-project.io,resources=runtimes/finalizers,verbs=update
 
 func (r *RuntimeReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-	logger.Info(request.String())
+	r.Log.Info(request.String())
+
+	var runtime imv1.Runtime
+
+	err := r.Get(ctx, request.NamespacedName, &runtime)
+
+	if err == nil {
+		r.Log.Info("Reconciling Runtime", "Name", runtime.Name, "Namespace", runtime.Namespace)
+	} else {
+		r.Log.Error(err, "unable to fetch Runtime")
+		return ctrl.Result{}, err
+	}
+
+	shoot := &gardener.Shoot{}
+
+	converterConfig := fixConverterConfig()
+	converter := gardener_shoot.NewConverter(converterConfig)
+
+	*shoot, err = converter.ToShoot(runtime)
+
+	if err != nil {
+		r.Log.Error(err, "unable to map Runtime to Shoot")
+		return ctrl.Result{}, err
+	}
+
+	r.Log.Info("Shoot mapped", "Name", shoot.Name, "Namespace", shoot.Namespace, "Shoot", shoot)
+
+	createdShoot, provisioningErr := r.ShootClient.Create(ctx, shoot, v1.CreateOptions{})
+
+	if provisioningErr != nil {
+		r.Log.Error(provisioningErr, "unable to create Shoot")
+		return ctrl.Result{}, provisioningErr
+	}
+	r.Log.Info("Shoot created", "Name", createdShoot.Name, "Namespace", createdShoot.Namespace)
 
 	return ctrl.Result{}, nil
+}
+
+func fixConverterConfig() gardener_shoot.ConverterConfig {
+	return gardener_shoot.ConverterConfig{
+		Kubernetes: gardener_shoot.KubernetesConfig{
+			DefaultVersion: "1.29",
+		},
+
+		DNS: gardener_shoot.DNSConfig{
+			SecretName:   "xxx-secret-dev",
+			DomainPrefix: "runtimeprov.dev.kyma.ondemand.com",
+			ProviderType: "aws-route53",
+		},
+		Provider: gardener_shoot.ProviderConfig{
+			AWS: gardener_shoot.AWSConfig{
+				EnableIMDSv2: true,
+			},
+		},
+	}
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *RuntimeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&infrastructuremanagerv1.Runtime{}).
+		For(&imv1.Runtime{}).
 		WithEventFilter(predicate.And(predicate.GenerationChangedPredicate{})).
 		Complete(r)
 }
