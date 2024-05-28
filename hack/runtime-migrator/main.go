@@ -176,7 +176,7 @@ func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, provider kubeconfig
 			APIVersion: "infrastructuremanager.kyma-project.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:                       shoot.Name,
+			Name:                       labels["kyma-project.io/runtime-id"],
 			GenerateName:               shoot.GenerateName,
 			Namespace:                  "kcp-system",
 			DeletionTimestamp:          shoot.DeletionTimestamp,
