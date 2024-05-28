@@ -18,11 +18,11 @@ package controller
 
 import (
 	"context"
-	"github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	metrics "github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/mocks"
@@ -96,12 +96,15 @@ var _ = BeforeSuite(func() {
 
 	clientset := fake.NewSimpleClientset()
 	shootClient := clientset.CoreV1beta1().Shoots("default")
-	err = (&RuntimeReconciler{
+
+	runtimeReconciler := &RuntimeReconciler{
 		Client:      mgr.GetClient(),
 		Scheme:      mgr.GetScheme(),
 		Log:         logger,
 		ShootClient: shootClient,
-	}).SetupWithManager(mgr)
+	}
+	runtimeReconcilerSetupErr := (runtimeReconciler).SetupWithManager(mgr)
+	Expect(runtimeReconcilerSetupErr).To(BeNil())
 
 	//+kubebuilder:scaffold:scheme
 

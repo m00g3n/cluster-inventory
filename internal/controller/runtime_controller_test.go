@@ -16,7 +16,7 @@ limitations under the License.
 
 package controller
 
-//var _ = Describe("Runtime Controller", func() {
+// var _ = Describe("Runtime Controller", func() {
 //	Context("When reconciling a resource", func() {
 //		const resourceName = "test-resource"
 //
@@ -74,4 +74,4 @@ package controller
 //			Expect(err).NotTo(HaveOccurred())
 //		})
 //	})
-//})
+// })

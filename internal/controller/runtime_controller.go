@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -46,7 +47,6 @@ type RuntimeReconciler struct {
 //+kubebuilder:rbac:groups=infrastructuremanager.kyma-project.io,resources=runtimes/finalizers,verbs=update
 
 func (r *RuntimeReconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
-
 	r.Log.Info(request.String())
 
 	var runtime imv1.Runtime
