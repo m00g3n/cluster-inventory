@@ -18,6 +18,7 @@ package v1
 
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,6 +27,24 @@ import (
 //+kubebuilder:printcolumn:name="STATE",type=string,JSONPath=`.status.state`
 //+kubebuilder:printcolumn:name="SHOOT-NAME",type=string,JSONPath=`.metadata.labels.kyma-project\.io/shoot-name`
 //+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+
+const (
+	StateReady      = "Ready"
+	StateError      = "Error"
+	StateProcessing = "Processing"
+	StateDeleting   = "Deleting"
+
+	ConditionReasonVerificationErr = ConditionReason("VerificationErr")
+	ConditionReasonVerified        = ConditionReason("Verified")
+	ConditionReasonVerification    = ConditionReason("Verification")
+	ConditionReasonInitialized     = ConditionReason("Initialized")
+	ConditionReasonDeletion        = ConditionReason("Deletion")
+	ConditionReasonDeletionErr     = ConditionReason("DeletionErr")
+	ConditionReasonDeleted         = ConditionReason("Deleted")
+
+	ConditionTypeInstalled = ConditionType("Installed")
+	ConditionTypeDeleted   = ConditionType("Deleted")
+)
 
 // Runtime is the Schema for the runtimes API
 type Runtime struct {
@@ -122,4 +141,28 @@ type Egress struct {
 
 func init() {
 	SchemeBuilder.Register(&Runtime{}, &RuntimeList{})
+}
+
+func (k *Runtime) UpdateStateProcessing(c ConditionType, r ConditionReason, msg string) {
+	k.Status.State = StateProcessing
+	condition := metav1.Condition{
+		Type:               string(c),
+		Status:             "Unknown",
+		LastTransitionTime: metav1.Now(),
+		Reason:             string(r),
+		Message:            msg,
+	}
+	meta.SetStatusCondition(&k.Status.Conditions, condition)
+}
+
+func (k *Runtime) UpdateStateDeletion(c ConditionType, r ConditionReason, msg string) {
+	k.Status.State = StateProcessing
+	condition := metav1.Condition{
+		Type:               string(c),
+		Status:             "Unknown",
+		LastTransitionTime: metav1.Now(),
+		Reason:             string(r),
+		Message:            msg,
+	}
+	meta.SetStatusCondition(&k.Status.Conditions, condition)
 }
