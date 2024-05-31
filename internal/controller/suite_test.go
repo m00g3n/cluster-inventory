@@ -133,7 +133,7 @@ func setupShootClientMock(shootClientMock *mocks.ShootClient) {
 		panic(err)
 	}
 
-	shootClientMock.On("Create", Anything, Anything, Anything).Return(&shoot, nil)
+	shootClientMock.On("Create", anyContext, &shoot, Anything).Return(&shoot, nil)
 }
 
 var _ = AfterSuite(func() {
