@@ -10,8 +10,6 @@ The `runtime-migrator` application
 
 In order to build the app, run the `go build` in `/hack/runtime-migrator` directory.
 
-```bash
-
 ## Usage
 
 ```bash
