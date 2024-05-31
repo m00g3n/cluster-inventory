@@ -32,7 +32,7 @@ func NewProviderExtender(enableIMDSv2 bool) Extend {
 }
 
 type InfrastructureProviderFunc func(workersCidr string, zones []string) ([]byte, error)
-type ControlPlaneProviderFunc func() ([]byte, error)
+type ControlPlaneProviderFunc func(zones []string) ([]byte, error)
 
 func getConfig(runtimeShoot imv1.RuntimeShoot) (infrastructureConfig *runtime.RawExtension, controlPlaneConfig *runtime.RawExtension, err error) {
 	getConfigForProvider := func(runtimeShoot imv1.RuntimeShoot, infrastructureConfigFunc InfrastructureProviderFunc, controlPlaneConfigFunc ControlPlaneProviderFunc) (*runtime.RawExtension, *runtime.RawExtension, error) {
@@ -41,7 +41,7 @@ func getConfig(runtimeShoot imv1.RuntimeShoot) (infrastructureConfig *runtime.Ra
 			return nil, nil, err
 		}
 
-		controlPlaneConfigBytes, err := controlPlaneConfigFunc()
+		controlPlaneConfigBytes, err := controlPlaneConfigFunc(runtimeShoot.Provider.Workers[0].Zones)
 		if err != nil {
 			return nil, nil, err
 		}

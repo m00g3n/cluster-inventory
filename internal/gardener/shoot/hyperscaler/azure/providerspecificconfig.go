@@ -14,7 +14,7 @@ func GetInfrastructureConfig(workerCIDR string, zones []string) ([]byte, error) 
 	return json.Marshal(NewInfrastructureConfig(workerCIDR, zones))
 }
 
-func GetControlPlaneConfig() ([]byte, error) {
+func GetControlPlaneConfig(_ []string) ([]byte, error) {
 	return json.Marshal(NewControlPlaneConfig())
 }
 
