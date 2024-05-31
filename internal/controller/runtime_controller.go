@@ -18,7 +18,6 @@ package controller
 
 import (
 	"context"
-
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -62,7 +61,7 @@ func (r *RuntimeReconciler) Reconcile(ctx context.Context, request ctrl.Request)
 
 	shoot := &gardener.Shoot{}
 
-	converterConfig := fixConverterConfig()
+	converterConfig := FixConverterConfig()
 	converter := gardener_shoot.NewConverter(converterConfig)
 
 	*shoot, err = converter.ToShoot(runtime)
@@ -85,7 +84,7 @@ func (r *RuntimeReconciler) Reconcile(ctx context.Context, request ctrl.Request)
 	return ctrl.Result{}, nil
 }
 
-func fixConverterConfig() gardener_shoot.ConverterConfig {
+func FixConverterConfig() gardener_shoot.ConverterConfig {
 	return gardener_shoot.ConverterConfig{
 		Kubernetes: gardener_shoot.KubernetesConfig{
 			DefaultVersion: "1.29",
@@ -101,6 +100,15 @@ func fixConverterConfig() gardener_shoot.ConverterConfig {
 				EnableIMDSv2: true,
 			},
 		},
+	}
+}
+
+func NewruntimeReconciler(mgr ctrl.Manager, shootClient ShootClient, logger logr.Logger) *RuntimeReconciler {
+	return &RuntimeReconciler{
+		Client:      mgr.GetClient(),
+		Scheme:      mgr.GetScheme(),
+		ShootClient: shootClient,
+		Log:         logger,
 	}
 }
 
