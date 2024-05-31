@@ -18,7 +18,6 @@ package controller
 
 import (
 	"context"
-	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	"path/filepath"
 	"testing"
 	"time"
@@ -26,6 +25,7 @@ import (
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	metrics "github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/mocks"
+	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
 	"github.com/pkg/errors"
