@@ -2,10 +2,11 @@ package gcp
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/gardener/gardener-extension-provider-gcp/pkg/apis/gcp/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestControlPlaneConfig(t *testing.T) {
