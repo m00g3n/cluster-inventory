@@ -33,6 +33,8 @@ func NewInfrastructureConfig(workerCIDR string) v1alpha1.InfrastructureConfig {
 			APIVersion: apiVersion,
 		},
 		Networks: v1alpha1.NetworkConfig{
+			// Provisioner sets also deprecated Worker field.
+			// Logic for comparing shoots in integration tests must be adjusted accordingly
 			Workers: workerCIDR,
 		},
 	}
