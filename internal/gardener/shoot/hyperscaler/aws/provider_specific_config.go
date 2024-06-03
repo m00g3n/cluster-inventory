@@ -3,6 +3,7 @@ package aws
 import (
 	"encoding/json"
 
+	"github.com/gardener/gardener-extension-provider-aws/pkg/apis/aws/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -26,23 +27,23 @@ func GetWorkerConfig() ([]byte, error) {
 	return json.Marshal(NewWorkerConfig())
 }
 
-func NewInfrastructureConfig(workersCidr string, zones []string) InfrastructureConfig {
-	return InfrastructureConfig{
+func NewInfrastructureConfig(workersCidr string, zones []string) v1alpha1.InfrastructureConfig {
+	return v1alpha1.InfrastructureConfig{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       infrastructureConfigKind,
 			APIVersion: apiVersion,
 		},
-		Networks: Networks{
+		Networks: v1alpha1.Networks{
 			Zones: generateAWSZones(workersCidr, zones),
-			VPC: VPC{
+			VPC: v1alpha1.VPC{
 				CIDR: &workersCidr,
 			},
 		},
 	}
 }
 
-func NewControlPlaneConfig() *ControlPlaneConfig {
-	return &ControlPlaneConfig{
+func NewControlPlaneConfig() *v1alpha1.ControlPlaneConfig {
+	return &v1alpha1.ControlPlaneConfig{
 		TypeMeta: v1.TypeMeta{
 			Kind:       controlPlaneConfigKind,
 			APIVersion: apiVersion,
@@ -50,16 +51,16 @@ func NewControlPlaneConfig() *ControlPlaneConfig {
 	}
 }
 
-func NewWorkerConfig() *WorkerConfig {
-	httpTokens := HTTPTokensRequired
+func NewWorkerConfig() *v1alpha1.WorkerConfig {
+	httpTokens := v1alpha1.HTTPTokensRequired
 	hopLimit := awsIMDSv2HTTPPutResponseHopLimit
 
-	return &WorkerConfig{
+	return &v1alpha1.WorkerConfig{
 		TypeMeta: v1.TypeMeta{
 			APIVersion: apiVersion,
 			Kind:       workerConfigKind,
 		},
-		InstanceMetadataOptions: &InstanceMetadataOptions{
+		InstanceMetadataOptions: &v1alpha1.InstanceMetadataOptions{
 			HTTPTokens:              &httpTokens,
 			HTTPPutResponseHopLimit: &hopLimit,
 		},

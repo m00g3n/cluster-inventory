@@ -2,6 +2,7 @@ package aws
 
 import (
 	"encoding/json"
+	"github.com/gardener/gardener-extension-provider-aws/pkg/apis/aws/v1alpha1"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +17,7 @@ func TestControlPlaneConfig(t *testing.T) {
 		// then
 		require.NoError(t, err)
 
-		var controlPlaneConfig ControlPlaneConfig
+		var controlPlaneConfig v1alpha1.ControlPlaneConfig
 		err = json.Unmarshal(controlPlaneConfigBytes, &controlPlaneConfig)
 		assert.NoError(t, err)
 
@@ -29,7 +30,7 @@ func TestInfrastructureConfig(t *testing.T) {
 	for tname, tcase := range map[string]struct {
 		givenNodesCidr   string
 		givenZoneNames   []string
-		expectedAwsZones []Zone
+		expectedAwsZones []v1alpha1.Zone
 	}{
 		"Regular 10.250.0.0/16": {
 			givenNodesCidr: "10.250.0.0/16",
@@ -38,7 +39,7 @@ func TestInfrastructureConfig(t *testing.T) {
 				"eu-central-1b",
 				"eu-central-1c",
 			},
-			expectedAwsZones: []Zone{
+			expectedAwsZones: []v1alpha1.Zone{
 				{
 					Name:     "eu-central-1a",
 					Workers:  "10.250.0.0/19",
@@ -66,7 +67,7 @@ func TestInfrastructureConfig(t *testing.T) {
 				"eu-central-1b",
 				"eu-central-1c",
 			},
-			expectedAwsZones: []Zone{
+			expectedAwsZones: []v1alpha1.Zone{
 				{
 					Name:     "eu-central-1a",
 					Workers:  "10.180.0.0/26",
@@ -96,7 +97,7 @@ func TestInfrastructureConfig(t *testing.T) {
 			assert.NoError(t, err)
 
 			// when
-			var infrastructureConfig InfrastructureConfig
+			var infrastructureConfig v1alpha1.InfrastructureConfig
 			err = json.Unmarshal(infrastructureConfigBytes, &infrastructureConfig)
 
 			// then
@@ -112,7 +113,7 @@ func TestInfrastructureConfig(t *testing.T) {
 	}
 }
 
-func assertIPRanges(t *testing.T, expectedZone Zone, actualZone Zone) {
+func assertIPRanges(t *testing.T, expectedZone v1alpha1.Zone, actualZone v1alpha1.Zone) {
 	assert.Equal(t, expectedZone.Name, actualZone.Name)
 	assert.Equal(t, expectedZone.Internal, actualZone.Internal)
 	assert.Equal(t, expectedZone.Workers, actualZone.Workers)
@@ -126,12 +127,12 @@ func TestWorkerConfig(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		var config WorkerConfig
+		var config v1alpha1.WorkerConfig
 
 		err = json.Unmarshal(configBytes, &config)
 		require.NoError(t, err)
 
 		assert.Equal(t, awsIMDSv2HTTPPutResponseHopLimit, *config.InstanceMetadataOptions.HTTPPutResponseHopLimit)
-		assert.Equal(t, HTTPTokensRequired, *config.InstanceMetadataOptions.HTTPTokens)
+		assert.Equal(t, v1alpha1.HTTPTokensRequired, *config.InstanceMetadataOptions.HTTPTokens)
 	})
 }
