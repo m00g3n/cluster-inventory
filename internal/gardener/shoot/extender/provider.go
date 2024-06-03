@@ -6,7 +6,7 @@ import (
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/aws"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/azure"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/gcp"
-	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/sapconvergedcloud"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/openstack"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -63,9 +63,9 @@ func getConfig(runtimeShoot imv1.RuntimeShoot) (infrastructureConfig *runtime.Ra
 		{
 			return getConfigForProvider(runtimeShoot, gcp.GetInfrastructureConfig, gcp.GetControlPlaneConfig)
 		}
-	case "sapconvergedcloud":
+	case "openstack":
 		{
-			return getConfigForProvider(runtimeShoot, sapconvergedcloud.GetInfrastructureConfig, sapconvergedcloud.GetControlPlaneConfig)
+			return getConfigForProvider(runtimeShoot, openstack.GetInfrastructureConfig, openstack.GetControlPlaneConfig)
 		}
 	default:
 		return nil, nil, errors.New("provider not supported")
