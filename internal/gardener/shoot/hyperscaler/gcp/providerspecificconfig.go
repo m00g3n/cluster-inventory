@@ -2,7 +2,6 @@ package gcp
 
 import (
 	"encoding/json"
-	"github.com/gardener/gardener-extension-provider-gcp/pkg/apis/gcp"
 	"github.com/gardener/gardener-extension-provider-gcp/pkg/apis/gcp/v1alpha1"
 	"github.com/pkg/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,8 +39,8 @@ func NewInfrastructureConfig(workerCIDR string) v1alpha1.InfrastructureConfig {
 	}
 }
 
-func NewControlPlaneConfig(zones []string) *gcp.ControlPlaneConfig {
-	return &gcp.ControlPlaneConfig{
+func NewControlPlaneConfig(zones []string) *v1alpha1.ControlPlaneConfig {
+	return &v1alpha1.ControlPlaneConfig{
 		TypeMeta: v1.TypeMeta{
 			Kind:       controlPlaneConfigKind,
 			APIVersion: apiVersion,
