@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/openstack"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"slices"
 )
 
 func NewProviderExtender(enableIMDSv2 bool) Extend {
@@ -36,12 +37,14 @@ type ControlPlaneProviderFunc func(zones []string) ([]byte, error)
 
 func getConfig(runtimeShoot imv1.RuntimeShoot) (infrastructureConfig *runtime.RawExtension, controlPlaneConfig *runtime.RawExtension, err error) {
 	getConfigForProvider := func(runtimeShoot imv1.RuntimeShoot, infrastructureConfigFunc InfrastructureProviderFunc, controlPlaneConfigFunc ControlPlaneProviderFunc) (*runtime.RawExtension, *runtime.RawExtension, error) {
-		infrastructureConfigBytes, err := infrastructureConfigFunc(runtimeShoot.Networking.Nodes, runtimeShoot.Provider.Workers[0].Zones)
+		zones := getZones(runtimeShoot.Provider.Workers)
+
+		infrastructureConfigBytes, err := infrastructureConfigFunc(runtimeShoot.Networking.Nodes, zones)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		controlPlaneConfigBytes, err := controlPlaneConfigFunc(runtimeShoot.Provider.Workers[0].Zones)
+		controlPlaneConfigBytes, err := controlPlaneConfigFunc(zones)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -79,4 +82,15 @@ func getAWSWorkerConfig() (*runtime.RawExtension, error) {
 	}
 
 	return &runtime.RawExtension{Raw: workerConfigBytes}, nil
+}
+
+func getZones(workers []gardener.Worker) []string {
+	var zones []string
+
+	for _, worker := range workers {
+		zones = append(zones, worker.Zones...)
+	}
+	slices.Sort(zones)
+
+	return slices.Compact(zones)
 }
