@@ -2,7 +2,6 @@ package azure
 
 import (
 	"encoding/json"
-	"github.com/gardener/gardener-extension-provider-azure/pkg/apis/azure/v1alpha1"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,7 +20,7 @@ func TestControlPlaneConfig(t *testing.T) {
 		// then
 		require.NoError(t, err)
 
-		var controlPlaneConfig v1alpha1.ControlPlaneConfig
+		var controlPlaneConfig ControlPlaneConfig
 		err = json.Unmarshal(controlPlaneConfigBytes, &controlPlaneConfig)
 		assert.NoError(t, err)
 
@@ -31,12 +30,10 @@ func TestControlPlaneConfig(t *testing.T) {
 }
 
 func TestInfrastructureConfig(t *testing.T) {
-	defaultConnectionTimeOutMinutes := int32(4)
-
 	for tname, tcase := range map[string]struct {
 		givenVnetCidr      string
 		givenZoneNames     []string
-		expectedAzureZones []v1alpha1.Zone
+		expectedAzureZones []Zone
 		expectedIsZoned    bool
 	}{
 		"Zoned setup for 1 zone with default CIDR 10.250.0.0/22": {
@@ -45,13 +42,13 @@ func TestInfrastructureConfig(t *testing.T) {
 			givenZoneNames: []string{
 				"1",
 			},
-			expectedAzureZones: []v1alpha1.Zone{
+			expectedAzureZones: []Zone{
 				{
 					Name: 1,
 					CIDR: "10.250.0.0/25",
-					NatGateway: &v1alpha1.ZonedNatGatewayConfig{
+					NatGateway: &NatGateway{
 						Enabled:                      true,
-						IdleConnectionTimeoutMinutes: &defaultConnectionTimeOutMinutes,
+						IdleConnectionTimeoutMinutes: defaultConnectionTimeOutMinutes,
 					},
 				},
 			},
@@ -63,21 +60,21 @@ func TestInfrastructureConfig(t *testing.T) {
 				"2",
 				"3",
 			},
-			expectedAzureZones: []v1alpha1.Zone{
+			expectedAzureZones: []Zone{
 				{
 					Name: 2,
 					CIDR: "10.250.0.0/25",
-					NatGateway: &v1alpha1.ZonedNatGatewayConfig{
+					NatGateway: &NatGateway{
 						Enabled:                      true,
-						IdleConnectionTimeoutMinutes: &defaultConnectionTimeOutMinutes,
+						IdleConnectionTimeoutMinutes: defaultConnectionTimeOutMinutes,
 					},
 				},
 				{
 					Name: 3,
 					CIDR: "10.250.0.128/25",
-					NatGateway: &v1alpha1.ZonedNatGatewayConfig{
+					NatGateway: &NatGateway{
 						Enabled:                      true,
-						IdleConnectionTimeoutMinutes: &defaultConnectionTimeOutMinutes,
+						IdleConnectionTimeoutMinutes: defaultConnectionTimeOutMinutes,
 					},
 				},
 			},
@@ -90,29 +87,29 @@ func TestInfrastructureConfig(t *testing.T) {
 				"2",
 				"3",
 			},
-			expectedAzureZones: []v1alpha1.Zone{
+			expectedAzureZones: []Zone{
 				{
 					Name: 1,
 					CIDR: "10.250.0.0/25",
-					NatGateway: &v1alpha1.ZonedNatGatewayConfig{
+					NatGateway: &NatGateway{
 						Enabled:                      true,
-						IdleConnectionTimeoutMinutes: &defaultConnectionTimeOutMinutes,
+						IdleConnectionTimeoutMinutes: defaultConnectionTimeOutMinutes,
 					},
 				},
 				{
 					Name: 2,
 					CIDR: "10.250.0.128/25",
-					NatGateway: &v1alpha1.ZonedNatGatewayConfig{
+					NatGateway: &NatGateway{
 						Enabled:                      true,
-						IdleConnectionTimeoutMinutes: &defaultConnectionTimeOutMinutes,
+						IdleConnectionTimeoutMinutes: defaultConnectionTimeOutMinutes,
 					},
 				},
 				{
 					Name: 3,
 					CIDR: "10.250.1.0/25",
-					NatGateway: &v1alpha1.ZonedNatGatewayConfig{
+					NatGateway: &NatGateway{
 						Enabled:                      true,
-						IdleConnectionTimeoutMinutes: &defaultConnectionTimeOutMinutes,
+						IdleConnectionTimeoutMinutes: defaultConnectionTimeOutMinutes,
 					},
 				},
 			},
@@ -126,7 +123,7 @@ func TestInfrastructureConfig(t *testing.T) {
 			assert.NoError(t, err)
 
 			// when
-			var infrastructureConfig v1alpha1.InfrastructureConfig
+			var infrastructureConfig InfrastructureConfig
 			err = json.Unmarshal(infrastructureConfigBytes, &infrastructureConfig)
 
 			// then
@@ -146,7 +143,7 @@ func TestInfrastructureConfig(t *testing.T) {
 	}
 }
 
-func assertAzureZoneCidrs(t *testing.T, expectedZone v1alpha1.Zone, actualZone v1alpha1.Zone) {
+func assertAzureZoneCidrs(t *testing.T, expectedZone Zone, actualZone Zone) {
 	assert.Equal(t, expectedZone.Name, actualZone.Name)
 	assert.Equal(t, expectedZone.CIDR, actualZone.CIDR)
 	assert.Equal(t, expectedZone.NatGateway.Enabled, actualZone.NatGateway.Enabled)

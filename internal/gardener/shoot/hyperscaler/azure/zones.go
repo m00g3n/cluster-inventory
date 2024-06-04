@@ -1,18 +1,17 @@
 package azure
 
 import (
-	"github.com/gardener/gardener-extension-provider-azure/pkg/apis/azure/v1alpha1"
 	"math/big"
 	"net/netip"
 	"strconv"
 )
 
+const defaultConnectionTimeOutMinutes = 4
 const workersBits = 3
 const cidrLength = 32
 
-func generateAzureZones(workerCidr string, zoneNames []string) []v1alpha1.Zone {
-	var zones []v1alpha1.Zone
-	defaultConnectionTimeOutMinutes := int32(4)
+func generateAzureZones(workerCidr string, zoneNames []string) []Zone {
+	var zones []Zone
 
 	cidr, _ := netip.ParsePrefix(workerCidr)
 	workerPrefixLength := cidr.Bits() + workersBits
@@ -30,29 +29,29 @@ func generateAzureZones(workerCidr string, zoneNames []string) []v1alpha1.Zone {
 		zoneWorkerIP, _ := netip.AddrFromSlice(zoneIPValue.Bytes())
 		zoneWorkerCidr := netip.PrefixFrom(zoneWorkerIP, workerPrefixLength)
 		zoneIPValue.Add(zoneIPValue, delta)
-		zones = append(zones, v1alpha1.Zone{
+		zones = append(zones, Zone{
 			Name: name,
 			CIDR: zoneWorkerCidr.String(),
-			NatGateway: &v1alpha1.ZonedNatGatewayConfig{
+			NatGateway: &NatGateway{
 				// There are existing Azure clusters which were created before NAT gateway support,
 				// and they were migrated to HA with all zones having enableNatGateway: false .
 				// But for new Azure runtimes, enableNatGateway for all zones is always true
 				Enabled:                      true,
-				IdleConnectionTimeoutMinutes: &defaultConnectionTimeOutMinutes,
+				IdleConnectionTimeoutMinutes: defaultConnectionTimeOutMinutes,
 			},
 		})
 	}
 	return zones
 }
 
-func convertZoneNames(zoneNames []string) []int32 {
-	var zones []int32
+func convertZoneNames(zoneNames []string) []int {
+	var zones []int
 	for _, inputZone := range zoneNames {
 		zone, err := strconv.Atoi(inputZone)
 		if err != nil || zone < 1 || zone > 3 {
 			continue
 		}
-		zones = append(zones, int32(zone))
+		zones = append(zones, zone)
 	}
 
 	return zones

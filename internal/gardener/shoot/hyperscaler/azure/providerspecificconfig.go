@@ -3,7 +3,6 @@ package azure
 import (
 	"encoding/json"
 
-	"github.com/gardener/gardener-extension-provider-azure/pkg/apis/azure/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -19,8 +18,8 @@ func GetControlPlaneConfig(_ []string) ([]byte, error) {
 	return json.Marshal(NewControlPlaneConfig())
 }
 
-func NewControlPlaneConfig() *v1alpha1.ControlPlaneConfig {
-	return &v1alpha1.ControlPlaneConfig{
+func NewControlPlaneConfig() *ControlPlaneConfig {
+	return &ControlPlaneConfig{
 		TypeMeta: v1.TypeMeta{
 			Kind:       controlPlaneConfigKind,
 			APIVersion: apiVersion,
@@ -28,19 +27,19 @@ func NewControlPlaneConfig() *v1alpha1.ControlPlaneConfig {
 	}
 }
 
-func NewInfrastructureConfig(workerCIDR string, zones []string) v1alpha1.InfrastructureConfig {
+func NewInfrastructureConfig(workerCIDR string, zones []string) InfrastructureConfig {
 	// All Azure shoots are zoned.
 	// No zones - the shoot configuration is invalid.
 	// We should validate the config before calling this function.
 	isZoned := len(zones) > 0
 
-	azureConfig := v1alpha1.InfrastructureConfig{
+	azureConfig := InfrastructureConfig{
 		TypeMeta: v1.TypeMeta{
 			Kind:       infrastructureConfigKind,
 			APIVersion: apiVersion,
 		},
-		Networks: v1alpha1.NetworkConfig{
-			VNet: v1alpha1.VNet{
+		Networks: NetworkConfig{
+			VNet: VNet{
 				CIDR: &workerCIDR,
 			},
 		},
