@@ -162,6 +162,7 @@ func saveRuntime(cfg migrator.Config, runtime v1.Runtime, getClient client.Clien
 
 func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, provider kubeconfig.Provider) (v1.Runtime, error) {
 	var subjects = getAdministratorsList(provider, shoot.Name)
+	var oidcConfig = getOidcConfig(shoot)
 	var hAFailureToleranceType = getFailureToleranceType(shoot)
 	var licenceType = shoot.Annotations["kcp.provisioner.kyma-project.io/licence-type"]
 	labels, err := getAllRuntimeLabels(shoot, cfg.Client)
@@ -197,19 +198,8 @@ func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, provider kubeconfig
 				Kubernetes: v1.Kubernetes{
 					Version: &shoot.Spec.Kubernetes.Version,
 					KubeAPIServer: v1.APIServer{
-						OidcConfig: v1beta1.OIDCConfig{
-							CABundle:             nil, // deliberately left empty
-							ClientAuthentication: shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.ClientAuthentication,
-							ClientID:             shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.ClientID,
-							GroupsClaim:          shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.GroupsClaim,
-							GroupsPrefix:         shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.GroupsPrefix,
-							IssuerURL:            shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.IssuerURL,
-							RequiredClaims:       shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.RequiredClaims,
-							SigningAlgs:          shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.SigningAlgs,
-							UsernameClaim:        shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.UsernameClaim,
-							UsernamePrefix:       shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.UsernamePrefix,
-						},
-						AdditionalOidcConfig: nil, // deliberately left empty for now
+						OidcConfig:           oidcConfig,
+						AdditionalOidcConfig: &[]v1beta1.OIDCConfig{oidcConfig},
 					},
 				},
 				Provider: v1.Provider{
@@ -249,6 +239,23 @@ func createRuntime(shoot v1beta1.Shoot, cfg migrator.Config, provider kubeconfig
 		},
 	}
 	return runtime, nil
+}
+
+func getOidcConfig(shoot v1beta1.Shoot) v1beta1.OIDCConfig {
+	var oidcConfig = v1beta1.OIDCConfig{
+		CABundle:             nil, // deliberately left empty
+		ClientAuthentication: shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.ClientAuthentication,
+		ClientID:             shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.ClientID,
+		GroupsClaim:          shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.GroupsClaim,
+		GroupsPrefix:         shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.GroupsPrefix,
+		IssuerURL:            shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.IssuerURL,
+		RequiredClaims:       shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.RequiredClaims,
+		SigningAlgs:          shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.SigningAlgs,
+		UsernameClaim:        shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.UsernameClaim,
+		UsernamePrefix:       shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig.UsernamePrefix,
+	}
+
+	return oidcConfig
 }
 
 func checkIfShootNetworkFilteringEnabled(shoot v1beta1.Shoot) bool {
@@ -377,11 +384,6 @@ func setupKubernetesKubeconfigProvider(kubeconfigPath string, namespace string, 
 func getAllRuntimeLabels(shoot v1beta1.Shoot, getClient migrator.GetClient) (map[string]string, error) {
 	enrichedRuntimeLabels := map[string]string{}
 	var err error
-
-	// add all labels from the shoot
-	for labelKey, labelValue := range shoot.Labels {
-		enrichedRuntimeLabels[labelKey] = labelValue
-	}
 
 	// add agreed labels from the GardenerCluster CR
 	k8sClient, clientErr := getClient()

@@ -2,7 +2,6 @@ package aws
 
 import (
 	"encoding/json"
-	"github.com/gardener/gardener-extension-provider-aws/pkg/apis/aws/v1alpha1"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
