@@ -2,6 +2,7 @@ package openstack
 
 import (
 	"encoding/json"
+
 	"github.com/gardener/gardener-extension-provider-openstack/pkg/apis/openstack/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

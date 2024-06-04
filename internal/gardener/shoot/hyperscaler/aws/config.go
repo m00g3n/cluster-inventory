@@ -2,6 +2,7 @@ package aws
 
 import (
 	"encoding/json"
+
 	"github.com/gardener/gardener-extension-provider-aws/pkg/apis/aws/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"

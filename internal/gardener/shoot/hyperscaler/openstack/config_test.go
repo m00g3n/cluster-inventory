@@ -2,10 +2,11 @@ package openstack
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/gardener/gardener-extension-provider-openstack/pkg/apis/openstack/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestControlPlaneConfig(t *testing.T) {

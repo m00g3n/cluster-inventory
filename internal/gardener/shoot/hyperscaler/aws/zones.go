@@ -1,9 +1,10 @@
 package aws
 
 import (
-	"github.com/gardener/gardener-extension-provider-aws/pkg/apis/aws/v1alpha1"
 	"math/big"
 	"net/netip"
+
+	"github.com/gardener/gardener-extension-provider-aws/pkg/apis/aws/v1alpha1"
 )
 
 const workersBits = 3
