@@ -22,10 +22,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gardener/gardener/pkg/client/core/clientset/versioned/fake"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	metrics "github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/mocks"
+	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
 	"github.com/pkg/errors"
@@ -94,20 +94,14 @@ var _ = BeforeSuite(func() {
 	err = gardenerClusterController.SetupWithManager(mgr)
 	Expect(err).To(BeNil())
 
-	clientset := fake.NewSimpleClientset()
-	shootClient := clientset.CoreV1beta1().Shoots("default")
-
-	runtimeReconciler := &RuntimeReconciler{
-		Client:      mgr.GetClient(),
-		Scheme:      mgr.GetScheme(),
-		Log:         logger,
-		ShootClient: shootClient,
-	}
-	runtimeReconcilerSetupErr := (runtimeReconciler).SetupWithManager(mgr)
-	Expect(runtimeReconcilerSetupErr).To(BeNil())
+	mockShootClient := &mocks.ShootClient{}
+	setupShootClientMock(mockShootClient)
+	runtimeReconciler := NewruntimeReconciler(mgr, mockShootClient, logger)
+	err = runtimeReconciler.SetupWithManager(mgr)
+	Expect(gardenerClusterController).NotTo(BeNil())
+	Expect(err).To(BeNil())
 
 	//+kubebuilder:scaffold:scheme
-
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
@@ -128,6 +122,18 @@ func setupKubeconfigProviderMock(kpMock *mocks.KubeconfigProvider) {
 	kpMock.On("Fetch", anyContext, "shootName6").Return("kubeconfig6", nil)
 	kpMock.On("Fetch", anyContext, "shootName4").Return("kubeconfig4", nil)
 	kpMock.On("Fetch", anyContext, "shootName5").Return("kubeconfig5", nil)
+}
+
+func setupShootClientMock(shootClientMock *mocks.ShootClient) {
+	runtimeStub := CreateRuntimeStub("test-resource")
+	converterConfig := FixConverterConfig()
+	converter := gardener_shoot.NewConverter(converterConfig)
+	shoot, err := converter.ToShoot(*runtimeStub)
+	if err != nil {
+		panic(err)
+	}
+
+	shootClientMock.On("Create", anyContext, &shoot, Anything).Return(&shoot, nil)
 }
 
 var _ = AfterSuite(func() {
