@@ -40,8 +40,6 @@ func NewControlPlaneConfig() *v1alpha1.ControlPlaneConfig {
 			Kind:       controlPlaneConfigKind,
 			APIVersion: apiVersion,
 		},
-		//admission webhook "validator.admission-openstack.extensions.gardener.cloud" denied the request:
-		//[spec.provider.infrastructureConfig.floatingPoolName: Unsupported value: "": supported values: "FloatingIP*", spec.provider.infrastructureConfig.floatingPoolName: Required value: must provide the name of a floating pool, spec.provider.infrastructureConfig.networks.workers: Required value: must specify the network range for the worker network]
 		LoadBalancerProvider: "f5",
 	}
 }
