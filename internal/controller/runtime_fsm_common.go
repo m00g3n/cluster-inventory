@@ -1,8 +1,9 @@
 package controller
 
 import (
-	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func stopWithErrorAndRequeue(err error) (stateFn, *ctrl.Result, error) {

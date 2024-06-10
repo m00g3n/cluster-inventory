@@ -3,17 +3,18 @@ package controller
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"runtime"
+	"sync"
+
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"k8s.io/client-go/tools/record"
-	"reflect"
-	"runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"sync"
 )
 
 type stateFn func(context.Context, *fsm, *systemState) (stateFn, *ctrl.Result, error)
@@ -23,7 +24,8 @@ func (f stateFn) String() string {
 }
 
 func (f stateFn) name() string {
-	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+	name := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+	return name
 }
 
 type Watch = func(src source.Source, eventhandler handler.EventHandler, predicates ...predicate.Predicate) error
