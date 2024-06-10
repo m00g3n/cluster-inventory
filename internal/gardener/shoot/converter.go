@@ -39,7 +39,7 @@ type ConverterConfig struct {
 
 func NewConverter(config ConverterConfig) Converter {
 	extenders := []extender.Extend{
-		extender.ExtendWithAnnotations,
+		extender.ExtendWithAnnotationsAndLabels,
 		extender.NewExtendWithKubernetes(config.Kubernetes.DefaultVersion),
 		extender.ExtendWithNetworking,
 		extender.NewProviderExtender(config.Provider.AWS.EnableIMDSv2),
@@ -80,4 +80,14 @@ func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
 
 func PtrTo[T any](v T) *T {
 	return &v
+}
+
+func IsEuAccess(platformRegion string) bool {
+	switch platformRegion {
+	case "cf-eu11":
+		return true
+	case "cf-ch20":
+		return true
+	}
+	return false
 }
