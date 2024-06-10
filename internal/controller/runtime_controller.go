@@ -92,7 +92,7 @@ func FixConverterConfig() gardener_shoot.ConverterConfig {
 		},
 
 		DNS: gardener_shoot.DNSConfig{
-			SecretName:   "xxx-secret-dev",
+			SecretName:   "openstack-eu-de-1-kyma-dev-01",
 			DomainPrefix: "runtimeprov.dev.kyma.ondemand.com",
 			ProviderType: "aws-route53",
 		},

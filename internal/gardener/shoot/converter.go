@@ -61,7 +61,7 @@ func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
 			Namespace: fmt.Sprintf("garden-%s", "kyma-dev"), //nolint:godox TODO: make it more dynamic - this should be the gardener project namespace
 		},
 		Spec: gardener.ShootSpec{
-			CloudProfileName:  "aws",
+			CloudProfileName:  "converged-cloud-cp",
 			Purpose:           &runtime.Spec.Shoot.Purpose,
 			Region:            runtime.Spec.Shoot.Region,
 			SecretBindingName: &runtime.Spec.Shoot.SecretBindingName,
