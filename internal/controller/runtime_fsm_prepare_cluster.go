@@ -36,16 +36,58 @@ func sFnPrepareCluster(ctx context.Context, m *fsm, s *systemState) (stateFn, *c
 		return stopWithRequeue()
 	}
 
-	if lastOperation.State == gardener.LastOperationStateProcessing ||
-		lastOperation.State == gardener.LastOperationStatePending {
-		msg := fmt.Sprintf("Shoot %s is in %s state, scheduling for retry", shoot.Name, lastOperation.State)
-		m.log.Info(msg)
-		return stopWithRequeue()
+	if lastOperation.Type == gardener.LastOperationTypeCreate {
+
+		if lastOperation.State == gardener.LastOperationStateProcessing ||
+			lastOperation.State == gardener.LastOperationStatePending {
+			msg := fmt.Sprintf("Shoot %s is in %s state, scheduling for retry", shoot.Name, lastOperation.State)
+			m.log.Info(msg)
+
+			//s.instance.UpdateStateCreating(
+			//	imv1.ConditionTypeRuntimeProvisioning,
+			//	imv1.ConditionReasonShootCreationPending,
+			//	"Shoot creation in progress")
+
+			return stopWithRequeue()
+		}
+
+		if lastOperation.State == gardener.LastOperationStateSucceeded {
+			msg := fmt.Sprintf("Shoot %s successfully created", shoot.Name)
+			m.log.Info(msg)
+
+			if s.instance.IsStateCreating() {
+				return switchState(sFnProcessShoot)
+			}
+
+			s.instance.UpdateStateCreating(
+				imv1.ConditionTypeRuntimeProvisioning,
+				imv1.ConditionReasonShootCreationCompleted,
+				"Shoot creation completed successfully")
+
+			return stopWithRequeue()
+		}
+
+		if lastOperation.State == gardener.LastOperationStateFailed {
+			if gardenerhelper.HasErrorCode(shoot.Status.LastErrors, gardener.ErrorInfraRateLimitsExceeded) {
+				msg := fmt.Sprintf("Error during cluster provisioning: Rate limits exceeded for Shoot %s, scheduling for retry", shoot.Name)
+				m.log.Info(msg)
+				return stopWithRequeue()
+			}
+
+			msg := fmt.Sprintf("Provisioning failed for shoot: %s ! Last state: %s, Description: %s", shoot.Name, lastOperation.State, lastOperation.Description)
+			m.log.Info(msg)
+
+			s.instance.UpdateStateError(
+				imv1.ConditionTypeRuntimeProvisioning,
+				imv1.ConditionReasonCreationError,
+				"Shoot creation failed")
+
+			return stopWithNoRequeue()
+		}
 	}
 
-	if lastOperation.State == gardener.LastOperationStateFailed {
-		msg := fmt.Sprintf("`Shoot %s successfully created", shoot.Name)
-		m.log.Info(msg)
+	// updating is progressing
+	if lastOperation.Type == gardener.LastOperationTypeReconcile {
 
 		var reason ErrReason
 
@@ -53,33 +95,9 @@ func sFnPrepareCluster(ctx context.Context, m *fsm, s *systemState) (stateFn, *c
 			reason = gardenerErrCodesToErrReason(shoot.Status.LastErrors...)
 		}
 
-		if gardenerhelper.HasErrorCode(shoot.Status.LastErrors, gardener.ErrorInfraRateLimitsExceeded) {
-			msg := fmt.Sprintf("Error during cluster provisioning: Rate limits exceeded for Shoot %s, scheduling for retry", shoot.Name)
-			m.log.Info(msg)
-			return stopWithRequeue()
-		}
-
-		if lastOperation.Type == gardener.LastOperationTypeReconcile {
-			msg := fmt.Sprintf("error during cluster provisioning: reconcilation error for shoot %s, reason: %s, scheduling for retry", shoot.Name, reason)
-			m.log.Info(msg)
-			return stopWithRequeue()
-		}
-
-		msg = fmt.Sprintf("Provisioning failed for shoot: %s ! Last state: %s, Description: %s", shoot.Name, lastOperation.State, lastOperation.Description)
+		msg := fmt.Sprintf("error during cluster provisioning: reconcilation error for shoot %s, reason: %s, scheduling for retry", shoot.Name, reason)
 		m.log.Info(msg)
-		return stopWithNoRequeue()
-	}
-
-	if lastOperation.State == gardener.LastOperationStateSucceeded {
-		msg := fmt.Sprintf("Shoot %s successfully created", shoot.Name)
-		m.log.Info(msg)
-
-		s.instance.UpdateStateCreating(
-			imv1.ConditionTypeRuntimeProvisioning,
-			imv1.ConditionReasonShootCreationCompleted,
-			"Shoot creation completed successfully")
-
-		return stopWithNoRequeue()
+		return stopWithRequeue()
 	}
 
 	return stopWithNoRequeue()

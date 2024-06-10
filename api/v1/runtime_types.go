@@ -225,3 +225,23 @@ func (k *Runtime) UpdateStateError(c RuntimeConditionType, r RuntimeConditionRea
 	}
 	meta.SetStatusCondition(&k.Status.Conditions, condition)
 }
+
+func (k *Runtime) IsStateCreating() bool {
+	return k.Status.State == RuntimeStateCreating
+}
+
+func (k *Runtime) IsStateProcessing() bool {
+	return k.Status.State == RuntimeStateProcessing
+}
+
+func (k *Runtime) IsStateError() bool {
+	return k.Status.State == RuntimeStateError
+}
+
+func (k *Runtime) IsStateDeleting() bool {
+	return k.Status.State == RuntimeStateDeleting
+}
+
+func (k *Runtime) IsStateReady() bool {
+	return k.Status.State == RuntimeStateReady
+}
