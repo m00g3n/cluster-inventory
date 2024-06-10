@@ -1,12 +1,14 @@
 package extender
 
 import (
+	"slices"
+
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/aws"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/azure"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/gcp"
-	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/sapconvergedcloud"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/openstack"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -32,16 +34,18 @@ func NewProviderExtender(enableIMDSv2 bool) Extend {
 }
 
 type InfrastructureProviderFunc func(workersCidr string, zones []string) ([]byte, error)
-type ControlPlaneProviderFunc func() ([]byte, error)
+type ControlPlaneProviderFunc func(zones []string) ([]byte, error)
 
 func getConfig(runtimeShoot imv1.RuntimeShoot) (infrastructureConfig *runtime.RawExtension, controlPlaneConfig *runtime.RawExtension, err error) {
 	getConfigForProvider := func(runtimeShoot imv1.RuntimeShoot, infrastructureConfigFunc InfrastructureProviderFunc, controlPlaneConfigFunc ControlPlaneProviderFunc) (*runtime.RawExtension, *runtime.RawExtension, error) {
-		infrastructureConfigBytes, err := infrastructureConfigFunc(runtimeShoot.Networking.Nodes, runtimeShoot.Provider.Workers[0].Zones)
+		zones := getZones(runtimeShoot.Provider.Workers)
+
+		infrastructureConfigBytes, err := infrastructureConfigFunc(runtimeShoot.Networking.Nodes, zones)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		controlPlaneConfigBytes, err := controlPlaneConfigFunc()
+		controlPlaneConfigBytes, err := controlPlaneConfigFunc(zones)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -63,9 +67,9 @@ func getConfig(runtimeShoot imv1.RuntimeShoot) (infrastructureConfig *runtime.Ra
 		{
 			return getConfigForProvider(runtimeShoot, gcp.GetInfrastructureConfig, gcp.GetControlPlaneConfig)
 		}
-	case "sapconvergedcloud":
+	case "openstack":
 		{
-			return getConfigForProvider(runtimeShoot, sapconvergedcloud.GetInfrastructureConfig, sapconvergedcloud.GetControlPlaneConfig)
+			return getConfigForProvider(runtimeShoot, openstack.GetInfrastructureConfig, openstack.GetControlPlaneConfig)
 		}
 	default:
 		return nil, nil, errors.New("provider not supported")
@@ -79,4 +83,15 @@ func getAWSWorkerConfig() (*runtime.RawExtension, error) {
 	}
 
 	return &runtime.RawExtension{Raw: workerConfigBytes}, nil
+}
+
+func getZones(workers []gardener.Worker) []string {
+	var zones []string
+
+	for _, worker := range workers {
+		zones = append(zones, worker.Zones...)
+	}
+	slices.Sort(zones)
+
+	return slices.Compact(zones)
 }

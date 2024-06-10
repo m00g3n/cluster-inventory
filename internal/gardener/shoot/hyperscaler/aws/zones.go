@@ -3,6 +3,8 @@ package aws
 import (
 	"math/big"
 	"net/netip"
+
+	"github.com/gardener/gardener-extension-provider-aws/pkg/apis/aws/v1alpha1"
 )
 
 const workersBits = 3
@@ -26,8 +28,8 @@ cidr: 10.250.0.0/16
     public: 10.250.160.0/20
     internal: 10.250.176.0/20
 */
-func generateAWSZones(workerCidr string, zoneNames []string) []Zone {
-	var zones []Zone
+func generateAWSZones(workerCidr string, zoneNames []string) []v1alpha1.Zone {
+	var zones []v1alpha1.Zone
 
 	cidr, _ := netip.ParsePrefix(workerCidr)
 	workerPrefixLength := cidr.Bits() + workersBits
@@ -57,7 +59,7 @@ func generateAWSZones(workerCidr string, zoneNames []string) []Zone {
 		internalIP, _ := netip.AddrFromSlice(base.Bytes())
 		internalPrefix := netip.PrefixFrom(internalIP, workerPrefixLength+1)
 
-		zones = append(zones, Zone{
+		zones = append(zones, v1alpha1.Zone{
 			Name:     name,
 			Workers:  zoneWorkerCidr.String(),
 			Public:   public.String(),

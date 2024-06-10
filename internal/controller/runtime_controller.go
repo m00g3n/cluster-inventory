@@ -37,6 +37,7 @@ type RCCfg struct {
 	Finalizer string
 }
 
+//go:generate mockery --name=ShootClient
 type ShootClient interface {
 	Create(ctx context.Context, shoot *gardener.Shoot, opts v1.CreateOptions) (*gardener.Shoot, error)
 	Get(ctx context.Context, name string, opts v1.GetOptions) (*gardener.Shoot, error)
@@ -85,7 +86,7 @@ func (r *RuntimeReconciler) Reconcile(ctx context.Context, request ctrl.Request)
 
 }
 
-func fixConverterConfig() gardener_shoot.ConverterConfig {
+func FixConverterConfig() gardener_shoot.ConverterConfig {
 	return gardener_shoot.ConverterConfig{
 		Kubernetes: gardener_shoot.KubernetesConfig{
 			DefaultVersion: "1.29",
@@ -101,6 +102,15 @@ func fixConverterConfig() gardener_shoot.ConverterConfig {
 				EnableIMDSv2: true,
 			},
 		},
+	}
+}
+
+func NewruntimeReconciler(mgr ctrl.Manager, shootClient ShootClient, logger logr.Logger) *RuntimeReconciler {
+	return &RuntimeReconciler{
+		Client:      mgr.GetClient(),
+		Scheme:      mgr.GetScheme(),
+		ShootClient: shootClient,
+		Log:         logger,
 	}
 }
 

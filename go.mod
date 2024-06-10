@@ -4,6 +4,9 @@ go 1.22.3
 
 require (
 	github.com/gardener/gardener v1.96.0
+	github.com/gardener/gardener-extension-provider-aws v1.54.1
+	github.com/gardener/gardener-extension-provider-gcp v1.35.0
+	github.com/gardener/gardener-extension-provider-openstack v1.39.2
 	github.com/go-logr/logr v1.4.2
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
@@ -23,7 +26,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
-	github.com/evanphx/json-patch v5.7.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect
@@ -78,7 +80,6 @@ require (
 )
 
 replace (
-	golang.org/x/crypto => golang.org/x/crypto v0.22.0
 	golang.org/x/net => golang.org/x/net v0.24.0
 	golang.org/x/sys => golang.org/x/sys v0.19.0
 	golang.org/x/text => golang.org/x/text v0.14.0
