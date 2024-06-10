@@ -12,21 +12,25 @@ func TestNetworkingExtender(t *testing.T) {
 	t.Run("Crete networking config", func(t *testing.T) {
 		// given
 		shoot := fixEmptyGardenerShoot("test", "kcp-system")
-		runtimeShoot := imv1.RuntimeShoot{
-			Networking: imv1.Networking{
-				Pods:     "100.64.0.0/12",
-				Nodes:    "10.250.0.0/16",
-				Services: "100.104.0.0/13",
+		runtime := imv1.Runtime{
+			Spec: imv1.RuntimeSpec{
+				Shoot: imv1.RuntimeShoot{
+					Networking: imv1.Networking{
+						Pods:     "100.64.0.0/12",
+						Nodes:    "10.250.0.0/16",
+						Services: "100.104.0.0/13",
+					},
+				},
 			},
 		}
 
 		// when
-		err := ExtendWithNetworking(runtimeShoot, &shoot)
+		err := ExtendWithNetworking(runtime, &shoot)
 
 		// then
 		require.NoError(t, err)
-		assert.Equal(t, runtimeShoot.Networking.Nodes, *shoot.Spec.Networking.Nodes)
-		assert.Equal(t, runtimeShoot.Networking.Pods, *shoot.Spec.Networking.Pods)
-		assert.Equal(t, runtimeShoot.Networking.Services, *shoot.Spec.Networking.Services)
+		assert.Equal(t, runtime.Spec.Shoot.Networking.Nodes, *shoot.Spec.Networking.Nodes)
+		assert.Equal(t, runtime.Spec.Shoot.Networking.Pods, *shoot.Spec.Networking.Pods)
+		assert.Equal(t, runtime.Spec.Shoot.Networking.Services, *shoot.Spec.Networking.Services)
 	})
 }

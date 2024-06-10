@@ -9,8 +9,10 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type Extend func(imv1.Runtime, *gardener.Shoot) error
+
 type Converter struct {
-	extenders []extender.Extend
+	extenders []Extend
 }
 
 type ProviderConfig struct {
@@ -38,7 +40,7 @@ type ConverterConfig struct {
 }
 
 func NewConverter(config ConverterConfig) Converter {
-	extenders := []extender.Extend{
+	extenders := []Extend{
 		extender.ExtendWithAnnotationsAndLabels,
 		extender.NewExtendWithKubernetes(config.Kubernetes.DefaultVersion),
 		extender.ExtendWithNetworking,
@@ -70,7 +72,7 @@ func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
 	}
 
 	for _, extend := range c.extenders {
-		if err := extend(runtime.Spec.Shoot, &shoot); err != nil {
+		if err := extend(runtime, &shoot); err != nil {
 			return gardener.Shoot{}, err
 		}
 	}
@@ -80,14 +82,4 @@ func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
 
 func PtrTo[T any](v T) *T {
 	return &v
-}
-
-func IsEuAccess(platformRegion string) bool {
-	switch platformRegion {
-	case "cf-eu11":
-		return true
-	case "cf-ch20":
-		return true
-	}
-	return false
 }

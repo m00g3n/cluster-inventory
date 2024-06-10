@@ -18,8 +18,12 @@ func TestDNSExtender(t *testing.T) {
 		secretName := "my-secret"
 		domainPrefix := "dev.mydomain.com"
 		dnsProviderType := "aws-route53"
-		runtimeShoot := imv1.RuntimeShoot{
-			Name: "myshoot",
+		runtimeShoot := imv1.Runtime{
+			Spec: imv1.RuntimeSpec{
+				Shoot: imv1.RuntimeShoot{
+					Name: "myshoot",
+				},
+			},
 		}
 		extender := NewExtendWithDNS(secretName, domainPrefix, dnsProviderType)
 		shoot := fixEmptyGardenerShoot("test", "dev")

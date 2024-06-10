@@ -13,27 +13,39 @@ import (
 
 func TestProviderExtender(t *testing.T) {
 	for tname, testCase := range map[string]struct {
-		RuntimeShoot       imv1.RuntimeShoot
+		Runtime            imv1.Runtime
 		EnableIMDSv2       bool
 		ExpectedZonesCount int
 	}{
 		"Create provider specific config for AWS without worker config": {
-			RuntimeShoot: imv1.RuntimeShoot{
-				Provider: fixAWSProvider(),
+			Runtime: imv1.Runtime{
+				Spec: imv1.RuntimeSpec{
+					Shoot: imv1.RuntimeShoot{
+						Provider: fixAWSProvider(),
+					},
+				},
 			},
 			EnableIMDSv2:       false,
 			ExpectedZonesCount: 3,
 		},
 		"Create provider specific config for AWS with worker config": {
-			RuntimeShoot: imv1.RuntimeShoot{
-				Provider: fixAWSProvider(),
+			Runtime: imv1.Runtime{
+				Spec: imv1.RuntimeSpec{
+					Shoot: imv1.RuntimeShoot{
+						Provider: fixAWSProvider(),
+					},
+				},
 			},
 			EnableIMDSv2:       true,
 			ExpectedZonesCount: 3,
 		},
 		"Create provider specific config for AWS with multiple workers": {
-			RuntimeShoot: imv1.RuntimeShoot{
-				Provider: fixAWSProviderWithMultipleWorkers(),
+			Runtime: imv1.Runtime{
+				Spec: imv1.RuntimeSpec{
+					Shoot: imv1.RuntimeShoot{
+						Provider: fixAWSProviderWithMultipleWorkers(),
+					},
+				},
 			},
 			EnableIMDSv2:       false,
 			ExpectedZonesCount: 3,
@@ -45,12 +57,12 @@ func TestProviderExtender(t *testing.T) {
 
 			// when
 			extender := NewProviderExtender(testCase.EnableIMDSv2)
-			err := extender(testCase.RuntimeShoot, &shoot)
+			err := extender(testCase.Runtime, &shoot)
 
 			// then
 			require.NoError(t, err)
 
-			assertProvider(t, testCase.RuntimeShoot, shoot, testCase.EnableIMDSv2)
+			assertProvider(t, testCase.Runtime.Spec.Shoot, shoot, testCase.EnableIMDSv2)
 			assertProviderSpecificConfig(t, shoot, testCase.ExpectedZonesCount)
 		})
 	}
@@ -58,15 +70,19 @@ func TestProviderExtender(t *testing.T) {
 	t.Run("Return error for unknown provider", func(t *testing.T) {
 		// given
 		shoot := fixEmptyGardenerShoot("cluster", "kcp-system")
-		runtimeShoot := imv1.RuntimeShoot{
-			Provider: imv1.Provider{
-				Type: "unknown",
+		runtime := imv1.Runtime{
+			Spec: imv1.RuntimeSpec{
+				Shoot: imv1.RuntimeShoot{
+					Provider: imv1.Provider{
+						Type: "unknown",
+					},
+				},
 			},
 		}
 
 		// when
 		extender := NewProviderExtender(false)
-		err := extender(runtimeShoot, &shoot)
+		err := extender(runtime, &shoot)
 
 		// then
 		require.Error(t, err)
