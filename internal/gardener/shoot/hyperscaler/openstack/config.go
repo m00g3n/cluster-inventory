@@ -13,23 +13,23 @@ const (
 	apiVersion               = "openstack.provider.extensions.gardener.cloud/v1alpha1"
 )
 
-func GetInfrastructureConfig(_ string, _ []string) ([]byte, error) {
-	return json.Marshal(NewInfrastructureConfig())
+func GetInfrastructureConfig(workerCIDR string, _ []string) ([]byte, error) {
+	return json.Marshal(NewInfrastructureConfig(workerCIDR))
 }
 
 func GetControlPlaneConfig(_ []string) ([]byte, error) {
 	return json.Marshal(NewControlPlaneConfig())
 }
 
-func NewInfrastructureConfig() v1alpha1.InfrastructureConfig {
+func NewInfrastructureConfig(workerCIDR string) v1alpha1.InfrastructureConfig {
 	return v1alpha1.InfrastructureConfig{
 		TypeMeta: v1.TypeMeta{
 			Kind:       infrastructureConfigKind,
 			APIVersion: apiVersion,
 		},
-		FloatingPoolName: "FloatingIP-external-kyma-01", //TODO: should it be configurable?
+		FloatingPoolName: "FloatingIP-external-kyma-01",
 		Networks: v1alpha1.Networks{
-			Workers: "10.250.0.0/22", //TODO: get from runtimeCR
+			Workers: workerCIDR,
 		},
 	}
 }
