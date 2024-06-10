@@ -1,10 +1,11 @@
 package extender
 
 import (
+	"testing"
+
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestRegionExtender(t *testing.T) {
@@ -46,6 +47,5 @@ func TestRegionExtender(t *testing.T) {
 
 		// then
 		assert.Equal(t, "eu-central-1", shoot.Spec.Region)
-
 	})
 }
