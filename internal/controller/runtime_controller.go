@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"k8s.io/client-go/tools/record"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/go-logr/logr"
@@ -38,15 +39,19 @@ type RCCfg struct {
 
 type ShootClient interface {
 	Create(ctx context.Context, shoot *gardener.Shoot, opts v1.CreateOptions) (*gardener.Shoot, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*gardener.Shoot, error)
+	//Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
+	//List(ctx context.Context, opts v1.ListOptions) (*gardener.ShootList, error)
 }
 
 // RuntimeReconciler reconciles a Runtime object
 type RuntimeReconciler struct {
 	client.Client
-	Scheme      *runtime.Scheme
-	ShootClient ShootClient
-	Log         logr.Logger
-	Cfg         RCCfg
+	Scheme        *runtime.Scheme
+	ShootClient   ShootClient
+	Log           logr.Logger
+	Cfg           RCCfg
+	EventRecorder record.EventRecorder
 }
 
 //+kubebuilder:rbac:groups=infrastructuremanager.kyma-project.io,resources=runtimes,verbs=get;list;watch;create;update;patch;delete
@@ -66,46 +71,18 @@ func (r *RuntimeReconciler) Reconcile(ctx context.Context, request ctrl.Request)
 		}, client.IgnoreNotFound(err)
 	}
 
+	r.Log.Info("Reconciling Runtime", "Name", runtime.Name, "Namespace", runtime.Namespace)
+
 	stateFSM := NewFsm(
 		r.Log.WithName(fmt.Sprintf("reqID %d", requCounter)),
 		r.Cfg,
 		K8s{
-			Client:      r.Client,
-			ShootClient: r.ShootClient,
-			//MapFunc:       r.mapFunction,
+			Client:        r.Client,
+			shootClient:   r.ShootClient,
+			EventRecorder: r.EventRecorder,
 		})
 	return stateFSM.Run(ctx, runtime)
 
-	//if err == nil {
-	//	r.Log.Info("Reconciling Runtime", "Name", runtime.Name, "Namespace", runtime.Namespace)
-	//} else {
-	//	r.Log.Error(err, "unable to fetch Runtime")
-	//	return ctrl.Result{}, err
-	//}
-	//
-	//shoot := &gardener.Shoot{}
-	//
-	//converterConfig := fixConverterConfig()
-	//converter := gardener_shoot.NewConverter(converterConfig)
-	//
-	//*shoot, err = converter.ToShoot(runtime)
-	//
-	//if err != nil {
-	//	r.Log.Error(err, "unable to map Runtime to Shoot")
-	//	return ctrl.Result{}, err
-	//}
-	//
-	//r.Log.Info("Shoot mapped", "Name", shoot.Name, "Namespace", shoot.Namespace, "Shoot", shoot)
-	//
-	//createdShoot, provisioningErr := r.ShootClient.Create(ctx, shoot, v1.CreateOptions{})
-	//
-	//if provisioningErr != nil {
-	//	r.Log.Error(provisioningErr, "unable to create Shoot")
-	//	return ctrl.Result{}, provisioningErr
-	//}
-	//r.Log.Info("Shoot created", "Name", createdShoot.Name, "Namespace", createdShoot.Namespace)
-	//
-	//return ctrl.Result{}, nil
 }
 
 func fixConverterConfig() gardener_shoot.ConverterConfig {

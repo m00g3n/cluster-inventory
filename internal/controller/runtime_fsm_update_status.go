@@ -15,8 +15,7 @@ func sFnUpdateStatus(result *ctrl.Result, err error) stateFn {
 			}
 			return nil, nil, err
 		}
-		//  FIXME
-		//return stopWithRequeue()
-		return nil, nil, nil
+		next := sFnEmmitEventfunc(nil, result, err)
+		return next, nil, nil
 	}
 }

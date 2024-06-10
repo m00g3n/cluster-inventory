@@ -29,22 +29,51 @@ import (
 //+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 const (
-	StateReady      = "Ready"
-	StateError      = "Error"
-	StateProcessing = "Processing"
-	StateDeleting   = "Deleting"
-
-	ConditionReasonVerificationErr = ConditionReason("VerificationErr")
-	ConditionReasonVerified        = ConditionReason("Verified")
-	ConditionReasonVerification    = ConditionReason("Verification")
-	ConditionReasonInitialized     = ConditionReason("Initialized")
-	ConditionReasonDeletion        = ConditionReason("Deletion")
-	ConditionReasonDeletionErr     = ConditionReason("DeletionErr")
-	ConditionReasonDeleted         = ConditionReason("Deleted")
-
-	ConditionTypeInstalled = ConditionType("Installed")
-	ConditionTypeDeleted   = ConditionType("Deleted")
+	RuntimeStateReady      = "Ready"
+	RuntimeStateError      = "Error"
+	RuntimeStateCreating   = "Creating"
+	RuntimeStateProcessing = "Processing"
+	RuntimeStateDeleting   = "Deleting"
 )
+
+type RuntimeConditionType string
+
+const (
+	ConditionTypeRuntimeProvisioning   RuntimeConditionType = "RuntimeProvisioning"
+	ConditionTypeRuntimeDeprovisioning RuntimeConditionType = "RuntimeDeprovisioning"
+	ConditionTypeRuntimeUpdate         RuntimeConditionType = "RuntimeUpgrade"
+)
+
+type RuntimeConditionReason string
+
+const (
+	ConditionReasonVerificationErr     = RuntimeConditionReason("VerificationErr")
+	ConditionReasonVerified            = RuntimeConditionReason("Verified")
+	ConditionReasonProcessingCompleted = RuntimeConditionReason("Processing Completed")
+	ConditionReasonProcessing          = RuntimeConditionReason("Processing")
+	ConditionReasonProcessingErr       = RuntimeConditionReason("ProcessingErr")
+
+	ConditionReasonInitialized            = RuntimeConditionReason("Initialised")
+	ConditionReasonShootCreationPending   = RuntimeConditionReason("Shoot creation pending")
+	ConditionReasonShootCreationCompleted = RuntimeConditionReason("Shoot creation completed")
+
+	ConditionReasonDeletion        = RuntimeConditionReason("Deletion")
+	ConditionReasonDeletionErr     = RuntimeConditionReason("DeletionErr")
+	ConditionReasonConversionError = RuntimeConditionReason("ConversionErr")
+	ConditionReasonCreationError   = RuntimeConditionReason("CreationErr")
+	ConditionReasonGardenerError   = RuntimeConditionReason("GardenerErr")
+	ConditionReasonDeleted         = RuntimeConditionReason("Deleted")
+
+	ConditionTypeInstalled = RuntimeConditionReason("Installed")
+	ConditionTypeDeleted   = RuntimeConditionReason("Deleted")
+)
+
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="Provider",type="string",JSONPath=".spec.shoot.provider.type"
+//+kubebuilder:printcolumn:name="Region",type="string",JSONPath=".spec.shoot.region"
+//+kubebuilder:printcolumn:name="STATE",type=string,JSONPath=`.status.state`
+//+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Runtime is the Schema for the runtimes API
 type Runtime struct {
@@ -105,6 +134,12 @@ type APIServer struct {
 	AdditionalOidcConfig *[]gardener.OIDCConfig `json:"additionalOidcConfig,omitempty"`
 }
 
+// TODO: Specify Provider type as enum with limited set of values
+// similar to
+// https://github.com/kyma-project/application-connector-manager/blob/main/api/v1alpha1/applicationconnector_types.go#L73C1-L74C21
+// +kubebuilder:validation:Enum=debug;panic;fatal;error;warn;info;debug
+// type LogLevel string
+
 type Provider struct {
 	Type    string            `json:"type"`
 	Workers []gardener.Worker `json:"workers"`
@@ -143,8 +178,8 @@ func init() {
 	SchemeBuilder.Register(&Runtime{}, &RuntimeList{})
 }
 
-func (k *Runtime) UpdateStateProcessing(c ConditionType, r ConditionReason, msg string) {
-	k.Status.State = StateProcessing
+func (k *Runtime) UpdateStateProcessing(c RuntimeConditionType, r RuntimeConditionReason, msg string) {
+	k.Status.State = RuntimeStateProcessing
 	condition := metav1.Condition{
 		Type:               string(c),
 		Status:             "Unknown",
@@ -155,11 +190,35 @@ func (k *Runtime) UpdateStateProcessing(c ConditionType, r ConditionReason, msg 
 	meta.SetStatusCondition(&k.Status.Conditions, condition)
 }
 
-func (k *Runtime) UpdateStateDeletion(c ConditionType, r ConditionReason, msg string) {
-	k.Status.State = StateProcessing
+func (k *Runtime) UpdateStateDeletion(c RuntimeConditionType, r RuntimeConditionReason, msg string) {
+	k.Status.State = RuntimeStateDeleting
 	condition := metav1.Condition{
 		Type:               string(c),
-		Status:             "Unknown",
+		Status:             "True",
+		LastTransitionTime: metav1.Now(),
+		Reason:             string(r),
+		Message:            msg,
+	}
+	meta.SetStatusCondition(&k.Status.Conditions, condition)
+}
+
+func (k *Runtime) UpdateStateCreating(c RuntimeConditionType, r RuntimeConditionReason, msg string) {
+	k.Status.State = RuntimeStateCreating
+	condition := metav1.Condition{
+		Type:               string(c),
+		Status:             "True",
+		LastTransitionTime: metav1.Now(),
+		Reason:             string(r),
+		Message:            msg,
+	}
+	meta.SetStatusCondition(&k.Status.Conditions, condition)
+}
+
+func (k *Runtime) UpdateStateError(c RuntimeConditionType, r RuntimeConditionReason, msg string) {
+	k.Status.State = RuntimeStateError
+	condition := metav1.Condition{
+		Type:               string(c),
+		Status:             "Error",
 		LastTransitionTime: metav1.Now(),
 		Reason:             string(r),
 		Message:            msg,

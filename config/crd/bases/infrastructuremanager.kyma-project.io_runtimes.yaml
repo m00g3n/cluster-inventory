@@ -15,11 +15,14 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .spec.shoot.provider.type
+      name: Provider
+      type: string
+    - jsonPath: .spec.shoot.region
+      name: Region
+      type: string
     - jsonPath: .status.state
       name: STATE
-      type: string
-    - jsonPath: .metadata.labels.kyma-project\.io/shoot-name
-      name: SHOOT-NAME
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
@@ -302,6 +305,14 @@ spec:
                   platformRegion:
                     type: string
                   provider:
+                    enum:
+                    - debug
+                    - panic
+                    - fatal
+                    - error
+                    - warn
+                    - info
+                    - debug
                     properties:
                       type:
                         type: string

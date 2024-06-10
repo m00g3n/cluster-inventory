@@ -142,10 +142,11 @@ func main() {
 
 	if enableRuntimeReconciler {
 		if err = (&controller.RuntimeReconciler{
-			Client:      mgr.GetClient(),
-			Scheme:      mgr.GetScheme(),
-			ShootClient: shootClient,
-			Log:         logger,
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			ShootClient:   shootClient,
+			Log:           logger,
+			EventRecorder: mgr.GetEventRecorderFor("runtime-controller"),
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Runtime")
 			os.Exit(1)

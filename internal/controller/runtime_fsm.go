@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"k8s.io/client-go/tools/record"
 	"reflect"
 	"runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -29,8 +30,8 @@ type Watch = func(src source.Source, eventhandler handler.EventHandler, predicat
 
 type K8s struct {
 	client.Client
-	ShootClient
-	handler.MapFunc
+	record.EventRecorder
+	shootClient ShootClient
 }
 
 type Fsm interface {

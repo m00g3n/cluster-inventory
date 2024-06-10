@@ -11,9 +11,9 @@ import (
 func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	if !isDeleting(s) {
 		s.instance.UpdateStateDeletion(
-			imv1.ConditionTypeInstalled,
+			imv1.ConditionTypeRuntimeDeprovisioning,
 			imv1.ConditionReasonDeletion,
-			"deletion in progress",
+			"Runtime deletion initialised",
 		)
 
 		return stopWithRequeue()
@@ -23,7 +23,7 @@ func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 }
 
 func isDeleting(s *systemState) bool {
-	condition := meta.FindStatusCondition(s.instance.Status.Conditions, string(imv1.ConditionTypeInstalled))
+	condition := meta.FindStatusCondition(s.instance.Status.Conditions, string(imv1.ConditionTypeRuntimeDeprovisioning))
 	if condition == nil {
 		return false
 	}
