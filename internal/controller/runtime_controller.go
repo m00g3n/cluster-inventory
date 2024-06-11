@@ -42,7 +42,7 @@ type RCCfg struct {
 type ShootClient interface {
 	Create(ctx context.Context, shoot *gardener.Shoot, opts v1.CreateOptions) (*gardener.Shoot, error)
 	Get(ctx context.Context, name string, opts v1.GetOptions) (*gardener.Shoot, error)
-	//Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
+	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	//List(ctx context.Context, opts v1.ListOptions) (*gardener.ShootList, error)
 }
 

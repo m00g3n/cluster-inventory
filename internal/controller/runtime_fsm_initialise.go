@@ -35,15 +35,14 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 	}
 
 	// in case instance has no finalizer and instance is being deleted - end reconciliation
-	if instanceIsBeingDeleted && !controllerutil.ContainsFinalizer(&s.instance, m.Finalizer) {
-		m.log.Info("Instance is being deleted")
-		// stop state machine
-		return nil, nil, nil
-	}
-
-	// in case instance is being deleted and does not have finalizer - delete shoot
 	if instanceIsBeingDeleted {
-		return switchState(sFnDeleteShoot)
+		// in case instance is being deleted and does not have finalizer - delete shoot
+		if controllerutil.ContainsFinalizer(&s.instance, m.Finalizer) {
+			return switchState(sFnDeleteShoot)
+		}
+		m.log.Info("Instance is being deleted")
+		// stop state machine ???
+		return nil, nil, nil
 	}
 
 	_, err := m.shootClient.Get(ctx, s.instance.Name, v1.GetOptions{})
