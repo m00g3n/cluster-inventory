@@ -13,6 +13,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+const (
+	ProviderTypeAWS       = "aws"
+	ProviderTypeAzure     = "azure"
+	ProviderTypeGCP       = "gcp"
+	ProviderTypeOpenstack = "openstack"
+)
+
 func NewProviderExtender(enableIMDSv2 bool) func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 	return func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 		provider := &shoot.Spec.Provider
@@ -54,20 +61,20 @@ func getConfig(runtimeShoot imv1.RuntimeShoot) (infrastructureConfig *runtime.Ra
 	}
 
 	switch runtimeShoot.Provider.Type {
-	case "aws":
+	case ProviderTypeAWS:
 		{
 			return getConfigForProvider(runtimeShoot, aws.GetInfrastructureConfig, aws.GetControlPlaneConfig)
 		}
-	case "azure":
+	case ProviderTypeAzure:
 		{
 			// Azure shoots are all zoned, put probably it not be validated here.
 			return getConfigForProvider(runtimeShoot, azure.GetInfrastructureConfig, azure.GetControlPlaneConfig)
 		}
-	case "gcp":
+	case ProviderTypeGCP:
 		{
 			return getConfigForProvider(runtimeShoot, gcp.GetInfrastructureConfig, gcp.GetControlPlaneConfig)
 		}
-	case "openstack":
+	case ProviderTypeOpenstack:
 		{
 			return getConfigForProvider(runtimeShoot, openstack.GetInfrastructureConfig, openstack.GetControlPlaneConfig)
 		}

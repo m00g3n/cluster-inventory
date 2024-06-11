@@ -9,43 +9,77 @@ import (
 )
 
 func TestRegionExtender(t *testing.T) {
-	t.Run("Use region from Runtime", func(t *testing.T) {
-		// given
-		runtime := imv1.Runtime{
-			Spec: imv1.RuntimeSpec{
-				Shoot: imv1.RuntimeShoot{
-					Region:         "ap-northeast-1",
-					PlatformRegion: "cf-asia",
+	for _, testCase := range []struct {
+		name           string
+		region         string
+		platformRegion string
+		providerType   string
+		expectedRegion string
+	}{
+		{
+			name:           "Use region from runtime for AWS",
+			region:         "ap-northeast-1",
+			platformRegion: "cf-asia",
+			providerType:   "aws",
+			expectedRegion: "ap-northeast-1",
+		},
+		{
+			name:           "Use region from runtime for Azure",
+			region:         "southeastasia",
+			platformRegion: "cf-asia",
+			providerType:   "aws",
+			expectedRegion: "southeastasia",
+		},
+		{
+			name:           "Use region from runtime for GCP",
+			region:         "asia-northeast2",
+			platformRegion: "cf-asia",
+			providerType:   "gcp",
+			expectedRegion: "asia-northeast2",
+		},
+		{
+			name:           "Use region from runtime for Openstack",
+			region:         "eu-de-1",
+			platformRegion: "cf-eu11",
+			providerType:   "openstack",
+			expectedRegion: "eu-de-1",
+		},
+		{
+			name:           "Replace region for EU Access on AWS",
+			region:         "ap-northeast-1",
+			platformRegion: "cf-eu11",
+			providerType:   "aws",
+			expectedRegion: "eu-central-1",
+		},
+		{
+			name:           "Replace region for EU Access on Azure",
+			region:         "uksouth",
+			platformRegion: "cf-ch20",
+			providerType:   "azure",
+			expectedRegion: "switzerlandnorth",
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			// given
+			runtime := imv1.Runtime{
+				Spec: imv1.RuntimeSpec{
+					Shoot: imv1.RuntimeShoot{
+						Region:         testCase.region,
+						PlatformRegion: testCase.platformRegion,
+						Provider: imv1.Provider{
+							Type: testCase.providerType,
+						},
+					},
 				},
-			},
-		}
-		shoot := fixEmptyGardenerShoot("shoot", "kcp-system")
+			}
+			shoot := fixEmptyGardenerShoot("shoot", "kcp-system")
 
-		// when
-		err := ExtendWithRegion(runtime, &shoot)
-		require.NoError(t, err)
+			// when
+			err := ExtendWithRegion(runtime, &shoot)
+			require.NoError(t, err)
 
-		// then
-		assert.Equal(t, "ap-northeast-1", shoot.Spec.Region)
-	})
-
-	t.Run("Use default region for EU access", func(t *testing.T) {
-		// given
-		runtime := imv1.Runtime{
-			Spec: imv1.RuntimeSpec{
-				Shoot: imv1.RuntimeShoot{
-					Region:         "ap-northeast-1",
-					PlatformRegion: "cf-eu11",
-				},
-			},
-		}
-		shoot := fixEmptyGardenerShoot("shoot", "kcp-system")
-
-		// when
-		err := ExtendWithRegion(runtime, &shoot)
-		require.NoError(t, err)
-
-		// then
-		assert.Equal(t, "eu-central-1", shoot.Spec.Region)
-	})
+			// then
+			assert.Equal(t, testCase.expectedRegion, shoot.Spec.Region)
+		})
+	}
 }
