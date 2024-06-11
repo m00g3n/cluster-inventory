@@ -19,7 +19,7 @@ func TestAnnotationsAndLabelsExtender(t *testing.T) {
 		expectedLabels      map[string]string
 	}{
 		{
-			name: "Extend with basic annotations",
+			name: "Create with basic annotations",
 			runtime: imv1.Runtime{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "runtime",
@@ -36,7 +36,7 @@ func TestAnnotationsAndLabelsExtender(t *testing.T) {
 				"subaccount": "subaccount-id"},
 		},
 		{
-			name: "Extend with licence type annotation",
+			name: "Create licence type annotation",
 			runtime: imv1.Runtime{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "runtime",
