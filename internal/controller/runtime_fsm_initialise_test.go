@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -49,6 +50,25 @@ func newTestFSMWithGardener(finalizer string, shoot gardener.Shoot) *fsm {
 
 	c := mocks.ShootClient{}
 	c.On("Get", mock.Anything, shoot.Name, mock.Anything).Return(&shoot, nil)
+
+	return &fsm{
+		K8s: K8s{
+			shootClient: &c,
+		},
+		RCCfg: RCCfg{
+			Finalizer: finalizer,
+		},
+	}
+}
+
+func newTestFSMWithShootNotFound(finalizer string) *fsm {
+	// create a new scheme for the test
+	scheme := runtime.NewScheme()
+	// add supported types to the scheme
+	util.Must(imv1.AddToScheme(scheme))
+
+	c := mocks.ShootClient{}
+	c.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("not found"))
 
 	return &fsm{
 		K8s: K8s{
@@ -148,6 +168,24 @@ var _ = Describe("KIM sFnInitialise", func() {
 			testInitialiseOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: haveName("sFnPrepareCluster"),
+			},
+		),
+		Entry(
+			"should return sFnUpdateStatus and no error when shoot is missing",
+			testContext,
+			newTestFSMWithShootNotFound("test-me-plz"),
+			&systemState{
+				instance: imv1.Runtime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:       "test-instance",
+						Namespace:  "default",
+						Finalizers: []string{"test-me-plz"},
+					},
+				},
+			},
+			testInitialiseOpts{
+				MatchExpectedErr: BeNil(),
+				MatchNextFnState: haveName("sFnUpdateStatus"),
 			},
 		),
 	)
