@@ -1,8 +1,9 @@
-package controller
+package fsm
 
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"reflect"
 	"runtime"
 	"sync"
@@ -19,6 +20,11 @@ import (
 
 type stateFn func(context.Context, *fsm, *systemState) (stateFn, *ctrl.Result, error)
 
+// runtime reconciler specific configuration
+type RCCfg struct {
+	Finalizer string
+}
+
 func (f stateFn) String() string {
 	return f.name()
 }
@@ -33,7 +39,7 @@ type Watch = func(src source.Source, eventhandler handler.EventHandler, predicat
 type K8s struct {
 	client.Client
 	record.EventRecorder
-	shootClient ShootClient
+	ShootClient gardener.ShootClient
 }
 
 type Fsm interface {

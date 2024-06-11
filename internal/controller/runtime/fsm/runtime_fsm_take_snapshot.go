@@ -1,8 +1,7 @@
-package controller
+package fsm
 
 import (
 	"context"
-
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 

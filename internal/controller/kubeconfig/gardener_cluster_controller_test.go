@@ -1,4 +1,4 @@
-package controller
+package kubeconfig
 
 import (
 	"context"

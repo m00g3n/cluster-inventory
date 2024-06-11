@@ -1,4 +1,4 @@
-package controller
+package fsm
 
 import (
 	"context"
@@ -45,7 +45,7 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 		return nil, nil, nil
 	}
 
-	_, err := m.shootClient.Get(ctx, s.instance.Name, v1.GetOptions{})
+	_, err := m.ShootClient.Get(ctx, s.instance.Name, v1.GetOptions{})
 
 	if err != nil {
 		if apierrors.IsNotFound(err) {

@@ -1,8 +1,9 @@
-package controller
+package fsm
 
 import (
 	"context"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -29,7 +30,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 
 	m.log.Info("Shoot mapped successfully", "Name", shoot.Name, "Namespace", shoot.Namespace, "Shoot", shoot)
 
-	createdShoot, provisioningErr := m.shootClient.Create(ctx, &shoot, v1.CreateOptions{})
+	createdShoot, provisioningErr := m.ShootClient.Create(ctx, &shoot, v1.CreateOptions{})
 
 	if provisioningErr != nil {
 		m.log.Error(provisioningErr, "Failed to create new gardener Shoot")
@@ -52,4 +53,23 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 	)
 
 	return stopWithRequeue()
+}
+
+func FixConverterConfig() gardener_shoot.ConverterConfig {
+	return gardener_shoot.ConverterConfig{
+		Kubernetes: gardener_shoot.KubernetesConfig{
+			DefaultVersion: "1.29",
+		},
+
+		DNS: gardener_shoot.DNSConfig{
+			SecretName:   "xxx-secret-dev",
+			DomainPrefix: "runtimeprov.dev.kyma.ondemand.com",
+			ProviderType: "aws-route53",
+		},
+		Provider: gardener_shoot.ProviderConfig{
+			AWS: gardener_shoot.AWSConfig{
+				EnableIMDSv2: true,
+			},
+		},
+	}
 }

@@ -1,4 +1,4 @@
-package controller
+package fsm
 
 import (
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"

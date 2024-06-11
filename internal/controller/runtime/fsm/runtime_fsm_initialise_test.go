@@ -1,8 +1,10 @@
-package controller
+package fsm
 
 import (
 	"context"
 	"fmt"
+	gardener_mocks "github.com/kyma-project/infrastructure-manager/internal/gardener/mocks"
+
 	"time"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -14,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	"github.com/kyma-project/infrastructure-manager/internal/controller/mocks"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
@@ -33,7 +34,7 @@ func newTestFSM(finalizer string, objs ...client.Object) *fsm {
 
 	return &fsm{
 		K8s: K8s{
-			shootClient: nil,
+			ShootClient: nil,
 			Client:      c,
 		},
 		RCCfg: RCCfg{
@@ -48,12 +49,12 @@ func newTestFSMWithGardener(finalizer string, shoot gardener.Shoot) *fsm {
 	// add supported types to the scheme
 	util.Must(imv1.AddToScheme(scheme))
 
-	c := mocks.ShootClient{}
+	c := gardener_mocks.ShootClient{}
 	c.On("Get", mock.Anything, shoot.Name, mock.Anything).Return(&shoot, nil)
 
 	return &fsm{
 		K8s: K8s{
-			shootClient: &c,
+			ShootClient: &c,
 		},
 		RCCfg: RCCfg{
 			Finalizer: finalizer,
@@ -67,12 +68,12 @@ func newTestFSMWithShootNotFound(finalizer string) *fsm {
 	// add supported types to the scheme
 	util.Must(imv1.AddToScheme(scheme))
 
-	c := mocks.ShootClient{}
+	c := gardener_mocks.ShootClient{}
 	c.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("not found"))
 
 	return &fsm{
 		K8s: K8s{
-			shootClient: &c,
+			ShootClient: &c,
 		},
 		RCCfg: RCCfg{
 			Finalizer: finalizer,

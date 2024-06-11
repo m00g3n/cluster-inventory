@@ -1,4 +1,4 @@
-package controller
+package fsm
 
 import (
 	"context"
@@ -17,7 +17,7 @@ func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 		return stopWithRequeue()
 	}
 
-	err := m.shootClient.Delete(ctx, s.instance.Name, v1.DeleteOptions{})
+	err := m.ShootClient.Delete(ctx, s.instance.Name, v1.DeleteOptions{})
 
 	if err != nil {
 		m.log.Error(err, "Failed to delete gardener Shoot")

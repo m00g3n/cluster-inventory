@@ -1,9 +1,8 @@
-package controller
+package fsm
 
 import (
 	"context"
 	"fmt"
-
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"

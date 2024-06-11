@@ -1,4 +1,4 @@
-package controller
+package fsm
 
 import (
 	"context"
@@ -15,10 +15,10 @@ type ErrReason string
 
 func sFnPrepareCluster(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 
-	shoot, err := m.shootClient.Get(ctx, s.instance.Name, v1.GetOptions{})
+	shoot, err := m.ShootClient.Get(ctx, s.instance.Name, v1.GetOptions{})
 
 	if err != nil || shoot == nil {
-		msg := fmt.Sprintf("Cannot get shoot: %s, scheduling for retry", shoot.Name)
+		msg := fmt.Sprintf("Cannot get shoot: %s, scheduling for retry", s.instance.Name)
 		m.log.Info(msg)
 		return stopWithRequeue()
 	}
