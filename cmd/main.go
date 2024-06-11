@@ -21,6 +21,7 @@ import (
 	"fmt"
 	kubeconfig_controller "github.com/kyma-project/infrastructure-manager/internal/controller/kubeconfig"
 	runtime_controller "github.com/kyma-project/infrastructure-manager/internal/controller/runtime"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
 	"os"
 	"time"
 
@@ -147,6 +148,7 @@ func main() {
 			Scheme:        mgr.GetScheme(),
 			ShootClient:   shootClient,
 			Log:           logger,
+			Cfg:           fsm.RCCfg{Finalizer: infrastructuremanagerv1.Finalizer},
 			EventRecorder: mgr.GetEventRecorderFor("runtime-controller"),
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Runtime")

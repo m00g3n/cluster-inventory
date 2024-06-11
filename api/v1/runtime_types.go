@@ -28,6 +28,8 @@ import (
 //+kubebuilder:printcolumn:name="SHOOT-NAME",type=string,JSONPath=`.metadata.labels.kyma-project\.io/shoot-name`
 //+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
+const Finalizer = "runtime-controller.infrastructure-manager.kyma-project.io/deletion-hook"
+
 const (
 	RuntimeStateReady      = "Ready"
 	RuntimeStateError      = "Error"
