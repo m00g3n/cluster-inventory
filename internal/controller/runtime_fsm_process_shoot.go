@@ -26,19 +26,3 @@ func sFnProcessShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctr
 
 	return stopWithNoRequeue()
 }
-
-/*
-func isProcessing(s *systemState) bool {
-	condition := meta.FindStatusCondition(s.instance.Status.Conditions, string(imv1.ConditionTypeRuntimeProvisioning))
-	if condition == nil {
-		return false
-	}
-
-	if condition.Reason != string(imv1.ConditionReasonProcessing) &&
-		condition.Reason != string(imv1.ConditionReasonProcessingErr) {
-		return false
-	}
-
-	return true
-}
-*/

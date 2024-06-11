@@ -43,10 +43,10 @@ func sFnPrepareCluster(ctx context.Context, m *fsm, s *systemState) (stateFn, *c
 			msg := fmt.Sprintf("Shoot %s is in %s state, scheduling for retry", shoot.Name, lastOperation.State)
 			m.log.Info(msg)
 
-			//s.instance.UpdateStateCreating(
-			//	imv1.ConditionTypeRuntimeProvisioning,
-			//	imv1.ConditionReasonShootCreationPending,
-			//	"Shoot creation in progress")
+			s.instance.UpdateStateCreating(
+				imv1.ConditionTypeRuntimeProvisioning,
+				imv1.ConditionReasonShootCreationPending,
+				"Shoot creation in progress")
 
 			return stopWithRequeue()
 		}
@@ -55,16 +55,16 @@ func sFnPrepareCluster(ctx context.Context, m *fsm, s *systemState) (stateFn, *c
 			msg := fmt.Sprintf("Shoot %s successfully created", shoot.Name)
 			m.log.Info(msg)
 
-			if s.instance.IsStateCreating() {
-				return switchState(sFnProcessShoot)
+			if !s.instance.IsRuntimeStateSet(imv1.RuntimeStateCreating, imv1.ConditionTypeRuntimeProvisioning, imv1.ConditionReasonShootCreationCompleted) {
+				s.instance.UpdateStateCreating(
+					imv1.ConditionTypeRuntimeProvisioning,
+					imv1.ConditionReasonShootCreationCompleted,
+					"Shoot creation completed successfully")
+
+				return stopWithRequeue()
 			}
 
-			s.instance.UpdateStateCreating(
-				imv1.ConditionTypeRuntimeProvisioning,
-				imv1.ConditionReasonShootCreationCompleted,
-				"Shoot creation completed successfully")
-
-			return stopWithRequeue()
+			return switchState(sFnProcessShoot)
 		}
 
 		if lastOperation.State == gardener.LastOperationStateFailed {
@@ -86,18 +86,52 @@ func sFnPrepareCluster(ctx context.Context, m *fsm, s *systemState) (stateFn, *c
 		}
 	}
 
-	// updating is progressing
+	// Runtime update is in progress
 	if lastOperation.Type == gardener.LastOperationTypeReconcile {
 
-		var reason ErrReason
+		if lastOperation.State == gardener.LastOperationStateProcessing ||
+			lastOperation.State == gardener.LastOperationStatePending {
+			msg := fmt.Sprintf("Shoot %s is in %s state, scheduling for retry", shoot.Name, lastOperation.State)
+			m.log.Info(msg)
 
-		if len(shoot.Status.LastErrors) > 0 {
-			reason = gardenerErrCodesToErrReason(shoot.Status.LastErrors...)
+			s.instance.UpdateStateProcessing(
+				imv1.ConditionTypeRuntimeUpdate,
+				imv1.ConditionReasonProcessing,
+				"Shoot creation in progress")
+
+			return stopWithRequeue()
 		}
 
-		msg := fmt.Sprintf("error during cluster provisioning: reconcilation error for shoot %s, reason: %s, scheduling for retry", shoot.Name, reason)
-		m.log.Info(msg)
-		return stopWithRequeue()
+		if lastOperation.State == gardener.LastOperationStateSucceeded {
+			msg := fmt.Sprintf("Shoot %s successfully updated", shoot.Name)
+			m.log.Info(msg)
+
+			s.instance.UpdateStateProcessing(
+				imv1.ConditionTypeRuntimeUpdate,
+				imv1.ConditionReasonProcessingCompleted,
+				"Shoot creation in progress")
+
+			return stopWithNoRequeue()
+		}
+
+		if lastOperation.State == gardener.LastOperationStateFailed {
+
+			var reason ErrReason
+
+			if len(shoot.Status.LastErrors) > 0 {
+				reason = gardenerErrCodesToErrReason(shoot.Status.LastErrors...)
+			}
+
+			msg := fmt.Sprintf("error during cluster provisioning: reconcilation error for shoot %s, reason: %s, scheduling for retry", shoot.Name, reason)
+			m.log.Info(msg)
+
+			s.instance.UpdateStateError(
+				imv1.ConditionTypeRuntimeUpdate,
+				imv1.ConditionReasonProcessingErr,
+				string(reason))
+
+			return stopWithNoRequeue()
+		}
 	}
 
 	return stopWithNoRequeue()
@@ -119,17 +153,3 @@ func gardenerErrCodesToErrReason(lastErrors ...gardener.LastError) ErrReason {
 
 	return ErrReason(strings.Join(vals, ", "))
 }
-
-//func isProcessingCluster(s *systemState) bool {
-//	condition := meta.FindStatusCondition(s.instance.Status.Conditions, string(imv1.ConditionTypeRuntimeProvisioning))
-//	if condition == nil {
-//		return false
-//	}
-//
-//	if condition.Reason != string(imv1.ConditionReasonProcessing) &&
-//		condition.Reason != string(imv1.ConditionReasonProcessingErr) {
-//		return false
-//	}
-//
-//	return true
-//}

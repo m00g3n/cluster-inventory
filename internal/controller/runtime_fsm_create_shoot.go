@@ -36,8 +36,8 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 
 		s.instance.UpdateStateError(
 			imv1.ConditionTypeRuntimeProvisioning,
-			imv1.ConditionReasonCreationError,
-			"Gardener API error",
+			imv1.ConditionReasonGardenerError,
+			"Gardener API create error",
 		)
 
 		return stopWithRequeue()
