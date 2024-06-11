@@ -19,8 +19,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	kubeconfig2 "github.com/kyma-project/infrastructure-manager/internal/controller/kubeconfig"
-	runtime2 "github.com/kyma-project/infrastructure-manager/internal/controller/runtime"
+	kubeconfig_controller "github.com/kyma-project/infrastructure-manager/internal/controller/kubeconfig"
+	runtime_controller "github.com/kyma-project/infrastructure-manager/internal/controller/runtime"
 	"os"
 	"time"
 
@@ -129,7 +129,7 @@ func main() {
 
 	rotationPeriod := time.Duration(minimalRotationTimeRatio*expirationTime.Minutes()) * time.Minute
 	metrics := metrics.NewMetrics()
-	if err = kubeconfig2.NewGardenerClusterController(
+	if err = kubeconfig_controller.NewGardenerClusterController(
 		mgr,
 		kubeconfigProvider,
 		logger,
@@ -142,7 +142,7 @@ func main() {
 	}
 
 	if enableRuntimeReconciler {
-		if err = (&runtime2.RuntimeReconciler{
+		if err = (&runtime_controller.RuntimeReconciler{
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),
 			ShootClient:   shootClient,

@@ -17,6 +17,13 @@ limitations under the License.
 package runtime
 
 import (
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+)
+
+import (
 	"context"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	gardener_mocks "github.com/kyma-project/infrastructure-manager/internal/gardener/mocks"
@@ -25,11 +32,8 @@ import (
 	. "github.com/onsi/gomega"           //nolint:revive
 	. "github.com/stretchr/testify/mock" //nolint:revive
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"testing"
@@ -72,7 +76,11 @@ var _ = BeforeSuite(func() {
 	err = infrastructuremanagerv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme.Scheme})
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+		Metrics: metricsserver.Options{
+			BindAddress: ":8083",
+		},
+		Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
 
 	mockShootClient := &gardener_mocks.ShootClient{}

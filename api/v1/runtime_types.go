@@ -134,11 +134,11 @@ type APIServer struct {
 	AdditionalOidcConfig *[]gardener.OIDCConfig `json:"additionalOidcConfig,omitempty"`
 }
 
-// TODO: Specify Provider type as enum with limited set of values
-// similar to
-// https://github.com/kyma-project/application-connector-manager/blob/main/api/v1alpha1/applicationconnector_types.go#L73C1-L74C21
-// +kubebuilder:validation:Enum=debug;panic;fatal;error;warn;info;debug
-// type LogLevel string
+/////TODO: Specify Provider type as enum with limited set of values
+/////similar to
+/////https://github.com/kyma-project/application-connector-manager/blob/main/api/v1alpha1/applicationconnector_types.go#L73C1-L74C21
+/////+kubebuilder:validation:Enum=debug;panic;fatal;error;warn;info;debug
+/////type LogLevel string
 
 type Provider struct {
 	Type    string            `json:"type"`

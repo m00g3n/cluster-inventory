@@ -305,14 +305,6 @@ spec:
                   platformRegion:
                     type: string
                   provider:
-                    enum:
-                    - debug
-                    - panic
-                    - fatal
-                    - error
-                    - warn
-                    - info
-                    - debug
                     properties:
                       type:
                         type: string
