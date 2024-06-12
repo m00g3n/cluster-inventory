@@ -10,25 +10,14 @@ import (
 //- kcp.provisioner.kyma-project.io/runtime-id
 //- support.gardener.cloud/eu-access-for-cluster-nodes
 
-// support.gardener.cloud/eu-access-for-cluster-nodes is no longer set as it was added temporarily, and is no longer used by the Gardener
-
-// Provisioner was setting the following labels:
-//- acconut
-//- subaccount
-
 const (
 	ShootRuntimeIDAnnotation          = "infrastructuremanager.kyma-project.io/runtime-id"
 	ShootLicenceTypeAnnotation        = "infrastructuremanager.kyma-project.io/licence-type"
-	ShootGlobalAccountLabel           = "account"
-	ShootSubAccountLabel              = "subaccount"
 	RuntimeIDLabel                    = "kyma-project.io/runtime-id"
-	RuntimeGlobalAccountLabel         = "kyma-project.io/global-account-id"
-	RuntimeSubaccountLabel            = "kyma-project.io/subaccount-id"
 	ShootRestrictedEUAccessAnnotation = "support.gardener.cloud/eu-access-for-cluster-nodes"
 )
 
-func ExtendWithAnnotationsAndLabels(runtime imv1.Runtime, shoot *gardener.Shoot) error {
-	shoot.Labels = getLabels(runtime)
+func ExtendWithAnnotations(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 	shoot.Annotations = getAnnotations(runtime)
 
 	return nil
@@ -48,15 +37,6 @@ func getAnnotations(runtime imv1.Runtime) map[string]string {
 	}
 
 	return annotations
-}
-
-func getLabels(runtime imv1.Runtime) map[string]string {
-	labels := map[string]string{
-		ShootGlobalAccountLabel: runtime.Labels[RuntimeGlobalAccountLabel],
-		ShootSubAccountLabel:    runtime.Labels[RuntimeSubaccountLabel],
-	}
-
-	return labels
 }
 
 func isEuAccess(platformRegion string) bool {

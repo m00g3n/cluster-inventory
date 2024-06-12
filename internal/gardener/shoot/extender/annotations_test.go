@@ -9,14 +9,13 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestAnnotationsAndLabelsExtender(t *testing.T) {
+func TestAnnotationsExtender(t *testing.T) {
 	licenceType := "licence"
 
 	for _, testCase := range []struct {
 		name                string
 		runtime             imv1.Runtime
 		expectedAnnotations map[string]string
-		expectedLabels      map[string]string
 	}{
 		{
 			name: "Create with basic annotations",
@@ -31,9 +30,6 @@ func TestAnnotationsAndLabelsExtender(t *testing.T) {
 			},
 			expectedAnnotations: map[string]string{
 				"infrastructuremanager.kyma-project.io/runtime-id": "runtime-id"},
-			expectedLabels: map[string]string{
-				"account":    "account-id",
-				"subaccount": "subaccount-id"},
 		},
 		{
 			name: "Create licence type annotation",
@@ -54,9 +50,6 @@ func TestAnnotationsAndLabelsExtender(t *testing.T) {
 			expectedAnnotations: map[string]string{
 				"infrastructuremanager.kyma-project.io/runtime-id":   "runtime-id",
 				"infrastructuremanager.kyma-project.io/licence-type": "licence"},
-			expectedLabels: map[string]string{
-				"account":    "account-id",
-				"subaccount": "subaccount-id"},
 		},
 		{
 			name: "Create restricted EU access annotation for cf-eu11 region",
@@ -77,9 +70,6 @@ func TestAnnotationsAndLabelsExtender(t *testing.T) {
 			expectedAnnotations: map[string]string{
 				"infrastructuremanager.kyma-project.io/runtime-id":   "runtime-id",
 				"support.gardener.cloud/eu-access-for-cluster-nodes": "true"},
-			expectedLabels: map[string]string{
-				"account":    "account-id",
-				"subaccount": "subaccount-id"},
 		},
 		{
 			name: "Create restricted EU access annotation for cf-ch20 region",
@@ -100,16 +90,13 @@ func TestAnnotationsAndLabelsExtender(t *testing.T) {
 			expectedAnnotations: map[string]string{
 				"infrastructuremanager.kyma-project.io/runtime-id":   "runtime-id",
 				"support.gardener.cloud/eu-access-for-cluster-nodes": "true"},
-			expectedLabels: map[string]string{
-				"account":    "account-id",
-				"subaccount": "subaccount-id"},
 		},
 	} {
 		// given
 		shoot := fixEmptyGardenerShoot("shoot", "kcp-system")
 
 		// when
-		err := ExtendWithAnnotationsAndLabels(testCase.runtime, &shoot)
+		err := ExtendWithAnnotations(testCase.runtime, &shoot)
 		require.NoError(t, err)
 
 		// then

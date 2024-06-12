@@ -41,7 +41,8 @@ type ConverterConfig struct {
 
 func NewConverter(config ConverterConfig) Converter {
 	extenders := []Extend{
-		extender.ExtendWithAnnotationsAndLabels,
+		extender.ExtendWithAnnotations,
+		extender.ExtendWithLabels,
 		extender.NewExtendWithKubernetes(config.Kubernetes.DefaultVersion),
 		extender.ExtendWithNetworking,
 		extender.NewProviderExtender(config.Provider.AWS.EnableIMDSv2),
