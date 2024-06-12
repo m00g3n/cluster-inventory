@@ -305,6 +305,11 @@ spec:
                   platformRegion:
                     type: string
                   provider:
+                    enum:
+                    - aws
+                    - azure
+                    - gcp
+                    - openstack
                     properties:
                       type:
                         type: string
