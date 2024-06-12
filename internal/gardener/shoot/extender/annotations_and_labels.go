@@ -17,13 +17,14 @@ import (
 //- subaccount
 
 const (
-	ShootRuntimeIDAnnotation   = "infrastructuremanager.kyma-project.io/runtime-id"
-	ShootLicenceTypeAnnotation = "infrastructuremanager.kyma-project.io/licence-type"
-	ShootGlobalAccountLabel    = "account"
-	ShootSubAccountLabel       = "subaccount"
-	RuntimeIDLabel             = "kyma-project.io/runtime-id"
-	RuntimeGlobalAccountLabel  = "kyma-project.io/global-account-id"
-	RuntimeSubaccountLabel     = "kyma-project.io/subaccount-id"
+	ShootRuntimeIDAnnotation          = "infrastructuremanager.kyma-project.io/runtime-id"
+	ShootLicenceTypeAnnotation        = "infrastructuremanager.kyma-project.io/licence-type"
+	ShootGlobalAccountLabel           = "account"
+	ShootSubAccountLabel              = "subaccount"
+	RuntimeIDLabel                    = "kyma-project.io/runtime-id"
+	RuntimeGlobalAccountLabel         = "kyma-project.io/global-account-id"
+	RuntimeSubaccountLabel            = "kyma-project.io/subaccount-id"
+	ShootRestrictedEUAccessAnnotation = "support.gardener.cloud/eu-access-for-cluster-nodes"
 )
 
 func ExtendWithAnnotationsAndLabels(runtime imv1.Runtime, shoot *gardener.Shoot) error {
@@ -42,6 +43,10 @@ func getAnnotations(runtime imv1.Runtime) map[string]string {
 		annotations[ShootLicenceTypeAnnotation] = *runtime.Spec.Shoot.LicenceType
 	}
 
+	if isEuAccess(runtime.Spec.Shoot.PlatformRegion) {
+		annotations[ShootRestrictedEUAccessAnnotation] = "true"
+	}
+
 	return annotations
 }
 
@@ -52,4 +57,14 @@ func getLabels(runtime imv1.Runtime) map[string]string {
 	}
 
 	return labels
+}
+
+func isEuAccess(platformRegion string) bool {
+	switch platformRegion {
+	case "cf-eu11":
+		return true
+	case "cf-ch20":
+		return true
+	}
+	return false
 }

@@ -41,7 +41,6 @@ type ConverterConfig struct {
 
 func NewConverter(config ConverterConfig) Converter {
 	extenders := []Extend{
-		extender.ExtendWithRegion,
 		extender.ExtendWithAnnotationsAndLabels,
 		extender.NewExtendWithKubernetes(config.Kubernetes.DefaultVersion),
 		extender.ExtendWithNetworking,
@@ -66,6 +65,7 @@ func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
 		Spec: gardener.ShootSpec{
 			CloudProfileName:  "aws",
 			Purpose:           &runtime.Spec.Shoot.Purpose,
+			Region:            runtime.Spec.Shoot.Region,
 			SecretBindingName: &runtime.Spec.Shoot.SecretBindingName,
 			ControlPlane:      &runtime.Spec.Shoot.ControlPlane, //nolint:godox TODO: check HAavailability (also in migrator)
 		},
