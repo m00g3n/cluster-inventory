@@ -13,7 +13,7 @@ import (
 // support.gardener.cloud/eu-access-for-cluster-nodes is no longer set as it was added temporarily, and is no longer used by the Gardener
 
 // Provisioner was setting the following labels:
-//- accout
+//- acconut
 //- subaccount
 
 const (
