@@ -44,7 +44,6 @@ func NewConverter(config ConverterConfig) Converter {
 		extender.ExtendWithAnnotations,
 		extender.ExtendWithLabels,
 		extender.NewKubernetesVersionExtender(config.Kubernetes.DefaultVersion),
-		extender.ExtendWithNetworking,
 		extender.NewProviderExtender(config.Provider.AWS.EnableIMDSv2),
 		extender.NewExtendWithDNS(config.DNS.SecretName, config.DNS.DomainPrefix, config.DNS.ProviderType),
 		extender.ExtendWithOIDC,
@@ -68,7 +67,13 @@ func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
 			Purpose:           &runtime.Spec.Shoot.Purpose,
 			Region:            runtime.Spec.Shoot.Region,
 			SecretBindingName: &runtime.Spec.Shoot.SecretBindingName,
-			ControlPlane:      &runtime.Spec.Shoot.ControlPlane, //nolint:godox TODO: check HAavailability (also in migrator)
+			Networking: &gardener.Networking{
+				Type:     runtime.Spec.Shoot.Networking.Type,
+				Nodes:    &runtime.Spec.Shoot.Networking.Nodes,
+				Pods:     &runtime.Spec.Shoot.Networking.Pods,
+				Services: &runtime.Spec.Shoot.Networking.Services,
+			},
+			ControlPlane: &runtime.Spec.Shoot.ControlPlane, //nolint:godox TODO: check HAavailability (also in migrator)
 		},
 	}
 
@@ -79,8 +84,4 @@ func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
 	}
 
 	return shoot, nil
-}
-
-func PtrTo[T any](v T) *T {
-	return &v
 }
