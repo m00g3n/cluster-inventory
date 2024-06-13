@@ -21,10 +21,12 @@ import (
 	"github.com/onsi/gomega/types"
 )
 
+var withTestFinalizer = withFinalizer("test-me-plz")
+
 var _ = Describe("KIM sFnInitialise", func() {
 	now := metav1.NewTime(time.Now())
 
-	testContext, cancel := context.WithTimeout(context.Background(), time.Second)
+	testCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
 	// GIVEN
@@ -32,7 +34,6 @@ var _ = Describe("KIM sFnInitialise", func() {
 	testScheme := runtime.NewScheme()
 	util.Must(imv1.AddToScheme(testScheme))
 
-	withTestFinalizer := withFinalizer("test-me-plz")
 	withTestSchemeAndObjects := func(objs ...client.Object) fakeFSMOpt {
 		return func(fsm *fsm) error {
 			return withFakedK8sClient(testScheme, objs...)(fsm)
@@ -80,37 +81,39 @@ var _ = Describe("KIM sFnInitialise", func() {
 	testShootClientWithError := gardener_mocks.ShootClient{}
 	testShootClientWithError.On("Get", mock.Anything, testShoot.Name, mock.Anything).Return(nil, fmt.Errorf("test error"))
 
-	// THAN
+	testFunction := buildTestFunction(sFnInitialize)
+
+	// WHEN/THAN
 
 	DescribeTable(
 		"transition graph validation",
-		testInitialise,
+		testFunction,
 		Entry(
 			"should return nothing when CR is being deleted without finalizer",
-			testContext,
+			testCtx,
 			must(newFakeFSM, withTestFinalizer),
 			&systemState{instance: testRtWithDeletionTimestamp},
-			testInitialiseOpts{
+			testOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: BeNil(),
 			},
 		),
 		Entry(
 			"should return sFnDeleteShoot and no error when CR is being deleted with finalizer",
-			testContext,
+			testCtx,
 			must(newFakeFSM, withTestFinalizer),
 			&systemState{instance: testRtWithDeletionTimestampAndFinalizer},
-			testInitialiseOpts{
+			testOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: haveName("sFnDeleteShoot"),
 			},
 		),
 		Entry(
 			"should return sFnUpdateStatus and no error when CR has been created",
-			testContext,
+			testCtx,
 			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(&testRt)),
 			&systemState{instance: testRt},
-			testInitialiseOpts{
+			testOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: haveName("sFnUpdateStatus"),
 				StateMatch:       []types.GomegaMatcher{haveFinalizer("test-me-plz")},
@@ -118,20 +121,20 @@ var _ = Describe("KIM sFnInitialise", func() {
 		),
 		Entry(
 			"should return sFnPrepareCluster and no error when CR has been created and shoot exists",
-			testContext,
+			testCtx,
 			must(newFakeFSM, withTestFinalizer, withMockedShootClient(&testShootClient)),
 			&systemState{instance: testRtWithFinalizer},
-			testInitialiseOpts{
+			testOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: haveName("sFnPrepareCluster"),
 			},
 		),
 		Entry(
 			"should return sFnUpdateStatus and no error when shoot is missing",
-			testContext,
+			testCtx,
 			must(newFakeFSM, withTestFinalizer, withMockedShootClient(&testShootClientWithError)),
 			&systemState{instance: testRtWithFinalizer},
-			testInitialiseOpts{
+			testOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: haveName("sFnUpdateStatus"),
 			},
@@ -139,19 +142,21 @@ var _ = Describe("KIM sFnInitialise", func() {
 	)
 })
 
-type testInitialiseOpts struct {
+type testOpts struct {
 	MatchExpectedErr types.GomegaMatcher
 	MatchNextFnState types.GomegaMatcher
 	StateMatch       []types.GomegaMatcher
 }
 
-func testInitialise(ctx context.Context, r *fsm, s *systemState, ops testInitialiseOpts) {
-	sFn, _, err := sFnInitialize(ctx, r, s)
+func buildTestFunction(fn stateFn) func(context.Context, *fsm, *systemState, testOpts) {
+	return func(ctx context.Context, r *fsm, s *systemState, ops testOpts) {
+		sFn, _, err := fn(ctx, r, s)
 
-	Expect(err).To(ops.MatchExpectedErr)
-	Expect(sFn).To(ops.MatchNextFnState)
+		Expect(err).To(ops.MatchExpectedErr)
+		Expect(sFn).To(ops.MatchNextFnState)
 
-	for _, match := range ops.StateMatch {
-		Expect(&s.instance).Should(match)
+		for _, match := range ops.StateMatch {
+			Expect(&s.instance).Should(match)
+		}
 	}
 }
