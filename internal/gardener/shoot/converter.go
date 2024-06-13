@@ -45,7 +45,7 @@ func NewConverter(config ConverterConfig) Converter {
 		extender.ExtendWithLabels,
 		extender.NewKubernetesVersionExtender(config.Kubernetes.DefaultVersion),
 		extender.NewProviderExtender(config.Provider.AWS.EnableIMDSv2),
-		extender.NewExtendWithDNS(config.DNS.SecretName, config.DNS.DomainPrefix, config.DNS.ProviderType),
+		extender.NewDNSExtender(config.DNS.SecretName, config.DNS.DomainPrefix, config.DNS.ProviderType),
 		extender.ExtendWithOIDC,
 	}
 
