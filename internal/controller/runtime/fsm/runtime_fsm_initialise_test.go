@@ -3,11 +3,11 @@ package fsm
 import (
 	"context"
 	"fmt"
+
 	gardener_mocks "github.com/kyma-project/infrastructure-manager/internal/gardener/mocks"
 
 	"time"
 
-	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/stretchr/testify/mock"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -20,6 +20,8 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 )
+
+//go:generate go run ../../../../hack/generators/shoot-helper/main.go --pkg fsm --out runtime_fsm_shoot_cases_test.go
 
 func newTestFSM(finalizer string, objs ...client.Object) *fsm {
 	// create a new scheme for the test
@@ -43,11 +45,14 @@ func newTestFSM(finalizer string, objs ...client.Object) *fsm {
 	}
 }
 
-func newTestFSMWithGardener(finalizer string, shoot gardener.Shoot) *fsm {
+func newTestFSMWithGardener(finalizer string) *fsm {
 	// create a new scheme for the test
 	scheme := runtime.NewScheme()
 	// add supported types to the scheme
 	util.Must(imv1.AddToScheme(scheme))
+
+	shoot, err := ShootExample_AG_TEST.Get()
+	Expect(err).ShouldNot(HaveOccurred())
 
 	c := gardener_mocks.ShootClient{}
 	c.On("Get", mock.Anything, shoot.Name, mock.Anything).Return(&shoot, nil)
@@ -151,16 +156,11 @@ var _ = Describe("KIM sFnInitialise", func() {
 		Entry(
 			"should return sFnPrepareCluster and no error when CR has been created and shoot exists",
 			testContext,
-			newTestFSMWithGardener("test-me-plz", gardener.Shoot{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-instance",
-					Namespace: "default",
-				},
-			}),
+			newTestFSMWithGardener("test-me-plz"),
 			&systemState{
 				instance: imv1.Runtime{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:       "test-instance",
+						Name:       "ag-test",
 						Namespace:  "default",
 						Finalizers: []string{"test-me-plz"},
 					},
