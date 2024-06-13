@@ -3,7 +3,9 @@ package fsm
 import (
 	"context"
 	"fmt"
+
 	gardener_mocks "github.com/kyma-project/infrastructure-manager/internal/gardener/mocks"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"time"
 
@@ -12,8 +14,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	util "k8s.io/apimachinery/pkg/util/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	. "github.com/onsi/ginkgo/v2"
@@ -21,71 +21,66 @@ import (
 	"github.com/onsi/gomega/types"
 )
 
-func newTestFSM(finalizer string, objs ...client.Object) *fsm {
-	// create a new scheme for the test
-	scheme := runtime.NewScheme()
-	// add supported types to the scheme
-	util.Must(imv1.AddToScheme(scheme))
-
-	c := fake.NewClientBuilder().
-		WithScheme(scheme).
-		WithObjects(objs...).
-		Build()
-
-	return &fsm{
-		K8s: K8s{
-			ShootClient: nil,
-			Client:      c,
-		},
-		RCCfg: RCCfg{
-			Finalizer: finalizer,
-		},
-	}
-}
-
-func newTestFSMWithGardener(finalizer string, shoot gardener.Shoot) *fsm {
-	// create a new scheme for the test
-	scheme := runtime.NewScheme()
-	// add supported types to the scheme
-	util.Must(imv1.AddToScheme(scheme))
-
-	c := gardener_mocks.ShootClient{}
-	c.On("Get", mock.Anything, shoot.Name, mock.Anything).Return(&shoot, nil)
-
-	return &fsm{
-		K8s: K8s{
-			ShootClient: &c,
-		},
-		RCCfg: RCCfg{
-			Finalizer: finalizer,
-		},
-	}
-}
-
-func newTestFSMWithShootNotFound(finalizer string) *fsm {
-	// create a new scheme for the test
-	scheme := runtime.NewScheme()
-	// add supported types to the scheme
-	util.Must(imv1.AddToScheme(scheme))
-
-	c := gardener_mocks.ShootClient{}
-	c.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("not found"))
-
-	return &fsm{
-		K8s: K8s{
-			ShootClient: &c,
-		},
-		RCCfg: RCCfg{
-			Finalizer: finalizer,
-		},
-	}
-}
-
 var _ = Describe("KIM sFnInitialise", func() {
 	now := metav1.NewTime(time.Now())
 
 	testContext, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+
+	// GIVEN
+
+	testScheme := runtime.NewScheme()
+	util.Must(imv1.AddToScheme(testScheme))
+
+	withTestFinalizer := withFinalizer("test-me-plz")
+	withTestSchemeAndObjects := func(objs ...client.Object) fakeFSMOpt {
+		return func(fsm *fsm) error {
+			return withFakedK8sClient(testScheme, objs...)(fsm)
+		}
+	}
+
+	testRt := imv1.Runtime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-instance",
+			Namespace: "default",
+		},
+	}
+
+	testRtWithFinalizer := imv1.Runtime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       "test-instance",
+			Namespace:  "default",
+			Finalizers: []string{"test-me-plz"},
+		},
+	}
+
+	testRtWithDeletionTimestamp := imv1.Runtime{
+		ObjectMeta: metav1.ObjectMeta{
+			DeletionTimestamp: &now,
+		},
+	}
+
+	testRtWithDeletionTimestampAndFinalizer := imv1.Runtime{
+		ObjectMeta: metav1.ObjectMeta{
+			DeletionTimestamp: &now,
+			Finalizers:        []string{"test-me-plz"},
+		},
+	}
+
+	testShoot := gardener.Shoot{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-instance",
+			Namespace: "default",
+		},
+	}
+
+	testShootClient := gardener_mocks.ShootClient{}
+	testShootClient.On("Get", mock.Anything, testShoot.Name, mock.Anything).Return(&testShoot, nil)
+
+	testShootClientWithError := gardener_mocks.ShootClient{}
+	testShootClientWithError.On("Get", mock.Anything, testShoot.Name, mock.Anything).Return(nil, fmt.Errorf("test error"))
+
+	// THAN
 
 	DescribeTable(
 		"transition graph validation",
@@ -93,14 +88,8 @@ var _ = Describe("KIM sFnInitialise", func() {
 		Entry(
 			"should return nothing when CR is being deleted without finalizer",
 			testContext,
-			newTestFSM("test-me-plz"),
-			&systemState{
-				instance: imv1.Runtime{
-					ObjectMeta: metav1.ObjectMeta{
-						DeletionTimestamp: &now,
-					},
-				},
-			},
+			must(newFakeFSM, withTestFinalizer),
+			&systemState{instance: testRtWithDeletionTimestamp},
 			testInitialiseOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: BeNil(),
@@ -109,15 +98,8 @@ var _ = Describe("KIM sFnInitialise", func() {
 		Entry(
 			"should return sFnDeleteShoot and no error when CR is being deleted with finalizer",
 			testContext,
-			newTestFSM("test-me-plz"),
-			&systemState{
-				instance: imv1.Runtime{
-					ObjectMeta: metav1.ObjectMeta{
-						DeletionTimestamp: &now,
-						Finalizers:        []string{"test-me-plz"},
-					},
-				},
-			},
+			must(newFakeFSM, withTestFinalizer),
+			&systemState{instance: testRtWithDeletionTimestampAndFinalizer},
 			testInitialiseOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: haveName("sFnDeleteShoot"),
@@ -126,46 +108,19 @@ var _ = Describe("KIM sFnInitialise", func() {
 		Entry(
 			"should return sFnUpdateStatus and no error when CR has been created",
 			testContext,
-			newTestFSM("test-me-plz", &imv1.Runtime{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-instance",
-					Namespace: "default",
-				},
-			}),
-			&systemState{
-				instance: imv1.Runtime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-instance",
-						Namespace: "default",
-					},
-				},
-			},
+			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(&testRt)),
+			&systemState{instance: testRt},
 			testInitialiseOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: haveName("sFnUpdateStatus"),
-				StateMatch: []types.GomegaMatcher{
-					haveFinalizer("test-me-plz"),
-				},
+				StateMatch:       []types.GomegaMatcher{haveFinalizer("test-me-plz")},
 			},
 		),
 		Entry(
 			"should return sFnPrepareCluster and no error when CR has been created and shoot exists",
 			testContext,
-			newTestFSMWithGardener("test-me-plz", gardener.Shoot{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-instance",
-					Namespace: "default",
-				},
-			}),
-			&systemState{
-				instance: imv1.Runtime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:       "test-instance",
-						Namespace:  "default",
-						Finalizers: []string{"test-me-plz"},
-					},
-				},
-			},
+			must(newFakeFSM, withTestFinalizer, withMockedShootClient(&testShootClient)),
+			&systemState{instance: testRtWithFinalizer},
 			testInitialiseOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: haveName("sFnPrepareCluster"),
@@ -174,16 +129,8 @@ var _ = Describe("KIM sFnInitialise", func() {
 		Entry(
 			"should return sFnUpdateStatus and no error when shoot is missing",
 			testContext,
-			newTestFSMWithShootNotFound("test-me-plz"),
-			&systemState{
-				instance: imv1.Runtime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:       "test-instance",
-						Namespace:  "default",
-						Finalizers: []string{"test-me-plz"},
-					},
-				},
-			},
+			must(newFakeFSM, withTestFinalizer, withMockedShootClient(&testShootClientWithError)),
+			&systemState{instance: testRtWithFinalizer},
 			testInitialiseOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: haveName("sFnUpdateStatus"),
