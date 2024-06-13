@@ -19,18 +19,22 @@ func TestOidcExtender(t *testing.T) {
 		usernameClaim := "sub"
 
 		shoot := fixEmptyGardenerShoot("test", "kcp-system")
-		runtimeShoot := imv1.RuntimeShoot{
-			Kubernetes: imv1.Kubernetes{
-				Version: &kubernetesVersion,
-				KubeAPIServer: imv1.APIServer{
-					OidcConfig: gardener.OIDCConfig{
-						ClientID:    &clientID,
-						GroupsClaim: &groupsClaim,
-						IssuerURL:   &issuerURL,
-						SigningAlgs: []string{
-							"RS256",
+		runtimeShoot := imv1.Runtime{
+			Spec: imv1.RuntimeSpec{
+				Shoot: imv1.RuntimeShoot{
+					Kubernetes: imv1.Kubernetes{
+						Version: &kubernetesVersion,
+						KubeAPIServer: imv1.APIServer{
+							OidcConfig: gardener.OIDCConfig{
+								ClientID:    &clientID,
+								GroupsClaim: &groupsClaim,
+								IssuerURL:   &issuerURL,
+								SigningAlgs: []string{
+									"RS256",
+								},
+								UsernameClaim: &usernameClaim,
+							},
 						},
-						UsernameClaim: &usernameClaim,
 					},
 				},
 			},
@@ -42,7 +46,7 @@ func TestOidcExtender(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		assert.Equal(t, *runtimeShoot.Kubernetes.Version, shoot.Spec.Kubernetes.Version)
-		assert.Equal(t, runtimeShoot.Kubernetes.KubeAPIServer.OidcConfig, *shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig)
+		assert.Equal(t, *runtimeShoot.Spec.Shoot.Kubernetes.Version, shoot.Spec.Kubernetes.Version)
+		assert.Equal(t, runtimeShoot.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig, *shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig)
 	})
 }

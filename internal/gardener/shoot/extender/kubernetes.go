@@ -5,16 +5,16 @@ import (
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 )
 
-func NewExtendWithKubernetes(defaultKubernetesVersion string) Extend {
-	return func(runtime imv1.RuntimeShoot, shoot *gardener.Shoot) error {
-		kubernetesVersion := runtime.Kubernetes.Version
+func NewExtendWithKubernetes(defaultKubernetesVersion string) func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
+	return func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
+		kubernetesVersion := runtime.Spec.Shoot.Kubernetes.Version
 		if kubernetesVersion == nil || *kubernetesVersion == "" {
 			kubernetesVersion = &defaultKubernetesVersion
 		}
 
 		shoot.Spec.Kubernetes.Version = *kubernetesVersion
 
-		oidcConfig := runtime.Kubernetes.KubeAPIServer.OidcConfig
+		oidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig
 
 		shoot.Spec.Kubernetes.KubeAPIServer = &gardener.KubeAPIServerConfig{
 			OIDCConfig: &gardener.OIDCConfig{
