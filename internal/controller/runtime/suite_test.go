@@ -179,7 +179,7 @@ func fixGardenerShootsForProvisioning(shoot *gardener_api.Shoot) []*gardener_api
 
 	readyShoot.Status.LastOperation.State = gardener_api.LastOperationStateSucceeded
 
-	return []*gardener_api.Shoot{missingShoot, initialisedShoot, processingShoot, readyShoot}
+	return []*gardener_api.Shoot{missingShoot, initialisedShoot, processingShoot, readyShoot, readyShoot}
 }
 
 func fixConverterConfigForTests() gardener_shoot.ConverterConfig {
