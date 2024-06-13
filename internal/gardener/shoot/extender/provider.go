@@ -13,19 +13,26 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func NewProviderExtender(enableIMDSv2 bool) Extend {
-	return func(runtimeShoot imv1.RuntimeShoot, shoot *gardener.Shoot) error {
+const (
+	ProviderTypeAWS       = "aws"
+	ProviderTypeAzure     = "azure"
+	ProviderTypeGCP       = "gcp"
+	ProviderTypeOpenstack = "openstack"
+)
+
+func NewProviderExtender(enableIMDSv2 bool) func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
+	return func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 		provider := &shoot.Spec.Provider
-		provider.Type = runtimeShoot.Provider.Type
-		provider.Workers = runtimeShoot.Provider.Workers
+		provider.Type = runtime.Spec.Shoot.Provider.Type
+		provider.Workers = runtime.Spec.Shoot.Provider.Workers
 
 		var err error
-		provider.InfrastructureConfig, provider.ControlPlaneConfig, err = getConfig(runtimeShoot)
+		provider.InfrastructureConfig, provider.ControlPlaneConfig, err = getConfig(runtime.Spec.Shoot)
 		if err != nil {
 			return err
 		}
 
-		if runtimeShoot.Provider.Type == "aws" && enableIMDSv2 {
+		if runtime.Spec.Shoot.Provider.Type == "aws" && enableIMDSv2 {
 			provider.Workers[0].ProviderConfig, err = getAWSWorkerConfig()
 		}
 
@@ -54,20 +61,20 @@ func getConfig(runtimeShoot imv1.RuntimeShoot) (infrastructureConfig *runtime.Ra
 	}
 
 	switch runtimeShoot.Provider.Type {
-	case "aws":
+	case ProviderTypeAWS:
 		{
 			return getConfigForProvider(runtimeShoot, aws.GetInfrastructureConfig, aws.GetControlPlaneConfig)
 		}
-	case "azure":
+	case ProviderTypeAzure:
 		{
 			// Azure shoots are all zoned, put probably it not be validated here.
 			return getConfigForProvider(runtimeShoot, azure.GetInfrastructureConfig, azure.GetControlPlaneConfig)
 		}
-	case "gcp":
+	case ProviderTypeGCP:
 		{
 			return getConfigForProvider(runtimeShoot, gcp.GetInfrastructureConfig, gcp.GetControlPlaneConfig)
 		}
-	case "openstack":
+	case ProviderTypeOpenstack:
 		{
 			return getConfigForProvider(runtimeShoot, openstack.GetInfrastructureConfig, openstack.GetControlPlaneConfig)
 		}

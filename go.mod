@@ -1,6 +1,6 @@
 module github.com/kyma-project/infrastructure-manager
 
-go 1.22.3
+go 1.22.4
 
 require (
 	github.com/gardener/gardener v1.96.0
