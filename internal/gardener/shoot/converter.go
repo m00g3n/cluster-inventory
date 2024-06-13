@@ -43,10 +43,11 @@ func NewConverter(config ConverterConfig) Converter {
 	extenders := []Extend{
 		extender.ExtendWithAnnotations,
 		extender.ExtendWithLabels,
-		extender.NewExtendWithKubernetes(config.Kubernetes.DefaultVersion),
+		extender.NewKubernetesVersionExtender(config.Kubernetes.DefaultVersion),
 		extender.ExtendWithNetworking,
 		extender.NewProviderExtender(config.Provider.AWS.EnableIMDSv2),
 		extender.NewExtendWithDNS(config.DNS.SecretName, config.DNS.DomainPrefix, config.DNS.ProviderType),
+		extender.ExtendWithOIDC,
 	}
 
 	return Converter{
