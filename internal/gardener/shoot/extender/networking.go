@@ -5,8 +5,8 @@ import (
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 )
 
-func ExtendWithNetworking(runtimeShoot imv1.RuntimeShoot, shoot *gardener.Shoot) error {
-	runtimeNetworking := runtimeShoot.Networking
+func ExtendWithNetworking(runtime imv1.Runtime, shoot *gardener.Shoot) error {
+	runtimeNetworking := runtime.Spec.Shoot.Networking
 
 	shoot.Spec.Networking = &gardener.Networking{
 		Type:     runtimeNetworking.Type,
