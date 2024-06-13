@@ -26,7 +26,7 @@ func NewProviderExtender(enableIMDSv2 bool) func(runtime imv1.Runtime, shoot *ga
 			return err
 		}
 
-		if runtime.Spec.Shoot.Provider.Type == "aws" && enableIMDSv2 {
+		if runtime.Spec.Shoot.Provider.Type == hyperscaler.TypeAWS && enableIMDSv2 {
 			provider.Workers[0].ProviderConfig, err = getAWSWorkerConfig()
 		}
 
