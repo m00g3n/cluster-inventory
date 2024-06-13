@@ -1,6 +1,7 @@
 package fsm
 
 import (
+	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 )
 
@@ -8,6 +9,7 @@ import (
 type systemState struct {
 	instance imv1.Runtime
 	snapshot imv1.RuntimeStatus
+	shoot    *gardener_api.Shoot
 }
 
 func (s *systemState) saveRuntimeStatus() {

@@ -3,8 +3,6 @@ package fsm
 import (
 	"context"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -45,18 +43,9 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 		return nil, nil, nil
 	}
 
-	// TODO cache the shoot in State
-
-	_, err := m.ShootClient.Get(ctx, s.instance.Name, v1.GetOptions{})
-
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			m.log.Info("Gardener shoot does not exist, creating new one")
-			return switchState(sFnCreateShoot)
-		}
-
-		m.log.Info("Failed to get shoot", "error", err)
-		return stopWithRequeue()
+	if s.shoot == nil {
+		m.log.Info("Gardener shoot does not exist, creating new one")
+		return switchState(sFnCreateShoot)
 	}
 
 	return switchState(sFnPrepareCluster)
