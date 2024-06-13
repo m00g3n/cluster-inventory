@@ -26,7 +26,7 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 			return stopWithErrorAndRequeue(err)
 		}
 
-		s.instance.UpdateStateProcessing(
+		s.instance.UpdateStateCreating(
 			imv1.ConditionTypeRuntimeProvisioning,
 			imv1.ConditionReasonInitialized,
 			"initialized",
@@ -44,6 +44,8 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 		// stop state machine ???
 		return nil, nil, nil
 	}
+
+	// TODO cache the shoot in State
 
 	_, err := m.ShootClient.Get(ctx, s.instance.Name, v1.GetOptions{})
 

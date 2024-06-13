@@ -19,10 +19,10 @@ func sFnProcessShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctr
 
 	// TODO: now let's process shoot get kubeconfig and create cluster role bindings
 
-	s.instance.UpdateStateProcessing(
+	s.instance.UpdateStateReady(
 		imv1.ConditionTypeRuntimeProvisioning,
-		imv1.ConditionReasonProcessing,
-		"Runtime processing completed successfully")
+		imv1.ConditionReasonConfigurationCompleted,
+		"Runtime creation completed successfully")
 
 	return stopWithNoRequeue()
 }

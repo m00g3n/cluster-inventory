@@ -59,7 +59,7 @@ func sFnPrepareCluster(ctx context.Context, m *fsm, s *systemState) (stateFn, *c
 				s.instance.UpdateStateCreating(
 					imv1.ConditionTypeRuntimeProvisioning,
 					imv1.ConditionReasonShootCreationCompleted,
-					"Shoot creation completed successfully")
+					"Shoot creation done")
 
 				return stopWithRequeue()
 			}
@@ -102,6 +102,7 @@ func sFnPrepareCluster(ctx context.Context, m *fsm, s *systemState) (stateFn, *c
 			return stopWithRequeue()
 		}
 
+		// Runtime update is successful
 		if lastOperation.State == gardener.LastOperationStateSucceeded {
 			msg := fmt.Sprintf("Shoot %s successfully updated", shoot.Name)
 			m.log.Info(msg)
@@ -114,6 +115,7 @@ func sFnPrepareCluster(ctx context.Context, m *fsm, s *systemState) (stateFn, *c
 			return stopWithNoRequeue()
 		}
 
+		// Runtime update is failed
 		if lastOperation.State == gardener.LastOperationStateFailed {
 
 			var reason ErrReason

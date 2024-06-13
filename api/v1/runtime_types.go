@@ -49,15 +49,16 @@ const (
 type RuntimeConditionReason string
 
 const (
-	ConditionReasonVerificationErr     = RuntimeConditionReason("VerificationErr")
-	ConditionReasonVerified            = RuntimeConditionReason("Verified")
-	ConditionReasonProcessingCompleted = RuntimeConditionReason("Processing Completed")
 	ConditionReasonProcessing          = RuntimeConditionReason("Processing")
 	ConditionReasonProcessingErr       = RuntimeConditionReason("ProcessingErr")
+	ConditionReasonProcessingCompleted = RuntimeConditionReason("ProcessingCompleted")
 
 	ConditionReasonInitialized            = RuntimeConditionReason("Initialised")
-	ConditionReasonShootCreationPending   = RuntimeConditionReason("Shoot creation pending")
-	ConditionReasonShootCreationCompleted = RuntimeConditionReason("Shoot creation completed")
+	ConditionReasonShootCreationPending   = RuntimeConditionReason("Pending")
+	ConditionReasonShootCreationCompleted = RuntimeConditionReason("ShootCreationCompleted")
+	ConditionReasonConfigurationStarted   = RuntimeConditionReason("ConfigurationStarted")
+	ConditionReasonConfigurationCompleted = RuntimeConditionReason("ConfigurationCompleted")
+	ConditionReasonConfigurationErr       = RuntimeConditionReason("ConfigurationError")
 
 	ConditionReasonDeletion        = RuntimeConditionReason("Deletion")
 	ConditionReasonDeletionErr     = RuntimeConditionReason("DeletionErr")
@@ -65,9 +66,6 @@ const (
 	ConditionReasonCreationError   = RuntimeConditionReason("CreationErr")
 	ConditionReasonGardenerError   = RuntimeConditionReason("GardenerErr")
 	ConditionReasonDeleted         = RuntimeConditionReason("Deleted")
-
-	ConditionTypeInstalled = RuntimeConditionReason("Installed")
-	ConditionTypeDeleted   = RuntimeConditionReason("Deleted")
 )
 
 //+kubebuilder:object:root=true
@@ -105,7 +103,7 @@ type RuntimeSpec struct {
 type RuntimeStatus struct {
 	// State signifies current state of Runtime
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=Processing;Deleting;Ready;Error
+	// +kubebuilder:validation:Enum=Creating;Processing;Deleting;Ready;Error
 	State State `json:"state,omitempty"`
 
 	// List of status conditions to indicate the status of a ServiceInstance.
@@ -136,9 +134,8 @@ type APIServer struct {
 	AdditionalOidcConfig *[]gardener.OIDCConfig `json:"additionalOidcConfig,omitempty"`
 }
 
-//+kubebuilder:validation:Enum=aws;azure;gcp;openstack
-
 type Provider struct {
+	//+kubebuilder:validation:Enum=aws;azure;gcp;openstack
 	Type    string            `json:"type"`
 	Workers []gardener.Worker `json:"workers"`
 }
@@ -188,6 +185,18 @@ func (k *Runtime) UpdateStateProcessing(c RuntimeConditionType, r RuntimeConditi
 	meta.SetStatusCondition(&k.Status.Conditions, condition)
 }
 
+func (k *Runtime) UpdateStateReady(c RuntimeConditionType, r RuntimeConditionReason, msg string) {
+	k.Status.State = RuntimeStateReady
+	condition := metav1.Condition{
+		Type:               string(c),
+		Status:             "True",
+		LastTransitionTime: metav1.Now(),
+		Reason:             string(r),
+		Message:            msg,
+	}
+	meta.SetStatusCondition(&k.Status.Conditions, condition)
+}
+
 func (k *Runtime) UpdateStateDeletion(c RuntimeConditionType, r RuntimeConditionReason, msg string) {
 	k.Status.State = RuntimeStateDeleting
 	condition := metav1.Condition{
@@ -216,7 +225,7 @@ func (k *Runtime) UpdateStateError(c RuntimeConditionType, r RuntimeConditionRea
 	k.Status.State = RuntimeStateError
 	condition := metav1.Condition{
 		Type:               string(c),
-		Status:             "Error",
+		Status:             "True",
 		LastTransitionTime: metav1.Now(),
 		Reason:             string(r),
 		Message:            msg,

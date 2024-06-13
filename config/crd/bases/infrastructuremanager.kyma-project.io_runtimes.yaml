@@ -305,13 +305,13 @@ spec:
                   platformRegion:
                     type: string
                   provider:
-                    enum:
-                    - aws
-                    - azure
-                    - gcp
-                    - openstack
                     properties:
                       type:
+                        enum:
+                        - aws
+                        - azure
+                        - gcp
+                        - openstack
                         type: string
                       workers:
                         items:
@@ -1110,6 +1110,7 @@ spec:
               state:
                 description: State signifies current state of Runtime
                 enum:
+                - Creating
                 - Processing
                 - Deleting
                 - Ready

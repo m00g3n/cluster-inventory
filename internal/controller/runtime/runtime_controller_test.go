@@ -17,17 +17,14 @@ limitations under the License.
 package runtime
 
 import (
+	"context"
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-)
-
-import (
-	"context"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"time"
 )
 
 var _ = Describe("Runtime Controller", func() {
@@ -40,16 +37,6 @@ var _ = Describe("Runtime Controller", func() {
 			Name:      ResourceName,
 			Namespace: "default",
 		}
-		var runtime imv1.Runtime
-
-		BeforeEach(func() {
-			By("creating the custom resource for the Kind Runtime")
-			err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
-			if err != nil && errors.IsNotFound(err) {
-				runtimeStub := CreateRuntimeStub(ResourceName)
-				Expect(k8sClient.Create(ctx, runtimeStub)).To(Succeed())
-			}
-		})
 
 		AfterEach(func() {
 			resource := &imv1.Runtime{}
@@ -58,9 +45,35 @@ var _ = Describe("Runtime Controller", func() {
 
 			By("Cleanup the specific resource instance Runtime")
 			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
+
+			By("Cleanup ShootClient mocks")
+			clearMockCalls(mockShootClient)
 		})
-		It("should successfully create and delete Runtime CR", func() {
-			// BeforeEach() and AfterEach() will create and delete the resource
+
+		It("Should successfully create new Shoot from provided Runtime and set Ready status on CR", func() {
+
+			By("Setup the mock of ShootClient for Provisioning")
+			setupShootClientMockForProvisioning(mockShootClient)
+
+			By("Create Runtime CR")
+			runtimeStub := CreateRuntimeStub(ResourceName)
+			Expect(k8sClient.Create(ctx, runtimeStub)).To(Succeed())
+
+			By("Wait for shoot to be created")
+
+			Eventually(func() bool {
+				runtime := imv1.Runtime{}
+				err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
+
+				if err != nil {
+					return false
+				}
+
+				return runtime.Status.State == imv1.RuntimeStateReady
+
+			}, time.Second*300, time.Second*3).Should(BeTrue())
+
+			mockShootClient.AssertExpectations(GinkgoT())
 		})
 	})
 })
@@ -68,8 +81,9 @@ var _ = Describe("Runtime Controller", func() {
 func CreateRuntimeStub(resourceName string) *imv1.Runtime {
 	resource := &imv1.Runtime{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      resourceName,
-			Namespace: "default",
+			Name:       resourceName,
+			Namespace:  "default",
+			Finalizers: []string{"finalizer.infrastructure.kyma-project.io"},
 		},
 		Spec: imv1.RuntimeSpec{
 			Shoot: imv1.RuntimeShoot{
