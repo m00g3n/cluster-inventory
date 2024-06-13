@@ -5,19 +5,13 @@ import (
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/aws"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/azure"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/gcp"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/openstack"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-)
-
-const (
-	ProviderTypeAWS       = "aws"
-	ProviderTypeAzure     = "azure"
-	ProviderTypeGCP       = "gcp"
-	ProviderTypeOpenstack = "openstack"
 )
 
 func NewProviderExtender(enableIMDSv2 bool) func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
@@ -61,20 +55,20 @@ func getConfig(runtimeShoot imv1.RuntimeShoot) (infrastructureConfig *runtime.Ra
 	}
 
 	switch runtimeShoot.Provider.Type {
-	case ProviderTypeAWS:
+	case hyperscaler.TypeAWS:
 		{
 			return getConfigForProvider(runtimeShoot, aws.GetInfrastructureConfig, aws.GetControlPlaneConfig)
 		}
-	case ProviderTypeAzure:
+	case hyperscaler.TypeAzure:
 		{
 			// Azure shoots are all zoned, put probably it not be validated here.
 			return getConfigForProvider(runtimeShoot, azure.GetInfrastructureConfig, azure.GetControlPlaneConfig)
 		}
-	case ProviderTypeGCP:
+	case hyperscaler.TypeGCP:
 		{
 			return getConfigForProvider(runtimeShoot, gcp.GetInfrastructureConfig, gcp.GetControlPlaneConfig)
 		}
-	case ProviderTypeOpenstack:
+	case hyperscaler.TypeOpenStack:
 		{
 			return getConfigForProvider(runtimeShoot, openstack.GetInfrastructureConfig, openstack.GetControlPlaneConfig)
 		}

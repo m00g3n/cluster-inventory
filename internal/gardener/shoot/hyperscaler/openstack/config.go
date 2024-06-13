@@ -8,9 +8,11 @@ import (
 )
 
 const (
-	infrastructureConfigKind = "InfrastructureConfig"
-	controlPlaneConfigKind   = "ControlPlaneConfig"
-	apiVersion               = "openstack.provider.extensions.gardener.cloud/v1alpha1"
+	infrastructureConfigKind    = "InfrastructureConfig"
+	controlPlaneConfigKind      = "ControlPlaneConfig"
+	apiVersion                  = "openstack.provider.extensions.gardener.cloud/v1alpha1"
+	defaultFloatingPoolName     = "FloatingIP-external-kyma-01"
+	defaultLoadBalancerProvider = "f5"
 )
 
 func GetInfrastructureConfig(workerCIDR string, _ []string) ([]byte, error) {
@@ -27,7 +29,7 @@ func NewInfrastructureConfig(workerCIDR string) v1alpha1.InfrastructureConfig {
 			Kind:       infrastructureConfigKind,
 			APIVersion: apiVersion,
 		},
-		FloatingPoolName: "FloatingIP-external-kyma-01",
+		FloatingPoolName: defaultFloatingPoolName,
 		Networks: v1alpha1.Networks{
 			Workers: workerCIDR,
 		},
@@ -40,6 +42,6 @@ func NewControlPlaneConfig() *v1alpha1.ControlPlaneConfig {
 			Kind:       controlPlaneConfigKind,
 			APIVersion: apiVersion,
 		},
-		LoadBalancerProvider: "f5",
+		LoadBalancerProvider: defaultLoadBalancerProvider,
 	}
 }

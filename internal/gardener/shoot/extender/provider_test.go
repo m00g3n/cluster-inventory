@@ -7,6 +7,7 @@ import (
 	"github.com/gardener/gardener-extension-provider-aws/pkg/apis/aws/v1alpha1"
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -91,7 +92,7 @@ func TestProviderExtender(t *testing.T) {
 
 func fixAWSProvider() imv1.Provider {
 	return imv1.Provider{
-		Type: "aws",
+		Type: hyperscaler.TypeAWS,
 		Workers: []gardener.Worker{
 			{
 				Name: "worker",
@@ -112,7 +113,7 @@ func fixAWSProvider() imv1.Provider {
 
 func fixAWSProviderWithMultipleWorkers() imv1.Provider {
 	return imv1.Provider{
-		Type: "aws",
+		Type: hyperscaler.TypeAWS,
 		Workers: []gardener.Worker{
 			{
 				Name: "worker",
