@@ -34,9 +34,14 @@ type KubernetesConfig struct {
 }
 
 type ConverterConfig struct {
-	Kubernetes KubernetesConfig
-	DNS        DNSConfig
-	Provider   ProviderConfig
+	Kubernetes   KubernetesConfig
+	DNS          DNSConfig
+	Provider     ProviderConfig
+	MachineImage MachineImageConfig
+}
+
+type MachineImageConfig struct {
+	DefaultVersion string
 }
 
 func NewConverter(config ConverterConfig) Converter {
@@ -44,7 +49,7 @@ func NewConverter(config ConverterConfig) Converter {
 		extender.ExtendWithAnnotations,
 		extender.ExtendWithLabels,
 		extender.NewKubernetesVersionExtender(config.Kubernetes.DefaultVersion),
-		extender.NewProviderExtender(config.Provider.AWS.EnableIMDSv2),
+		extender.NewProviderExtender(config.Provider.AWS.EnableIMDSv2, config.MachineImage.DefaultVersion),
 		extender.NewDNSExtender(config.DNS.SecretName, config.DNS.DomainPrefix, config.DNS.ProviderType),
 		extender.ExtendWithOIDC,
 	}

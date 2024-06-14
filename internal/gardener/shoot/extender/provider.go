@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func NewProviderExtender(enableIMDSv2 bool) func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
+func NewProviderExtender(enableIMDSv2 bool, defaultMachineImageVersion string) func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 	return func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 		provider := &shoot.Spec.Provider
 		provider.Type = runtime.Spec.Shoot.Provider.Type
@@ -26,9 +26,8 @@ func NewProviderExtender(enableIMDSv2 bool) func(runtime imv1.Runtime, shoot *ga
 			return err
 		}
 
-		if runtime.Spec.Shoot.Provider.Type == hyperscaler.TypeAWS && enableIMDSv2 {
-			provider.Workers[0].ProviderConfig, err = getAWSWorkerConfig()
-		}
+		setDefaultMachineImageVersion(provider, defaultMachineImageVersion)
+		err = setWorkerConfig(provider, provider.Type, enableIMDSv2)
 
 		return err
 	}
@@ -95,4 +94,41 @@ func getZones(workers []gardener.Worker) []string {
 	slices.Sort(zones)
 
 	return slices.Compact(zones)
+}
+
+func setWorkerConfig(provider *gardener.Provider, providerType string, enableIMDSv2 bool) error {
+	if providerType != hyperscaler.TypeAWS || !enableIMDSv2 {
+		return nil
+	}
+
+	for i := 0; i < len(provider.Workers); i++ {
+		var err error
+		provider.Workers[i].ProviderConfig, err = getAWSWorkerConfig()
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func setDefaultMachineImageVersion(provider *gardener.Provider, defaultMachineImageVersion string) {
+	for i := 0; i < len(provider.Workers); i++ {
+		worker := &provider.Workers[i]
+
+		if worker.Machine.Image == nil {
+			worker.Machine.Image = &gardener.ShootMachineImage{
+				Version: &defaultMachineImageVersion,
+			}
+
+			continue
+		}
+		machineImageVersion := worker.Machine.Image.Version
+		if machineImageVersion == nil || *machineImageVersion == "" {
+			machineImageVersion = &defaultMachineImageVersion
+		}
+
+		worker.Machine.Image.Version = machineImageVersion
+	}
 }

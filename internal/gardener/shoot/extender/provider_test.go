@@ -14,31 +14,37 @@ import (
 
 func TestProviderExtender(t *testing.T) {
 	for tname, testCase := range map[string]struct {
-		Runtime            imv1.Runtime
-		EnableIMDSv2       bool
-		ExpectedZonesCount int
+		Runtime                     imv1.Runtime
+		EnableIMDSv2                bool
+		DefaultMachineImageVersion  string
+		ExpectedMachineImageVersion string
+		ExpectedZonesCount          int
 	}{
 		"Create provider specific config for AWS without worker config": {
 			Runtime: imv1.Runtime{
 				Spec: imv1.RuntimeSpec{
 					Shoot: imv1.RuntimeShoot{
-						Provider: fixAWSProvider(),
+						Provider: fixAWSProvider("1312.2.0"),
 					},
 				},
 			},
-			EnableIMDSv2:       false,
-			ExpectedZonesCount: 3,
+			EnableIMDSv2:                false,
+			DefaultMachineImageVersion:  "1312.3.0",
+			ExpectedMachineImageVersion: "1312.2.0",
+			ExpectedZonesCount:          3,
 		},
 		"Create provider specific config for AWS with worker config": {
 			Runtime: imv1.Runtime{
 				Spec: imv1.RuntimeSpec{
 					Shoot: imv1.RuntimeShoot{
-						Provider: fixAWSProvider(),
+						Provider: fixAWSProvider(""),
 					},
 				},
 			},
-			EnableIMDSv2:       true,
-			ExpectedZonesCount: 3,
+			EnableIMDSv2:                true,
+			DefaultMachineImageVersion:  "1312.3.0",
+			ExpectedMachineImageVersion: "1312.3.0",
+			ExpectedZonesCount:          3,
 		},
 		"Create provider specific config for AWS with multiple workers": {
 			Runtime: imv1.Runtime{
@@ -48,8 +54,10 @@ func TestProviderExtender(t *testing.T) {
 					},
 				},
 			},
-			EnableIMDSv2:       false,
-			ExpectedZonesCount: 3,
+			EnableIMDSv2:                false,
+			DefaultMachineImageVersion:  "1312.3.0",
+			ExpectedMachineImageVersion: "1312.3.0",
+			ExpectedZonesCount:          3,
 		},
 	} {
 		t.Run(tname, func(t *testing.T) {
@@ -57,13 +65,13 @@ func TestProviderExtender(t *testing.T) {
 			shoot := fixEmptyGardenerShoot("cluster", "kcp-system")
 
 			// when
-			extender := NewProviderExtender(testCase.EnableIMDSv2)
+			extender := NewProviderExtender(testCase.EnableIMDSv2, testCase.DefaultMachineImageVersion)
 			err := extender(testCase.Runtime, &shoot)
 
 			// then
 			require.NoError(t, err)
 
-			assertProvider(t, testCase.Runtime.Spec.Shoot, shoot, testCase.EnableIMDSv2)
+			assertProvider(t, testCase.Runtime.Spec.Shoot, shoot, testCase.EnableIMDSv2, testCase.ExpectedMachineImageVersion)
 			assertProviderSpecificConfig(t, shoot, testCase.ExpectedZonesCount)
 		})
 	}
@@ -82,7 +90,7 @@ func TestProviderExtender(t *testing.T) {
 		}
 
 		// when
-		extender := NewProviderExtender(false)
+		extender := NewProviderExtender(false, "")
 		err := extender(runtime, &shoot)
 
 		// then
@@ -90,14 +98,15 @@ func TestProviderExtender(t *testing.T) {
 	})
 }
 
-func fixAWSProvider() imv1.Provider {
+func fixAWSProvider(machineImageVersion string) imv1.Provider {
 	return imv1.Provider{
 		Type: hyperscaler.TypeAWS,
 		Workers: []gardener.Worker{
 			{
 				Name: "worker",
 				Machine: gardener.Machine{
-					Type: "m6i.large",
+					Type:  "m6i.large",
+					Image: fixMachineImage(machineImageVersion),
 				},
 				Minimum: 1,
 				Maximum: 3,
@@ -109,6 +118,16 @@ func fixAWSProvider() imv1.Provider {
 			},
 		},
 	}
+}
+
+func fixMachineImage(machineImageVersion string) *gardener.ShootMachineImage {
+	if machineImageVersion != "" {
+		return &gardener.ShootMachineImage{
+			Version: &machineImageVersion,
+		}
+	}
+
+	return &gardener.ShootMachineImage{}
 }
 
 func fixAWSProviderWithMultipleWorkers() imv1.Provider {
@@ -130,7 +149,8 @@ func fixAWSProviderWithMultipleWorkers() imv1.Provider {
 			{
 				Name: "worker",
 				Machine: gardener.Machine{
-					Type: "m6i.large",
+					Type:  "m6i.large",
+					Image: &gardener.ShootMachineImage{},
 				},
 				Minimum: 1,
 				Maximum: 3,
@@ -155,19 +175,22 @@ func fixAWSProviderWithMultipleWorkers() imv1.Provider {
 	}
 }
 
-func assertProvider(t *testing.T, runtimeShoot imv1.RuntimeShoot, shoot gardener.Shoot, expectWorkerConfig bool) {
+func assertProvider(t *testing.T, runtimeShoot imv1.RuntimeShoot, shoot gardener.Shoot, expectWorkerConfig bool, expectedMachineImageVersion string) {
 	assert.Equal(t, runtimeShoot.Provider.Type, shoot.Spec.Provider.Type)
 	assert.Equal(t, runtimeShoot.Provider.Workers, shoot.Spec.Provider.Workers)
 	assert.NotEmpty(t, shoot.Spec.Provider.InfrastructureConfig)
 	assert.NotEmpty(t, shoot.Spec.Provider.InfrastructureConfig.Raw)
 	assert.NotEmpty(t, shoot.Spec.Provider.ControlPlaneConfig)
 	assert.NotEmpty(t, shoot.Spec.Provider.ControlPlaneConfig.Raw)
-
-	if expectWorkerConfig {
-		assert.NotEmpty(t, shoot.Spec.Provider.Workers[0].ProviderConfig)
-		assert.NotEmpty(t, shoot.Spec.Provider.Workers[0].ProviderConfig.Raw)
-	} else {
-		assert.Empty(t, shoot.Spec.Provider.Workers[0].ProviderConfig)
+	assert.NotEmpty(t, shoot.Spec.Provider.ControlPlaneConfig.Raw)
+	for _, worker := range shoot.Spec.Provider.Workers {
+		if expectWorkerConfig {
+			assert.NotEmpty(t, worker.ProviderConfig)
+			assert.NotEmpty(t, worker.ProviderConfig.Raw)
+		} else {
+			assert.Empty(t, worker.ProviderConfig)
+		}
+		assert.Equal(t, expectedMachineImageVersion, *worker.Machine.Image.Version)
 	}
 }
 
