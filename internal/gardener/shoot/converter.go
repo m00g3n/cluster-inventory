@@ -13,6 +13,7 @@ type Extend func(imv1.Runtime, *gardener.Shoot) error
 
 type Converter struct {
 	extenders []Extend
+	config    ConverterConfig
 }
 
 type ProviderConfig struct {
@@ -38,6 +39,11 @@ type ConverterConfig struct {
 	DNS          DNSConfig
 	Provider     ProviderConfig
 	MachineImage MachineImageConfig
+	Gardener     GardenerConfig
+}
+
+type GardenerConfig struct {
+	ProjectName string
 }
 
 type MachineImageConfig struct {
@@ -56,6 +62,7 @@ func NewConverter(config ConverterConfig) Converter {
 
 	return Converter{
 		extenders: extenders,
+		config:    config,
 	}
 }
 
@@ -70,7 +77,7 @@ func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
 	shoot := gardener.Shoot{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      runtime.Spec.Shoot.Name,
-			Namespace: fmt.Sprintf("garden-%s", "kyma-dev"), //nolint:godox TODO: make it more dynamic - this should be the gardener project namespace
+			Namespace: fmt.Sprintf("garden-%s", c.config.Gardener.ProjectName),
 		},
 		Spec: gardener.ShootSpec{
 			Purpose:           &runtime.Spec.Shoot.Purpose,
