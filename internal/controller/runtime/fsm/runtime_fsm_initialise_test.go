@@ -120,23 +120,23 @@ var _ = Describe("KIM sFnInitialise", func() {
 			},
 		),
 		Entry(
-			"should return sFnPrepareCluster and no error when CR has been created and shoot exists",
+			"should return sFnCreateShoot and no error when CR has been created and shoot exists",
 			testCtx,
 			must(newFakeFSM, withTestFinalizer, withMockedShootClient(&testShootClient)),
 			&systemState{instance: testRtWithFinalizer},
 			testOpts{
 				MatchExpectedErr: BeNil(),
-				MatchNextFnState: haveName("sFnPrepareCluster"),
+				MatchNextFnState: haveName("sFnCreateShoot"),
 			},
 		),
 		Entry(
-			"should return sFnUpdateStatus and no error when shoot is missing",
+			"should return sFnCreateShoot and no error when shoot is missing",
 			testCtx,
 			must(newFakeFSM, withTestFinalizer, withMockedShootClient(&testShootClientWithError)),
 			&systemState{instance: testRtWithFinalizer},
 			testOpts{
 				MatchExpectedErr: BeNil(),
-				MatchNextFnState: haveName("sFnUpdateStatus"),
+				MatchNextFnState: haveName("sFnCreateShoot"),
 			},
 		),
 	)

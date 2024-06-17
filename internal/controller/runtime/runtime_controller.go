@@ -19,6 +19,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
 
 	"k8s.io/client-go/tools/record"

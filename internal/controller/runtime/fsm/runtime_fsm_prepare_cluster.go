@@ -3,11 +3,12 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerhelper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"strings"
 )
 
 type ErrReason string
