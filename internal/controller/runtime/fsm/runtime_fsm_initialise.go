@@ -25,7 +25,7 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 		}
 
 		s.instance.UpdateStateCreating(
-			imv1.ConditionTypeRuntimeProvisioning,
+			imv1.ConditionTypeRuntimeProvisioned,
 			imv1.ConditionReasonInitialized,
 			"initialized",
 		)

@@ -41,9 +41,9 @@ const (
 type RuntimeConditionType string
 
 const (
-	ConditionTypeRuntimeProvisioning   RuntimeConditionType = "RuntimeProvisioning"
-	ConditionTypeRuntimeDeprovisioning RuntimeConditionType = "RuntimeDeprovisioning"
-	ConditionTypeRuntimeUpdate         RuntimeConditionType = "RuntimeUpgrade"
+	ConditionTypeRuntimeProvisioned     RuntimeConditionType = "Provisioned"
+	ConditionTypeRuntimeKubeconfigReady RuntimeConditionType = "KubeconfigReady"
+	ConditionTypeRuntimeConfigured      RuntimeConditionType = "Configured"
 )
 
 type RuntimeConditionReason string
@@ -209,11 +209,11 @@ func (k *Runtime) UpdateStateDeletion(c RuntimeConditionType, r RuntimeCondition
 	meta.SetStatusCondition(&k.Status.Conditions, condition)
 }
 
-func (k *Runtime) UpdateStateCreating(c RuntimeConditionType, r RuntimeConditionReason, msg string) {
+func (k *Runtime) UpdateStateCreating(c RuntimeConditionType, r RuntimeConditionReason, status, msg string) {
 	k.Status.State = RuntimeStateCreating
 	condition := metav1.Condition{
 		Type:               string(c),
-		Status:             "True",
+		Status:             "Unknown",
 		LastTransitionTime: metav1.Now(),
 		Reason:             string(r),
 		Message:            msg,

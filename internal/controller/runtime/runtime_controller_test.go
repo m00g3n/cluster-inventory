@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/gomega"    //nolint:revive
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"time"
 )
 
@@ -59,6 +60,20 @@ var _ = Describe("Runtime Controller", func() {
 			runtimeStub := CreateRuntimeStub(ResourceName)
 			Expect(k8sClient.Create(ctx, runtimeStub)).To(Succeed())
 
+			By("Check if Runtime CR has finalizer")
+
+			Eventually(func() bool {
+				runtime := imv1.Runtime{}
+				err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
+
+				if err != nil {
+					return false
+				}
+
+				return controllerutil.ContainsFinalizer(&runtime, imv1.Finalizer)
+
+			}, time.Second*300, time.Second*3).Should(BeTrue())
+
 			By("Wait for shoot to be created")
 
 			Eventually(func() bool {
@@ -81,9 +96,8 @@ var _ = Describe("Runtime Controller", func() {
 func CreateRuntimeStub(resourceName string) *imv1.Runtime {
 	resource := &imv1.Runtime{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:       resourceName,
-			Namespace:  "default",
-			Finalizers: []string{"finalizer.infrastructure.kyma-project.io"},
+			Name:      resourceName,
+			Namespace: "default",
 		},
 		Spec: imv1.RuntimeSpec{
 			Shoot: imv1.RuntimeShoot{

@@ -80,21 +80,12 @@ var _ = BeforeSuite(func() {
 	err = infrastructuremanagerv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	//err = gardener_api.AddToScheme(scheme.Scheme)
-	//Expect(err).NotTo(HaveOccurred())
-
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Metrics: metricsserver.Options{
 			BindAddress: ":8083",
 		},
 		Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
-
-	//gardenerClientSet, err := gardener_apis.NewForConfig(cfg)
-	//Expect(err).ToNot(HaveOccurred())
-	//
-	//testShootClient = gardenerClientSet.Shoots("default")
-	//Expect(testShootClient).NotTo(BeNil())
 
 	mockShootClient = &gardener_mocks.ShootClient{}
 
