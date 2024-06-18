@@ -3,10 +3,11 @@ package fsm
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"reflect"
 	"runtime"
 	"sync"
+
+	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -23,6 +24,7 @@ type stateFn func(context.Context, *fsm, *systemState) (stateFn, *ctrl.Result, e
 // runtime reconciler specific configuration
 type RCCfg struct {
 	Finalizer string
+	PVCPath   string
 }
 
 func (f stateFn) String() string {

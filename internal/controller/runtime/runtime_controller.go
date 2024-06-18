@@ -81,7 +81,9 @@ func NewRuntimeReconciler(mgr ctrl.Manager, shootClient gardener.ShootClient, lo
 		Scheme:      mgr.GetScheme(),
 		ShootClient: shootClient,
 		Log:         logger,
-		Cfg:         fsm.RCCfg{Finalizer: imv1.Finalizer},
+		Cfg: fsm.RCCfg{
+			Finalizer: imv1.Finalizer,
+		},
 	}
 }
 

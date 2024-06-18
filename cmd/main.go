@@ -19,11 +19,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+	"time"
+
 	kubeconfig_controller "github.com/kyma-project/infrastructure-manager/internal/controller/kubeconfig"
 	runtime_controller "github.com/kyma-project/infrastructure-manager/internal/controller/runtime"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
-	"os"
-	"time"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
@@ -67,6 +68,7 @@ func main() {
 	var minimalRotationTimeRatio float64
 	var expirationTime time.Duration
 	var enableRuntimeReconciler bool
+	var persistShoot bool
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -78,6 +80,7 @@ func main() {
 	flag.Float64Var(&minimalRotationTimeRatio, "minimal-rotation-time", defaultMinimalRotationTimeRatio, "The ratio determines what is the minimal time that needs to pass to rotate certificate.")
 	flag.DurationVar(&expirationTime, "kubeconfig-expiration-time", defaultExpirationTime, "Dynamic kubeconfig expiration time")
 	flag.BoolVar(&enableRuntimeReconciler, "runtime-reconciler-enabled", defaultRuntimeReconcilerEnabled, "Feature flag for all runtime reconciler functionalities")
+	flag.BoolVar(&persistShoot, "persist-shoot", false, "Feature flag to allow persisting created shoots")
 
 	opts := zap.Options{
 		Development: true,
@@ -142,13 +145,18 @@ func main() {
 		os.Exit(1)
 	}
 
+	cfg := fsm.RCCfg{Finalizer: infrastructuremanagerv1.Finalizer}
+	if persistShoot {
+		cfg.PVCPath = "/testdata/kim"
+	}
+
 	if enableRuntimeReconciler {
 		if err = (&runtime_controller.RuntimeReconciler{
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),
 			ShootClient:   shootClient,
 			Log:           logger,
-			Cfg:           fsm.RCCfg{Finalizer: infrastructuremanagerv1.Finalizer},
+			Cfg:           cfg,
 			EventRecorder: mgr.GetEventRecorderFor("runtime-controller"),
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Runtime")

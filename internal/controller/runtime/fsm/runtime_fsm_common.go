@@ -6,7 +6,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func stopWithErrorAndRequeue(err error) (stateFn, *ctrl.Result, error) {
+// TODO Przegadać
+func stopWithErrorAndNoRequeue(err error) (stateFn, *ctrl.Result, error) {
 	return sFnUpdateStatus(nil, err), nil, nil
 }
 

@@ -2,6 +2,7 @@ package fsm
 
 import (
 	"context"
+
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -21,7 +22,7 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 
 		err := m.Update(ctx, &s.instance)
 		if err != nil {
-			return stopWithErrorAndRequeue(err)
+			return stopWithErrorAndNoRequeue(err)
 		}
 
 		s.instance.UpdateStateCreating(

@@ -2,6 +2,7 @@ package fsm
 
 import (
 	"context"
+
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
@@ -30,10 +31,10 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 
 	m.log.Info("Shoot mapped successfully", "Name", shoot.Name, "Namespace", shoot.Namespace, "Shoot", shoot)
 
-	createdShoot, provisioningErr := m.ShootClient.Create(ctx, &shoot, v1.CreateOptions{})
+	s.shoot, err = m.ShootClient.Create(ctx, &shoot, v1.CreateOptions{})
 
-	if provisioningErr != nil {
-		m.log.Error(provisioningErr, "Failed to create new gardener Shoot")
+	if err != nil {
+		m.log.Error(err, "Failed to create new gardener Shoot")
 
 		s.instance.UpdateStateError(
 			imv1.ConditionTypeRuntimeProvisioning,
@@ -44,13 +45,18 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 		return stopWithRequeue()
 	}
 
-	m.log.Info("Gardener shoot for runtime initialised successfully", "Name", createdShoot.Name, "Namespace", createdShoot.Namespace)
+	m.log.Info("Gardener shoot for runtime initialised successfully", "Name", s.shoot.Name, "Namespace", s.shoot.Namespace)
 
 	s.instance.UpdateStateCreating(
 		imv1.ConditionTypeRuntimeProvisioning,
 		imv1.ConditionReasonShootCreationPending,
 		"Shoot is pending",
 	)
+
+	shouldPersistShoot := m.PVCPath != ""
+	if shouldPersistShoot {
+		return switchState(sFnPersistShoot)
+	}
 
 	return stopWithRequeue()
 }
