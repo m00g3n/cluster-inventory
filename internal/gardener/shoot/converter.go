@@ -2,7 +2,6 @@ package shoot
 
 import (
 	"fmt"
-
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/extender"
@@ -58,6 +57,8 @@ func NewConverter(config ConverterConfig) Converter {
 		extender.NewProviderExtender(config.Provider.AWS.EnableIMDSv2, config.MachineImage.DefaultVersion),
 		extender.NewDNSExtender(config.DNS.SecretName, config.DNS.DomainPrefix, config.DNS.ProviderType),
 		extender.ExtendWithOIDC,
+		extender.ExtendWithCloudProfile,
+		extender.ExtendWithNetworkFilter,
 	}
 
 	return Converter{
@@ -89,7 +90,7 @@ func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
 				Pods:     &runtime.Spec.Shoot.Networking.Pods,
 				Services: &runtime.Spec.Shoot.Networking.Services,
 			},
-			ControlPlane: &runtime.Spec.Shoot.ControlPlane, //nolint:godox TODO: check HAavailability (also in migrator)
+			ExposureClassName: extender.ToPtr("converged-cloud-internet"),
 		},
 	}
 

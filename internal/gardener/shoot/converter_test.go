@@ -36,7 +36,7 @@ func TestConverter(t *testing.T) {
 func fixConverterConfig() ConverterConfig {
 	return ConverterConfig{
 		Kubernetes: KubernetesConfig{
-			DefaultVersion: "1.29",
+			DefaultVersion: "1.29", //TODO: set on deployment level
 		},
 		DNS: DNSConfig{
 			SecretName:   "dns-secret",
