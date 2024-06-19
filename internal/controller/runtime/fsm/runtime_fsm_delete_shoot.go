@@ -8,10 +8,11 @@ import (
 )
 
 func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
-	if !s.instance.IsRuntimeStateSet(imv1.RuntimeStateDeleting, imv1.ConditionTypeRuntimeDeprovisioning, imv1.ConditionReasonDeletion) {
+	if !s.instance.IsRuntimeStateSet(imv1.RuntimeStateTerminating, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonDeletion) {
 		s.instance.UpdateStateDeletion(
-			imv1.ConditionTypeRuntimeDeprovisioning,
+			imv1.ConditionTypeRuntimeProvisioned,
 			imv1.ConditionReasonDeletion,
+			"Unknown",
 			"Runtime deletion initialised",
 		)
 		return stopWithRequeue()
@@ -22,9 +23,10 @@ func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 	if err != nil {
 		m.log.Error(err, "Failed to delete gardener Shoot")
 
-		s.instance.UpdateStateError(
-			imv1.ConditionTypeRuntimeDeprovisioning,
+		s.instance.UpdateStateDeletion(
+			imv1.ConditionTypeRuntimeProvisioned,
 			imv1.ConditionReasonGardenerError,
+			"Error",
 			"Gardener API delete error",
 		)
 		return stopWithRequeue()

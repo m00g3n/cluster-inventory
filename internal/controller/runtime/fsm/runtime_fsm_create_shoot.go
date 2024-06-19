@@ -19,9 +19,10 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 	if err != nil {
 		m.log.Error(err, "unable to convert Runtime CR to a shoot object")
 
-		s.instance.UpdateStateError(
-			imv1.ConditionTypeRuntimeProvisioning,
+		s.instance.UpdateStatePending(
+			imv1.ConditionTypeRuntimeProvisioned,
 			imv1.ConditionReasonConversionError,
+			"Error",
 			"Runtime conversion error",
 		)
 
@@ -35,9 +36,10 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 	if provisioningErr != nil {
 		m.log.Error(provisioningErr, "Failed to create new gardener Shoot")
 
-		s.instance.UpdateStateError(
-			imv1.ConditionTypeRuntimeProvisioning,
+		s.instance.UpdateStatePending(
+			imv1.ConditionTypeRuntimeProvisioned,
 			imv1.ConditionReasonGardenerError,
+			"Error",
 			"Gardener API create error",
 		)
 
@@ -46,9 +48,10 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 
 	m.log.Info("Gardener shoot for runtime initialised successfully", "Name", createdShoot.Name, "Namespace", createdShoot.Namespace)
 
-	s.instance.UpdateStateCreating(
-		imv1.ConditionTypeRuntimeProvisioning,
+	s.instance.UpdateStatePending(
+		imv1.ConditionTypeRuntimeProvisioned,
 		imv1.ConditionReasonShootCreationPending,
+		"Unknown",
 		"Shoot is pending",
 	)
 

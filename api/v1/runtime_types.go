@@ -31,11 +31,10 @@ import (
 const Finalizer = "runtime-controller.infrastructure-manager.kyma-project.io/deletion-hook"
 
 const (
-	RuntimeStateReady      = "Ready"
-	RuntimeStateError      = "Error"
-	RuntimeStateCreating   = "Creating"
-	RuntimeStateProcessing = "Processing"
-	RuntimeStateDeleting   = "Deleting"
+	RuntimeStateReady       = "Ready"
+	RuntimeStateFailed      = "Failed"
+	RuntimeStatePending     = "Pending"
+	RuntimeStateTerminating = "Terminating"
 )
 
 type RuntimeConditionType string
@@ -56,6 +55,7 @@ const (
 	ConditionReasonInitialized            = RuntimeConditionReason("Initialised")
 	ConditionReasonShootCreationPending   = RuntimeConditionReason("Pending")
 	ConditionReasonShootCreationCompleted = RuntimeConditionReason("ShootCreationCompleted")
+
 	ConditionReasonConfigurationStarted   = RuntimeConditionReason("ConfigurationStarted")
 	ConditionReasonConfigurationCompleted = RuntimeConditionReason("ConfigurationCompleted")
 	ConditionReasonConfigurationErr       = RuntimeConditionReason("ConfigurationError")
@@ -173,18 +173,6 @@ func init() {
 	SchemeBuilder.Register(&Runtime{}, &RuntimeList{})
 }
 
-func (k *Runtime) UpdateStateProcessing(c RuntimeConditionType, r RuntimeConditionReason, msg string) {
-	k.Status.State = RuntimeStateProcessing
-	condition := metav1.Condition{
-		Type:               string(c),
-		Status:             "Unknown",
-		LastTransitionTime: metav1.Now(),
-		Reason:             string(r),
-		Message:            msg,
-	}
-	meta.SetStatusCondition(&k.Status.Conditions, condition)
-}
-
 func (k *Runtime) UpdateStateReady(c RuntimeConditionType, r RuntimeConditionReason, msg string) {
 	k.Status.State = RuntimeStateReady
 	condition := metav1.Condition{
@@ -197,11 +185,18 @@ func (k *Runtime) UpdateStateReady(c RuntimeConditionType, r RuntimeConditionRea
 	meta.SetStatusCondition(&k.Status.Conditions, condition)
 }
 
-func (k *Runtime) UpdateStateDeletion(c RuntimeConditionType, r RuntimeConditionReason, msg string) {
-	k.Status.State = RuntimeStateDeleting
+func (k *Runtime) UpdateStateDeletion(c RuntimeConditionType, r RuntimeConditionReason, status, msg string) {
+
+	if status != "Error" {
+		k.Status.State = RuntimeStateTerminating
+	} else {
+		k.Status.State = RuntimeStateFailed
+	}
+
+	k.Status.State = RuntimeStateTerminating
 	condition := metav1.Condition{
 		Type:               string(c),
-		Status:             "True",
+		Status:             metav1.ConditionStatus(status),
 		LastTransitionTime: metav1.Now(),
 		Reason:             string(r),
 		Message:            msg,
@@ -209,23 +204,17 @@ func (k *Runtime) UpdateStateDeletion(c RuntimeConditionType, r RuntimeCondition
 	meta.SetStatusCondition(&k.Status.Conditions, condition)
 }
 
-func (k *Runtime) UpdateStateCreating(c RuntimeConditionType, r RuntimeConditionReason, status, msg string) {
-	k.Status.State = RuntimeStateCreating
-	condition := metav1.Condition{
-		Type:               string(c),
-		Status:             "Unknown",
-		LastTransitionTime: metav1.Now(),
-		Reason:             string(r),
-		Message:            msg,
-	}
-	meta.SetStatusCondition(&k.Status.Conditions, condition)
-}
+func (k *Runtime) UpdateStatePending(c RuntimeConditionType, r RuntimeConditionReason, status, msg string) {
 
-func (k *Runtime) UpdateStateError(c RuntimeConditionType, r RuntimeConditionReason, msg string) {
-	k.Status.State = RuntimeStateError
+	if status != "Error" {
+		k.Status.State = RuntimeStatePending
+	} else {
+		k.Status.State = RuntimeStateFailed
+	}
+
 	condition := metav1.Condition{
 		Type:               string(c),
-		Status:             "True",
+		Status:             metav1.ConditionStatus(status),
 		LastTransitionTime: metav1.Now(),
 		Reason:             string(r),
 		Message:            msg,

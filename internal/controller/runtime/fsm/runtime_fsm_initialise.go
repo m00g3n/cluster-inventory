@@ -24,10 +24,11 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 			return stopWithErrorAndRequeue(err)
 		}
 
-		s.instance.UpdateStateCreating(
+		s.instance.UpdateStatePending(
 			imv1.ConditionTypeRuntimeProvisioned,
 			imv1.ConditionReasonInitialized,
-			"initialized",
+			"Unknown",
+			"Runtime initialized",
 		)
 		return stopWithRequeue()
 	}

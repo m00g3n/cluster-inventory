@@ -39,9 +39,10 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 			msg := fmt.Sprintf("Shoot %s is in %s state, scheduling for retry", s.shoot.Name, lastOperation.State)
 			m.log.Info(msg)
 
-			s.instance.UpdateStateCreating(
-				imv1.ConditionTypeRuntimeProvisioning,
+			s.instance.UpdateStatePending(
+				imv1.ConditionTypeRuntimeProvisioned,
 				imv1.ConditionReasonShootCreationPending,
+				"Unknown",
 				"Shoot creation in progress")
 
 			return stopWithRequeue()
@@ -51,11 +52,12 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 			msg := fmt.Sprintf("Shoot %s successfully created", s.shoot.Name)
 			m.log.Info(msg)
 
-			if !s.instance.IsRuntimeStateSet(imv1.RuntimeStateCreating, imv1.ConditionTypeRuntimeProvisioning, imv1.ConditionReasonShootCreationCompleted) {
-				s.instance.UpdateStateCreating(
-					imv1.ConditionTypeRuntimeProvisioning,
+			if !s.instance.IsRuntimeStateSet(imv1.RuntimeStatePending, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonShootCreationCompleted) {
+				s.instance.UpdateStatePending(
+					imv1.ConditionTypeRuntimeProvisioned,
 					imv1.ConditionReasonShootCreationCompleted,
-					"Shoot creation done")
+					"True",
+					"Shoot creation completed")
 
 				return stopWithRequeue()
 			}
@@ -73,9 +75,10 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 			msg := fmt.Sprintf("Provisioning failed for shoot: %s ! Last state: %s, Description: %s", s.shoot.Name, lastOperation.State, lastOperation.Description)
 			m.log.Info(msg)
 
-			s.instance.UpdateStateError(
-				imv1.ConditionTypeRuntimeProvisioning,
+			s.instance.UpdateStatePending(
+				imv1.ConditionTypeRuntimeProvisioned,
 				imv1.ConditionReasonCreationError,
+				"False",
 				"Shoot creation failed")
 
 			return stopWithNoRequeue()
@@ -90,9 +93,10 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 			msg := fmt.Sprintf("Shoot %s is in %s state, scheduling for retry", s.shoot.Name, lastOperation.State)
 			m.log.Info(msg)
 
-			s.instance.UpdateStateProcessing(
-				imv1.ConditionTypeRuntimeUpdate,
+			s.instance.UpdateStatePending(
+				imv1.ConditionTypeRuntimeProvisioned,
 				imv1.ConditionReasonProcessing,
+				"Unknown",
 				"Shoot creation in progress")
 
 			return stopWithRequeue()
@@ -103,10 +107,11 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 			msg := fmt.Sprintf("Shoot %s successfully updated", s.shoot.Name)
 			m.log.Info(msg)
 
-			s.instance.UpdateStateProcessing(
-				imv1.ConditionTypeRuntimeUpdate,
-				imv1.ConditionReasonProcessingCompleted,
-				"Shoot creation in progress")
+			s.instance.UpdateStatePending(
+				imv1.ConditionTypeRuntimeProvisioned,
+				imv1.ConditionReasonProcessing,
+				"True",
+				"Shoot update completed")
 
 			return stopWithNoRequeue()
 		}
@@ -123,9 +128,10 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 			msg := fmt.Sprintf("error during cluster provisioning: reconcilation error for shoot %s, reason: %s, scheduling for retry", s.shoot.Name, reason)
 			m.log.Info(msg)
 
-			s.instance.UpdateStateError(
-				imv1.ConditionTypeRuntimeUpdate,
+			s.instance.UpdateStatePending(
+				imv1.ConditionTypeRuntimeProvisioned,
 				imv1.ConditionReasonProcessingErr,
+				"Error",
 				string(reason))
 
 			return stopWithNoRequeue()
