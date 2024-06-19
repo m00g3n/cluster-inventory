@@ -12,7 +12,6 @@ import (
 func TestOidcExtender(t *testing.T) {
 	t.Run("Create kubernetes config", func(t *testing.T) {
 		// given
-		kubernetesVersion := "1.28"
 		clientID := "client-id"
 		groupsClaim := "groups"
 		issuerURL := "https://my.cool.tokens.com"
@@ -23,7 +22,6 @@ func TestOidcExtender(t *testing.T) {
 			Spec: imv1.RuntimeSpec{
 				Shoot: imv1.RuntimeShoot{
 					Kubernetes: imv1.Kubernetes{
-						Version: &kubernetesVersion,
 						KubeAPIServer: imv1.APIServer{
 							OidcConfig: gardener.OIDCConfig{
 								ClientID:    &clientID,
@@ -41,12 +39,10 @@ func TestOidcExtender(t *testing.T) {
 		}
 
 		// when
-		extender := NewExtendWithKubernetes("")
-		err := extender(runtimeShoot, &shoot)
+		err := ExtendWithOIDC(runtimeShoot, &shoot)
 
 		// then
 		require.NoError(t, err)
-		assert.Equal(t, *runtimeShoot.Spec.Shoot.Kubernetes.Version, shoot.Spec.Kubernetes.Version)
 		assert.Equal(t, runtimeShoot.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig, *shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig)
 	})
 }

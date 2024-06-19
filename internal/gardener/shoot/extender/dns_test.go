@@ -25,7 +25,7 @@ func TestDNSExtender(t *testing.T) {
 				},
 			},
 		}
-		extender := NewExtendWithDNS(secretName, domainPrefix, dnsProviderType)
+		extender := NewDNSExtender(secretName, domainPrefix, dnsProviderType)
 		shoot := fixEmptyGardenerShoot("test", "dev")
 
 		// when
