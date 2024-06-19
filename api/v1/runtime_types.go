@@ -103,7 +103,7 @@ type RuntimeSpec struct {
 type RuntimeStatus struct {
 	// State signifies current state of Runtime
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=Creating;Processing;Deleting;Ready;Error
+	// +kubebuilder:validation:Enum=Pending;Ready;Terminating;Failed
 	State State `json:"state,omitempty"`
 
 	// List of status conditions to indicate the status of a ServiceInstance.

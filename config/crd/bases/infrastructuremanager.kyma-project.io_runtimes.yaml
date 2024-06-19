@@ -1110,11 +1110,10 @@ spec:
               state:
                 description: State signifies current state of Runtime
                 enum:
-                - Creating
-                - Processing
-                - Deleting
+                - Pending
                 - Ready
-                - Error
+                - Terminating
+                - Failed
                 type: string
             type: object
         type: object
