@@ -170,6 +170,8 @@ func fixGardenerShootsForProvisioning(shoot *gardener_api.Shoot) []*gardener_api
 
 	readyShoot.Status.LastOperation.State = gardener_api.LastOperationStateSucceeded
 
+	//processedShoot := processingShoot.DeepCopy() // will add specific data later
+
 	return []*gardener_api.Shoot{missingShoot, missingShoot, initialisedShoot, processingShoot, readyShoot, readyShoot}
 }
 
