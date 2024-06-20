@@ -89,9 +89,6 @@ var _ = Describe("Runtime Controller", func() {
 					return false
 				}
 				// check conditions
-				//if !runtime.IsConditionSet(imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonShootCreationCompleted) {
-				//	return false
-				//}
 
 				if !runtime.IsConditionSet(imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonConfigurationCompleted) {
 					return false
