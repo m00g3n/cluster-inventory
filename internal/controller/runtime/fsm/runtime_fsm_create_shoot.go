@@ -80,5 +80,8 @@ func FixConverterConfig() gardener_shoot.ConverterConfig {
 				EnableIMDSv2: true,
 			},
 		},
+		Gardener: gardener_shoot.GardenerConfig{
+			ProjectName: "kyma-dev",
+		},
 	}
 }
