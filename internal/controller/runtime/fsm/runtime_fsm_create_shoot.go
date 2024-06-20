@@ -30,7 +30,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 		return stopWithNoRequeue()
 	}
 
-	m.log.Info("Shoot mapped successfully", "Name", shoot.Name, "Namespace", shoot.Namespace, "Shoot", shoot)
+	m.log.Info("Shoot converted successfully", "Name", shoot.Name, "Namespace", shoot.Namespace, "Shoot", shoot)
 
 	s.shoot, err = m.ShootClient.Create(ctx, &shoot, v1.CreateOptions{})
 

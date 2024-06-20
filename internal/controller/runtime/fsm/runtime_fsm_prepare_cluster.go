@@ -52,7 +52,7 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 			msg := fmt.Sprintf("Shoot %s successfully created", s.shoot.Name)
 			m.log.Info(msg)
 
-			if !s.instance.IsRuntimeStateSet(imv1.RuntimeStatePending, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonShootCreationCompleted) {
+			if !s.instance.IsStateWithConditionSet(imv1.RuntimeStatePending, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonShootCreationCompleted) {
 				s.instance.UpdateStatePending(
 					imv1.ConditionTypeRuntimeProvisioned,
 					imv1.ConditionReasonShootCreationCompleted,

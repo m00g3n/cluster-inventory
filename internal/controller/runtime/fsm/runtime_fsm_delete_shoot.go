@@ -8,7 +8,7 @@ import (
 )
 
 func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
-	if !s.instance.IsRuntimeStateSet(imv1.RuntimeStateTerminating, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonDeletion) {
+	if !s.instance.IsStateWithConditionSet(imv1.RuntimeStateTerminating, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonDeletion) {
 		s.instance.UpdateStateDeletion(
 			imv1.ConditionTypeRuntimeProvisioned,
 			imv1.ConditionReasonDeletion,

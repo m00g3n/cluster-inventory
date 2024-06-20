@@ -77,10 +77,11 @@ func (r *RuntimeReconciler) Reconcile(ctx context.Context, request ctrl.Request)
 
 func NewRuntimeReconciler(mgr ctrl.Manager, shootClient gardener.ShootClient, logger logr.Logger) *RuntimeReconciler {
 	return &RuntimeReconciler{
-		Client:      mgr.GetClient(),
-		Scheme:      mgr.GetScheme(),
-		ShootClient: shootClient,
-		Log:         logger,
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		ShootClient:   shootClient,
+		EventRecorder: mgr.GetEventRecorderFor("runtime-controller"),
+		Log:           logger,
 		Cfg: fsm.RCCfg{
 			Finalizer: imv1.Finalizer,
 		},

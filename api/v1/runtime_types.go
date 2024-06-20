@@ -222,10 +222,15 @@ func (k *Runtime) UpdateStatePending(c RuntimeConditionType, r RuntimeConditionR
 	meta.SetStatusCondition(&k.Status.Conditions, condition)
 }
 
-func (k *Runtime) IsRuntimeStateSet(runtimeState State, c RuntimeConditionType, r RuntimeConditionReason) bool {
+func (k *Runtime) IsStateWithConditionSet(runtimeState State, c RuntimeConditionType, r RuntimeConditionReason) bool {
 	if k.Status.State != runtimeState {
 		return false
 	}
+
+	return k.IsConditionSet(c, r)
+}
+
+func (k *Runtime) IsConditionSet(c RuntimeConditionType, r RuntimeConditionReason) bool {
 
 	condition := meta.FindStatusCondition(k.Status.Conditions, string(c))
 	if condition != nil && condition.Reason == string(r) {

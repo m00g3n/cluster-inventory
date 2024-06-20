@@ -84,7 +84,20 @@ var _ = Describe("Runtime Controller", func() {
 					return false
 				}
 
-				return runtime.Status.State == imv1.RuntimeStateReady
+				// check state
+				if runtime.Status.State != imv1.RuntimeStateReady {
+					return false
+				}
+				// check conditions
+				//if !runtime.IsConditionSet(imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonShootCreationCompleted) {
+				//	return false
+				//}
+
+				if !runtime.IsConditionSet(imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonConfigurationCompleted) {
+					return false
+				}
+
+				return true
 
 			}, time.Second*300, time.Second*3).Should(BeTrue())
 
