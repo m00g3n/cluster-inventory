@@ -5,6 +5,7 @@ import (
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,6 +27,9 @@ func TestConverter(t *testing.T) {
 		assert.Equal(t, runtime.Spec.Shoot.Region, shoot.Spec.Region)
 		assert.Equal(t, runtime.Spec.Shoot.SecretBindingName, *shoot.Spec.SecretBindingName)
 		assert.Equal(t, runtime.Spec.Shoot.ControlPlane, *shoot.Spec.ControlPlane)
+		assert.Equal(t, runtime.Spec.Shoot.Networking.Nodes, *shoot.Spec.Networking.Nodes)
+		assert.Equal(t, runtime.Spec.Shoot.Networking.Pods, *shoot.Spec.Networking.Pods)
+		assert.Equal(t, runtime.Spec.Shoot.Networking.Services, *shoot.Spec.Networking.Services)
 	})
 }
 
@@ -65,7 +69,7 @@ func fixRuntime() imv1.Runtime {
 				Region:            "eu-central-1",
 				SecretBindingName: "my-secret",
 				Provider: imv1.Provider{
-					Type: "aws",
+					Type: hyperscaler.TypeAWS,
 					Workers: []gardener.Worker{
 						{
 							Name: "worker",

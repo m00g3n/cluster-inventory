@@ -8,24 +8,30 @@ import (
 )
 
 const (
-	infrastructureConfigKind = "InfrastructureConfig"
-	controlPlaneConfigKind   = "ControlPlaneConfig"
-	apiVersion               = "openstack.provider.extensions.gardener.cloud/v1alpha1"
+	infrastructureConfigKind    = "InfrastructureConfig"
+	controlPlaneConfigKind      = "ControlPlaneConfig"
+	apiVersion                  = "openstack.provider.extensions.gardener.cloud/v1alpha1"
+	defaultFloatingPoolName     = "FloatingIP-external-kyma-01"
+	defaultLoadBalancerProvider = "f5"
 )
 
-func GetInfrastructureConfig(_ string, _ []string) ([]byte, error) {
-	return json.Marshal(NewInfrastructureConfig())
+func GetInfrastructureConfig(workerCIDR string, _ []string) ([]byte, error) {
+	return json.Marshal(NewInfrastructureConfig(workerCIDR))
 }
 
 func GetControlPlaneConfig(_ []string) ([]byte, error) {
 	return json.Marshal(NewControlPlaneConfig())
 }
 
-func NewInfrastructureConfig() v1alpha1.InfrastructureConfig {
+func NewInfrastructureConfig(workerCIDR string) v1alpha1.InfrastructureConfig {
 	return v1alpha1.InfrastructureConfig{
 		TypeMeta: v1.TypeMeta{
 			Kind:       infrastructureConfigKind,
 			APIVersion: apiVersion,
+		},
+		FloatingPoolName: defaultFloatingPoolName,
+		Networks: v1alpha1.Networks{
+			Workers: workerCIDR,
 		},
 	}
 }
@@ -36,6 +42,6 @@ func NewControlPlaneConfig() *v1alpha1.ControlPlaneConfig {
 			Kind:       controlPlaneConfigKind,
 			APIVersion: apiVersion,
 		},
-		LoadBalancerProvider: "f5",
+		LoadBalancerProvider: defaultLoadBalancerProvider,
 	}
 }

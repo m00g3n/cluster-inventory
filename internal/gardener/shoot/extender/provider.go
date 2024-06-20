@@ -5,6 +5,7 @@ import (
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/aws"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/azure"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/gcp"
@@ -13,14 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-const (
-	ProviderTypeAWS       = "aws"
-	ProviderTypeAzure     = "azure"
-	ProviderTypeGCP       = "gcp"
-	ProviderTypeOpenstack = "openstack"
-)
-
-func NewProviderExtender(enableIMDSv2 bool) func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
+func NewProviderExtender(enableIMDSv2 bool, defaultMachineImageVersion string) func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 	return func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 		provider := &shoot.Spec.Provider
 		provider.Type = runtime.Spec.Shoot.Provider.Type
@@ -32,9 +26,8 @@ func NewProviderExtender(enableIMDSv2 bool) func(runtime imv1.Runtime, shoot *ga
 			return err
 		}
 
-		if runtime.Spec.Shoot.Provider.Type == "aws" && enableIMDSv2 {
-			provider.Workers[0].ProviderConfig, err = getAWSWorkerConfig()
-		}
+		setDefaultMachineImageVersion(provider, defaultMachineImageVersion)
+		err = setWorkerConfig(provider, provider.Type, enableIMDSv2)
 
 		return err
 	}
@@ -61,20 +54,20 @@ func getConfig(runtimeShoot imv1.RuntimeShoot) (infrastructureConfig *runtime.Ra
 	}
 
 	switch runtimeShoot.Provider.Type {
-	case ProviderTypeAWS:
+	case hyperscaler.TypeAWS:
 		{
 			return getConfigForProvider(runtimeShoot, aws.GetInfrastructureConfig, aws.GetControlPlaneConfig)
 		}
-	case ProviderTypeAzure:
+	case hyperscaler.TypeAzure:
 		{
 			// Azure shoots are all zoned, put probably it not be validated here.
 			return getConfigForProvider(runtimeShoot, azure.GetInfrastructureConfig, azure.GetControlPlaneConfig)
 		}
-	case ProviderTypeGCP:
+	case hyperscaler.TypeGCP:
 		{
 			return getConfigForProvider(runtimeShoot, gcp.GetInfrastructureConfig, gcp.GetControlPlaneConfig)
 		}
-	case ProviderTypeOpenstack:
+	case hyperscaler.TypeOpenStack:
 		{
 			return getConfigForProvider(runtimeShoot, openstack.GetInfrastructureConfig, openstack.GetControlPlaneConfig)
 		}
@@ -101,4 +94,41 @@ func getZones(workers []gardener.Worker) []string {
 	slices.Sort(zones)
 
 	return slices.Compact(zones)
+}
+
+func setWorkerConfig(provider *gardener.Provider, providerType string, enableIMDSv2 bool) error {
+	if providerType != hyperscaler.TypeAWS || !enableIMDSv2 {
+		return nil
+	}
+
+	for i := 0; i < len(provider.Workers); i++ {
+		var err error
+		provider.Workers[i].ProviderConfig, err = getAWSWorkerConfig()
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func setDefaultMachineImageVersion(provider *gardener.Provider, defaultMachineImageVersion string) {
+	for i := 0; i < len(provider.Workers); i++ {
+		worker := &provider.Workers[i]
+
+		if worker.Machine.Image == nil {
+			worker.Machine.Image = &gardener.ShootMachineImage{
+				Version: &defaultMachineImageVersion,
+			}
+
+			continue
+		}
+		machineImageVersion := worker.Machine.Image.Version
+		if machineImageVersion == nil || *machineImageVersion == "" {
+			machineImageVersion = &defaultMachineImageVersion
+		}
+
+		worker.Machine.Image.Version = machineImageVersion
+	}
 }

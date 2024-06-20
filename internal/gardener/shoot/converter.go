@@ -13,6 +13,7 @@ type Extend func(imv1.Runtime, *gardener.Shoot) error
 
 type Converter struct {
 	extenders []Extend
+	config    ConverterConfig
 }
 
 type ProviderConfig struct {
@@ -34,23 +35,34 @@ type KubernetesConfig struct {
 }
 
 type ConverterConfig struct {
-	Kubernetes KubernetesConfig
-	DNS        DNSConfig
-	Provider   ProviderConfig
+	Kubernetes   KubernetesConfig
+	DNS          DNSConfig
+	Provider     ProviderConfig
+	MachineImage MachineImageConfig
+	Gardener     GardenerConfig
+}
+
+type GardenerConfig struct {
+	ProjectName string
+}
+
+type MachineImageConfig struct {
+	DefaultVersion string
 }
 
 func NewConverter(config ConverterConfig) Converter {
 	extenders := []Extend{
 		extender.ExtendWithAnnotations,
 		extender.ExtendWithLabels,
-		extender.NewExtendWithKubernetes(config.Kubernetes.DefaultVersion),
-		extender.ExtendWithNetworking,
-		extender.NewProviderExtender(config.Provider.AWS.EnableIMDSv2),
-		extender.NewExtendWithDNS(config.DNS.SecretName, config.DNS.DomainPrefix, config.DNS.ProviderType),
+		extender.NewKubernetesVersionExtender(config.Kubernetes.DefaultVersion),
+		extender.NewProviderExtender(config.Provider.AWS.EnableIMDSv2, config.MachineImage.DefaultVersion),
+		extender.NewDNSExtender(config.DNS.SecretName, config.DNS.DomainPrefix, config.DNS.ProviderType),
+		extender.ExtendWithOIDC,
 	}
 
 	return Converter{
 		extenders: extenders,
+		config:    config,
 	}
 }
 
@@ -58,17 +70,26 @@ func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
 	// The original implementation in the Provisioner: https://github.com/kyma-project/control-plane/blob/3dd257826747384479986d5d79eb20f847741aa6/components/provisioner/internal/model/gardener_config.go#L127
 	// Note: shoot.Spec.ExposureClassNames field is ignored as KEB didn't send this field to the Provisioner
 
+	// If you need to enhance the converter please adhere to the following convention:
+	// - fields taken directly from Runtime CR must be added in this function
+	// - if any logic is needed to be implemented, either enhance existing, or create a new extender
+
 	shoot := gardener.Shoot{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      runtime.Spec.Shoot.Name,
-			Namespace: fmt.Sprintf("garden-%s", "kyma-dev"), //nolint:godox TODO: make it more dynamic - this should be the gardener project namespace
+			Namespace: fmt.Sprintf("garden-%s", c.config.Gardener.ProjectName),
 		},
 		Spec: gardener.ShootSpec{
-			CloudProfileName:  "aws",
 			Purpose:           &runtime.Spec.Shoot.Purpose,
 			Region:            runtime.Spec.Shoot.Region,
 			SecretBindingName: &runtime.Spec.Shoot.SecretBindingName,
-			ControlPlane:      &runtime.Spec.Shoot.ControlPlane, //nolint:godox TODO: check HAavailability (also in migrator)
+			Networking: &gardener.Networking{
+				Type:     runtime.Spec.Shoot.Networking.Type,
+				Nodes:    &runtime.Spec.Shoot.Networking.Nodes,
+				Pods:     &runtime.Spec.Shoot.Networking.Pods,
+				Services: &runtime.Spec.Shoot.Networking.Services,
+			},
+			ControlPlane: &runtime.Spec.Shoot.ControlPlane, //nolint:godox TODO: check HAavailability (also in migrator)
 		},
 	}
 
@@ -79,8 +100,4 @@ func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
 	}
 
 	return shoot, nil
-}
-
-func PtrTo[T any](v T) *T {
-	return &v
 }
