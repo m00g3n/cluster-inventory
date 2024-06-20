@@ -45,10 +45,11 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 
 	} else {
 		if instanceHasFinalizer {
-			if s.shoot.GetDeletionTimestamp().IsZero() {
-				return switchState(sFnDeleteShoot)
-			}
+			//if s.shoot.GetDeletionTimestamp().IsZero() {
 			m.log.Info("Instance is being deleted")
+			return switchState(sFnDeleteShoot)
+			//}
+
 			//return switchState(sFnWaitForShootDeletion)
 		}
 	}
