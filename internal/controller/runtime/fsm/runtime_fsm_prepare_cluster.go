@@ -107,11 +107,15 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 			msg := fmt.Sprintf("Shoot %s successfully updated", s.shoot.Name)
 			m.log.Info(msg)
 
-			s.instance.UpdateStatePending(
-				imv1.ConditionTypeRuntimeProvisioned,
-				imv1.ConditionReasonProcessing,
-				"True",
-				"Shoot update completed")
+			if !s.instance.IsStateWithConditionSet(imv1.RuntimeStatePending, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonProcessing) {
+				s.instance.UpdateStatePending(
+					imv1.ConditionTypeRuntimeProvisioned,
+					imv1.ConditionReasonProcessing,
+					"True",
+					"Shoot update completed")
+
+				return stopWithRequeue()
+			}
 
 			return switchState(sFnProcessShoot)
 		}
