@@ -1,10 +1,11 @@
 package extender
 
 import (
+	"testing"
+
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestNetworkingFilterExtender(t *testing.T) {

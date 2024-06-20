@@ -88,7 +88,7 @@ func (r *RuntimeReconciler) Reconcile(ctx context.Context, request ctrl.Request)
 func FixConverterConfig() gardener_shoot.ConverterConfig {
 	return gardener_shoot.ConverterConfig{
 		Kubernetes: gardener_shoot.KubernetesConfig{
-			DefaultVersion: "1.29", //TODO: Should be parametrised
+			DefaultVersion: "1.29", //nolint:godox TODO: Should be parametrised
 		},
 
 		DNS: gardener_shoot.DNSConfig{
@@ -98,11 +98,11 @@ func FixConverterConfig() gardener_shoot.ConverterConfig {
 		},
 		Provider: gardener_shoot.ProviderConfig{
 			AWS: gardener_shoot.AWSConfig{
-				EnableIMDSv2: true, //TODO: Should be parametrised
+				EnableIMDSv2: true, //nolint:godox TODO: Should be parametrised
 			},
 		},
 		Gardener: gardener_shoot.GardenerConfig{
-			ProjectName: "kyma-dev", //TODO: should be parametrised
+			ProjectName: "kyma-dev", //nolint:godox TODO: should be parametrised
 		},
 	}
 }
