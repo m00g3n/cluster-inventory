@@ -7,7 +7,7 @@ import (
 
 const NetworkFilterType = "shoot-networking-filter"
 
-func ExtendWithNetworkFilter(runtime imv1.Runtime, shoot *gardener.Shoot) error {
+func ExtendWithNetworkFilter(runtime imv1.Runtime, shoot *gardener.Shoot) error { //nolint:revive
 	networkingFilter := gardener.Extension{
 		Type:     NetworkFilterType,
 		Disabled: ToPtr(false),
