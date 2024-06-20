@@ -45,7 +45,3 @@ func TestKubernetesVersionExtender(t *testing.T) {
 		assert.Equal(t, "1.88", shoot.Spec.Kubernetes.Version)
 	})
 }
-
-func ToPtr[T any](v T) *T {
-	return &v
-}
