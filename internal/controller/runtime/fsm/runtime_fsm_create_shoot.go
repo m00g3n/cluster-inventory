@@ -67,21 +67,21 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 func FixConverterConfig() gardener_shoot.ConverterConfig {
 	return gardener_shoot.ConverterConfig{
 		Kubernetes: gardener_shoot.KubernetesConfig{
-			DefaultVersion: "1.29",
+			DefaultVersion: "1.29", //nolint:godox TODO: Should be parametrised
 		},
 
 		DNS: gardener_shoot.DNSConfig{
-			SecretName:   "xxx-secret-dev",
-			DomainPrefix: "runtimeprov.dev.kyma.ondemand.com",
+			SecretName:   "aws-route53-secret-dev",
+			DomainPrefix: "dev.kyma.ondemand.com",
 			ProviderType: "aws-route53",
 		},
 		Provider: gardener_shoot.ProviderConfig{
 			AWS: gardener_shoot.AWSConfig{
-				EnableIMDSv2: true,
+				EnableIMDSv2: true, //nolint:godox TODO: Should be parametrised
 			},
 		},
 		Gardener: gardener_shoot.GardenerConfig{
-			ProjectName: "kyma-dev",
+			ProjectName: "kyma-dev", //nolint:godox TODO: should be parametrised
 		},
 	}
 }
