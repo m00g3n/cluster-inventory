@@ -152,7 +152,7 @@ func fixGardenerShootsForProvisioning(shoot *gardener_api.Shoot) []*gardener_api
 	initialisedShoot := shoot.DeepCopy()
 
 	initialisedShoot.Spec.DNS = &gardener_api.DNS{
-		Domain: gardener_shoot.PtrTo("test.domain"),
+		Domain: ptrTo("test.domain"),
 	}
 
 	initialisedShoot.Status = gardener_api.ShootStatus{
@@ -191,5 +191,12 @@ func fixConverterConfigForTests() gardener_shoot.ConverterConfig {
 				EnableIMDSv2: true,
 			},
 		},
+		Gardener: gardener_shoot.GardenerConfig{
+			ProjectName: "kyma-dev",
+		},
 	}
+}
+
+func ptrTo[T any](v T) *T {
+	return &v
 }
