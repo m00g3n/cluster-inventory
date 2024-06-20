@@ -110,7 +110,7 @@ var _ = Describe("KIM sFnInitialise", func() {
 			},
 			testOpts{
 				MatchExpectedErr: BeNil(),
-				MatchNextFnState: haveName("sFnUpdateStatus"),
+				MatchNextFnState: haveName("sFnProcessShoot"),
 			},
 		),
 		Entry(
@@ -158,7 +158,7 @@ var _ = Describe("KIM sFnInitialise", func() {
 			},
 			testOpts{
 				MatchExpectedErr: BeNil(),
-				MatchNextFnState: haveName("sFnUpdateStatus"),
+				MatchNextFnState: haveName("sFnProcessShoot"),
 			},
 		),
 		Entry(

@@ -16,7 +16,7 @@ type ErrReason string
 func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 
 	if s.shoot == nil {
-		panic("Fatal state machine logic problem: Shoot can never be nil in PrepareCluster state!")
+		return stopWithErrorAndNoRequeue(fmt.Errorf("Fatal state machine logic problem: Shoot can never be nil in PrepareCluster state!"))
 	}
 
 	if s.shoot.Spec.DNS == nil || s.shoot.Spec.DNS.Domain == nil {
@@ -113,7 +113,7 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 				"True",
 				"Shoot update completed")
 
-			return stopWithNoRequeue()
+			return switchState(sFnProcessShoot)
 		}
 
 		// Runtime update is failed
