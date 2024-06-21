@@ -54,6 +54,7 @@ var (
 const TestMinimalRotationTimeRatio = 0.5
 const TestKubeconfigValidityTime = 24 * time.Hour
 const TestKubeconfigRotationPeriod = time.Duration(float64(TestKubeconfigValidityTime) * TestMinimalRotationTimeRatio)
+const TestGardenerRequestTimeout = 6 * time.Second
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -87,7 +88,7 @@ var _ = BeforeSuite(func() {
 	setupKubeconfigProviderMock(kubeconfigProviderMock)
 	metrics := metrics.NewMetrics()
 
-	gardenerClusterController := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger, TestKubeconfigRotationPeriod, TestMinimalRotationTimeRatio, metrics)
+	gardenerClusterController := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger, TestKubeconfigRotationPeriod, TestMinimalRotationTimeRatio, TestGardenerRequestTimeout, metrics)
 
 	Expect(gardenerClusterController).NotTo(BeNil())
 
