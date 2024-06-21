@@ -9,9 +9,9 @@ func stopWithErrorAndNoRequeue(err error) (stateFn, *ctrl.Result, error) {
 	return sFnUpdateStatus(nil, err), nil, nil
 }
 
-//func stopWithRequeueAfter(duration time.Duration) (stateFn, *ctrl.Result, error) {
+// func stopWithRequeueAfter(duration time.Duration) (stateFn, *ctrl.Result, error) {
 //	return sFnUpdateStatus(&ctrl.Result{RequeueAfter: duration}, nil), nil, nil
-//}
+// }
 
 func stopWithNoRequeue() (stateFn, *ctrl.Result, error) {
 	return sFnUpdateStatus(nil, nil), nil, nil

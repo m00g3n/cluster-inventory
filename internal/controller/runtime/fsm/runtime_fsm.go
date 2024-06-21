@@ -52,13 +52,13 @@ type fsm struct {
 	RCCfg
 }
 
-//var mux sync.Mutex
+// var mux sync.Mutex
 
 func (m *fsm) Run(ctx context.Context, v imv1.Runtime) (ctrl.Result, error) {
 	state := systemState{instance: v}
 	var err error
 	var result *ctrl.Result
-	//mux.Lock()
+	// mux.Lock()
 loop:
 	for {
 		select {
@@ -75,7 +75,7 @@ loop:
 			}
 		}
 	}
-	//mux.Unlock()
+	// mux.Unlock()
 
 	m.log.WithValues("error", err).
 		WithValues("result", result).
