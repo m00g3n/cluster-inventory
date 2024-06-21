@@ -404,7 +404,7 @@ func newTestGardenerClusterCR(name, namespace, shootName, secretName string) *Te
 					Secret: imv1.Secret{
 						Name:      secretName,
 						Namespace: namespace,
-						Key:       "config", //nolint:all TODO: fill it up with the actual data
+						Key:       "config", //nolint:godox TODO: fill it up with the actual data
 					},
 				},
 			},

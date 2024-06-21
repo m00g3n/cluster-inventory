@@ -53,10 +53,11 @@ type GardenerClusterController struct {
 	log                      logr.Logger
 	rotationPeriod           time.Duration
 	minimalRotationTimeRatio float64
+	gardenerRequestTimeout   time.Duration
 	metrics                  metrics.Metrics
 }
 
-func NewGardenerClusterController(mgr ctrl.Manager, kubeconfigProvider KubeconfigProvider, logger logr.Logger, rotationPeriod time.Duration, minimalRotationTimeRatio float64, metrics metrics.Metrics) *GardenerClusterController {
+func NewGardenerClusterController(mgr ctrl.Manager, kubeconfigProvider KubeconfigProvider, logger logr.Logger, rotationPeriod time.Duration, minimalRotationTimeRatio float64, gardenerRequestTimeout time.Duration, metrics metrics.Metrics) *GardenerClusterController {
 	return &GardenerClusterController{
 		Client:                   mgr.GetClient(),
 		Scheme:                   mgr.GetScheme(),
@@ -64,6 +65,7 @@ func NewGardenerClusterController(mgr ctrl.Manager, kubeconfigProvider Kubeconfi
 		log:                      logger,
 		rotationPeriod:           rotationPeriod,
 		minimalRotationTimeRatio: minimalRotationTimeRatio,
+		gardenerRequestTimeout:   gardenerRequestTimeout,
 		metrics:                  metrics,
 	}
 }
@@ -88,15 +90,17 @@ type KubeconfigProvider interface {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.15.0/pkg/reconcile
 func (controller *GardenerClusterController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) { //nolint:revive
 	controller.log.Info("Starting reconciliation.", loggingContext(req)...)
+	reconciliationContext, cancel := context.WithTimeout(ctx, controller.gardenerRequestTimeout)
+	defer cancel()
 
 	var cluster imv1.GardenerCluster
 
-	err := controller.Get(ctx, req.NamespacedName, &cluster)
+	err := controller.Get(reconciliationContext, req.NamespacedName, &cluster)
 
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			controller.unsetMetrics(req)
-			err = controller.deleteKubeconfigSecret(ctx, req.Name)
+			err = controller.deleteKubeconfigSecret(reconciliationContext, req.Name)
 		}
 
 		if err == nil {
@@ -109,7 +113,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	secret, err := controller.getSecret(cluster.Spec.Shoot.Name)
 	if err != nil && !k8serrors.IsNotFound(err) {
 		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetSecret, err)
-		_ = controller.persistStatusChange(ctx, &cluster)
+		_ = controller.persistStatusChange(reconciliationContext, &cluster)
 		return controller.resultWithoutRequeue(&cluster), err
 	}
 
@@ -127,9 +131,9 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		"requeueAfter", requeueAfter.String(),
 	)
 
-	kubeconfigStatus, err := controller.handleKubeconfig(ctx, secret, &cluster, now)
+	kubeconfigStatus, err := controller.handleKubeconfig(reconciliationContext, secret, &cluster, now)
 	if err != nil {
-		_ = controller.persistStatusChange(ctx, &cluster)
+		_ = controller.persistStatusChange(reconciliationContext, &cluster)
 		// if a claster was not found in gardener,
 		// CRD should not be rereconciled
 		if k8serrors.IsNotFound(err) {
@@ -140,13 +144,13 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 
 	// there was a request to rotate the kubeconfig
 	if kubeconfigStatus == ksRotated {
-		err = controller.removeForceRotationAnnotation(ctx, &cluster)
+		err = controller.removeForceRotationAnnotation(reconciliationContext, &cluster)
 		if err != nil {
 			return controller.resultWithoutRequeue(&cluster), err
 		}
 	}
 
-	if err := controller.persistStatusChange(ctx, &cluster); err != nil {
+	if err := controller.persistStatusChange(reconciliationContext, &cluster); err != nil {
 		return controller.resultWithoutRequeue(&cluster), err
 	}
 
@@ -183,21 +187,21 @@ func (controller *GardenerClusterController) resultWithoutRequeue(cluster *imv1.
 	return ctrl.Result{}
 }
 
-func (controller *GardenerClusterController) persistStatusChange(ctx context.Context, cluster *imv1.GardenerCluster) error {
-	err := controller.Status().Update(ctx, cluster)
+func (controller *GardenerClusterController) persistStatusChange(reconciliationContext context.Context, cluster *imv1.GardenerCluster) error {
+	err := controller.Status().Update(reconciliationContext, cluster)
 	if err != nil {
 		controller.log.Error(err, "status update failed")
 	}
 	return err
 }
 
-func (controller *GardenerClusterController) deleteKubeconfigSecret(ctx context.Context, clusterCRName string) error {
+func (controller *GardenerClusterController) deleteKubeconfigSecret(reconciliationContext context.Context, clusterCRName string) error {
 	selector := client.MatchingLabels(map[string]string{
 		clusterCRNameLabel: clusterCRName,
 	})
 
 	var secretList corev1.SecretList
-	err := controller.List(ctx, &secretList, selector)
+	err := controller.List(reconciliationContext, &secretList, selector)
 
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return err
@@ -212,7 +216,7 @@ func (controller *GardenerClusterController) deleteKubeconfigSecret(ctx context.
 		return errors.Errorf("unexpected numer of secrets found for cluster CR `%s`", clusterCRName)
 	}
 
-	return controller.Delete(ctx, &secretList.Items[0])
+	return controller.Delete(reconciliationContext, &secretList.Items[0])
 }
 
 func (controller *GardenerClusterController) getSecret(shootName string) (*corev1.Secret, error) {
