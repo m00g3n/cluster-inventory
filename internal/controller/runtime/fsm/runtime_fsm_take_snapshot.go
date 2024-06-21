@@ -14,12 +14,12 @@ func sFnTakeSnapshot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctr
 
 	shoot, err := m.ShootClient.Get(ctx, s.instance.Name, v1.GetOptions{})
 
-	if err != nil && !apierrors.IsNotFound(err) {
-		m.log.Info("Failed to get Gardener shoot", "error", err)
-		return stopWithRequeue()
-	}
-
-	if shoot != nil {
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			m.log.Info("Failed to get Gardener shoot", "error", err)
+			return stopWithRequeue()
+		}
+	} else if shoot != nil {
 		s.shoot = shoot.DeepCopy()
 	}
 
