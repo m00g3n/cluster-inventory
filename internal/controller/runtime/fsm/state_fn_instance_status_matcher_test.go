@@ -3,7 +3,7 @@ package fsm
 import (
 	"fmt"
 
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega" //nolint:revive
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/onsi/gomega/types"

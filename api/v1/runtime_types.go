@@ -186,7 +186,6 @@ func (k *Runtime) UpdateStateReady(c RuntimeConditionType, r RuntimeConditionRea
 }
 
 func (k *Runtime) UpdateStateDeletion(c RuntimeConditionType, r RuntimeConditionReason, status, msg string) {
-
 	if status != "Error" {
 		k.Status.State = RuntimeStateTerminating
 	} else {
@@ -205,7 +204,6 @@ func (k *Runtime) UpdateStateDeletion(c RuntimeConditionType, r RuntimeCondition
 }
 
 func (k *Runtime) UpdateStatePending(c RuntimeConditionType, r RuntimeConditionReason, status, msg string) {
-
 	if status != "Error" {
 		k.Status.State = RuntimeStatePending
 	} else {
@@ -231,7 +229,6 @@ func (k *Runtime) IsStateWithConditionSet(runtimeState State, c RuntimeCondition
 }
 
 func (k *Runtime) IsConditionSet(c RuntimeConditionType, r RuntimeConditionReason) bool {
-
 	condition := meta.FindStatusCondition(k.Status.Conditions, string(c))
 	if condition != nil && condition.Reason == string(r) {
 		return true

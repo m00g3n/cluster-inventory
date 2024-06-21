@@ -4,10 +4,8 @@ import (
 	"context"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 

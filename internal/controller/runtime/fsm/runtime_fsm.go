@@ -7,10 +7,9 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/kyma-project/infrastructure-manager/internal/gardener"
-
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm/testing"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2" //nolint:revive
+	. "github.com/onsi/gomega"    //nolint:revive
 	"sigs.k8s.io/yaml"
 )
 

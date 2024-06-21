@@ -30,10 +30,10 @@ func (m *finalizerMatcher) Match(actual any) (success bool, err error) {
 	return ContainElement(m.expectedFinalizer).Match(actualRt.GetFinalizers())
 }
 
-func (m *finalizerMatcher) FailureMessage(actual interface{}) (message string) {
+func (m *finalizerMatcher) FailureMessage(_ interface{}) (message string) {
 	return fmt.Sprintf("Expected\n\t%v\nto contain\n\t%s", m.actualFinalizers, m.expectedFinalizer)
 }
 
-func (m *finalizerMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+func (m *finalizerMatcher) NegatedFailureMessage(_ interface{}) (message string) {
 	return fmt.Sprintf("Expected\n\t%v\nnot to contain\n\t%s", m.actualFinalizers, m.expectedFinalizer)
 }

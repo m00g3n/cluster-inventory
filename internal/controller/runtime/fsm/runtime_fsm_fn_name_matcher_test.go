@@ -47,10 +47,10 @@ func (m *stateFnNameMatcher) Match(actual any) (success bool, err error) {
 	return m.actName == m.expName, nil
 }
 
-func (m *stateFnNameMatcher) FailureMessage(actual interface{}) (message string) {
+func (m *stateFnNameMatcher) FailureMessage(_ interface{}) (message string) {
 	return fmt.Sprintf("Expected\n\t%s\nto be equal to\n\t%s", m.actName, m.expName)
 }
 
-func (m *stateFnNameMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+func (m *stateFnNameMatcher) NegatedFailureMessage(_ interface{}) (message string) {
 	return fmt.Sprintf("Expected\n\t%s\nnot to be equal to\n\t%s", m.actName, m.expName)
 }
