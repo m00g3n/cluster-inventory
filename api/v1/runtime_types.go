@@ -186,7 +186,7 @@ func (k *Runtime) UpdateStateReady(c RuntimeConditionType, r RuntimeConditionRea
 }
 
 func (k *Runtime) UpdateStateDeletion(c RuntimeConditionType, r RuntimeConditionReason, status, msg string) {
-	if status != "Error" {
+	if status != "False" {
 		k.Status.State = RuntimeStateTerminating
 	} else {
 		k.Status.State = RuntimeStateFailed

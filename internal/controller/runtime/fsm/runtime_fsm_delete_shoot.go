@@ -26,7 +26,7 @@ func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 		s.instance.UpdateStateDeletion(
 			imv1.ConditionTypeRuntimeProvisioned,
 			imv1.ConditionReasonGardenerError,
-			"Error",
+			"False",
 			"Gardener API delete error",
 		)
 		return stopWithRequeue()
