@@ -10,7 +10,6 @@ import (
 )
 
 func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
-
 	converterConfig := FixConverterConfig()
 	converter := gardener_shoot.NewConverter(converterConfig)
 	shoot, err := converter.ToShoot(s.instance)
