@@ -204,7 +204,8 @@ func (k *Runtime) UpdateStateDeletion(c RuntimeConditionType, r RuntimeCondition
 }
 
 func (k *Runtime) UpdateStatePending(c RuntimeConditionType, r RuntimeConditionReason, status, msg string) {
-	if status != "Error" {
+
+	if status != "False" {
 		k.Status.State = RuntimeStatePending
 	} else {
 		k.Status.State = RuntimeStateFailed

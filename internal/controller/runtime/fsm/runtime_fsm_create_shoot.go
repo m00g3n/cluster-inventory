@@ -20,7 +20,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 		s.instance.UpdateStatePending(
 			imv1.ConditionTypeRuntimeProvisioned,
 			imv1.ConditionReasonConversionError,
-			"Error",
+			"False",
 			"Runtime conversion error",
 		)
 
@@ -37,7 +37,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 		s.instance.UpdateStatePending(
 			imv1.ConditionTypeRuntimeProvisioned,
 			imv1.ConditionReasonGardenerError,
-			"Error",
+			"False",
 			"Gardener API create error",
 		)
 

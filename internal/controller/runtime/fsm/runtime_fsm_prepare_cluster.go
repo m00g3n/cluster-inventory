@@ -135,7 +135,7 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 			s.instance.UpdateStatePending(
 				imv1.ConditionTypeRuntimeProvisioned,
 				imv1.ConditionReasonProcessingErr,
-				"Error",
+				"False",
 				string(reason))
 
 			return stopWithNoRequeue()
