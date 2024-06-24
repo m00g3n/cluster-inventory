@@ -2,6 +2,8 @@ package fsm
 
 import (
 	"context"
+	"time"
+
 	"k8s.io/apimachinery/pkg/api/meta"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -27,22 +29,25 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 			if err != nil {
 				return stopWithErrorAndNoRequeue(err)
 			}
-			return stopWithRequeue()
-		}
-
-		provisioningCondition := meta.FindStatusCondition(s.instance.Status.Conditions, string(imv1.ConditionTypeRuntimeProvisioned))
-
-		if provisioningCondition == nil {
-			s.instance.UpdateStatePending(
-				imv1.ConditionTypeRuntimeProvisioned,
-				imv1.ConditionReasonInitialized,
-				"Unknown",
-				"Runtime initialized",
-			)
-			return stopWithRequeue()
+			return stopWithRequeueAfter(time.Millisecond * 250)
 		}
 
 		if s.shoot == nil {
+			provisioningCondition := meta.FindStatusCondition(
+				s.instance.Status.Conditions,
+				string(imv1.ConditionTypeRuntimeProvisioned),
+			)
+
+			if provisioningCondition == nil {
+				s.instance.UpdateStatePending(
+					imv1.ConditionTypeRuntimeProvisioned,
+					imv1.ConditionReasonInitialized,
+					"Unknown",
+					"Runtime initialized",
+				)
+				return stopWithRequeueAfter(time.Millisecond * 250)
+			}
+
 			m.log.Info("Gardener shoot does not exist, creating new one")
 			return switchState(sFnCreateShoot)
 		}

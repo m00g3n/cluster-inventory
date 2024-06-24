@@ -41,5 +41,5 @@ func sFnPersistShoot(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 	if err := persist(path, s.shoot); err != nil {
 		return stopWithErrorAndNoRequeue(err)
 	}
-	return stopWithNoRequeue()
+	return stopWithRequeue()
 }

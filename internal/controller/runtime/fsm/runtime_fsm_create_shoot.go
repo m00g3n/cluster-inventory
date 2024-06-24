@@ -2,6 +2,7 @@ package fsm
 
 import (
 	"context"
+	"time"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
@@ -41,7 +42,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 			"Gardener API create error",
 		)
 
-		return stopWithRequeue()
+		return stopWithRequeueAfter(15 * time.Second)
 	}
 
 	m.log.Info("Gardener shoot for runtime initialised successfully", "Name", s.shoot.Name, "Namespace", s.shoot.Namespace)
@@ -58,7 +59,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 		return switchState(sFnPersistShoot)
 	}
 
-	return stopWithRequeue()
+	return stopWithRequeueAfter(15 * time.Second)
 }
 
 func FixConverterConfig() gardener_shoot.ConverterConfig {

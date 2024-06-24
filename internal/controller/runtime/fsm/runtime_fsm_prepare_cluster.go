@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerhelper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
@@ -16,20 +17,20 @@ type ErrReason string
 func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 
 	if s.shoot == nil {
-		return stopWithErrorAndNoRequeue(fmt.Errorf("Fatal state machine logic problem: Shoot can never be nil in PrepareCluster state!"))
+		return stopWithErrorAndNoRequeue(fmt.Errorf("fatal state machine logic problem: Shoot can never be nil in PrepareCluster state"))
 	}
 
 	if s.shoot.Spec.DNS == nil || s.shoot.Spec.DNS.Domain == nil {
 		msg := fmt.Sprintf("DNS Domain is not set yet for shoot: %s, scheduling for retry", s.shoot.Name)
 		m.log.Info(msg)
-		return stopWithRequeue()
+		return stopWithRequeueAfter(time.Second * 15)
 	}
 
 	lastOperation := s.shoot.Status.LastOperation
 	if lastOperation == nil {
 		msg := fmt.Sprintf("Last operation is nil for shoot: %s, scheduling for retry", s.shoot.Name)
 		m.log.Info(msg)
-		return stopWithRequeue()
+		return stopWithRequeueAfter(time.Second * 15)
 	}
 
 	if lastOperation.Type == gardener.LastOperationTypeCreate {
@@ -45,7 +46,7 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 				"Unknown",
 				"Shoot creation in progress")
 
-			return stopWithRequeue()
+			return stopWithRequeueAfter(time.Second * 15)
 		}
 
 		if lastOperation.State == gardener.LastOperationStateSucceeded {
@@ -69,7 +70,7 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 			if gardenerhelper.HasErrorCode(s.shoot.Status.LastErrors, gardener.ErrorInfraRateLimitsExceeded) {
 				msg := fmt.Sprintf("Error during cluster provisioning: Rate limits exceeded for Shoot %s, scheduling for retry", s.shoot.Name)
 				m.log.Info(msg)
-				return stopWithRequeue()
+				return stopWithRequeueAfter(time.Second * 15)
 			}
 
 			msg := fmt.Sprintf("Provisioning failed for shoot: %s ! Last state: %s, Description: %s", s.shoot.Name, lastOperation.State, lastOperation.Description)
