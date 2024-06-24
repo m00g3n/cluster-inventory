@@ -29,7 +29,7 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 			if err != nil {
 				return stopWithErrorAndNoRequeue(err)
 			}
-			return stopWithRequeueAfter(time.Millisecond * 250)
+			return stopWithRequeueAfter(time.Second)
 		}
 
 		if s.shoot == nil {
@@ -45,7 +45,7 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 					"Unknown",
 					"Runtime initialized",
 				)
-				return stopWithRequeueAfter(time.Millisecond * 250)
+				return stopWithRequeueAfter(time.Second)
 			}
 
 			m.log.Info("Gardener shoot does not exist, creating new one")
