@@ -26,7 +26,10 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 			if err != nil {
 				return stopWithErrorAndNoRequeue(err)
 			}
+			return stopWithRequeue()
+		}
 
+		if !s.instance.IsStateWithConditionSet(imv1.RuntimeStatePending, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonInitialized) {
 			s.instance.UpdateStatePending(
 				imv1.ConditionTypeRuntimeProvisioned,
 				imv1.ConditionReasonInitialized,
@@ -41,7 +44,7 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 			return switchState(sFnCreateShoot)
 		}
 
-		return switchState(sFnPrepareCluster)
+		return switchState(sFnPrepareCluster) // wait for operation to complete
 
 	} else {
 		if instanceHasFinalizer {
@@ -52,6 +55,12 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 
 			//return switchState(sFnWaitForShootDeletion)
 		}
+
+		//if s.shoot == nil {
+		//	m.log.Info("Removing finalizer")
+		//	controllerutil.RemoveFinalizer(&s.instance, m.Finalizer)
+		//	return stopWithNoRequeue()
+		//}
 	}
 	// stop state machine
 	return nil, nil, nil
