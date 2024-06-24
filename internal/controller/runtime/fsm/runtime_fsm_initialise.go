@@ -2,6 +2,7 @@ package fsm
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/api/meta"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -29,7 +30,9 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 			return stopWithRequeue()
 		}
 
-		if !s.instance.IsStateWithConditionSet(imv1.RuntimeStatePending, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonInitialized) {
+		provisioningCondition := meta.FindStatusCondition(s.instance.Status.Conditions, string(imv1.ConditionTypeRuntimeProvisioned))
+
+		if provisioningCondition == nil {
 			s.instance.UpdateStatePending(
 				imv1.ConditionTypeRuntimeProvisioned,
 				imv1.ConditionReasonInitialized,
