@@ -19,7 +19,7 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 	provisioningCondition := meta.FindStatusCondition(s.instance.Status.Conditions, string(imv1.ConditionTypeRuntimeProvisioned))
 
 	if instanceIsNotBeingDeleted && !instanceHasFinalizer {
-		return addFinalizer(ctx, m, s)
+		return addFinalizerAndRequeue(ctx, m, s)
 	}
 
 	if instanceIsNotBeingDeleted && s.shoot == nil && provisioningCondition == nil {
@@ -49,13 +49,13 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 	}
 
 	if !instanceIsNotBeingDeleted && instanceHasFinalizer && s.shoot == nil {
-		return removeFinalizer(ctx, m, s)
+		return removeFinalizerAndStop(ctx, m, s)
 	}
 
 	return nil, nil, nil
 }
 
-func addFinalizer(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
+func addFinalizerAndRequeue(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	m.log.Info("adding finalizer")
 	controllerutil.AddFinalizer(&s.instance, m.Finalizer)
 
@@ -66,7 +66,7 @@ func addFinalizer(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.R
 	return stopWithRequeueAfter(time.Second)
 }
 
-func removeFinalizer(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
+func removeFinalizerAndStop(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	m.log.Info("removing finalizer")
 	controllerutil.RemoveFinalizer(&s.instance, m.Finalizer)
 
