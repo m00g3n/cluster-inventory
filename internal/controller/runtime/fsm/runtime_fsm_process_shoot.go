@@ -7,9 +7,7 @@ import (
 )
 
 func sFnProcessShoot(_ context.Context, _ *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
-
-	// TODO: now let's process shoot get kubeconfig and create cluster role bindings
-
+	// process shoot get kubeconfig and create cluster role bindings
 	s.instance.UpdateStateReady(
 		imv1.ConditionTypeRuntimeProvisioned,
 		imv1.ConditionReasonConfigurationCompleted,
