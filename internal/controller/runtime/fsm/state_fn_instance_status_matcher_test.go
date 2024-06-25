@@ -1,5 +1,6 @@
 package fsm
 
+/*
 import (
 	"fmt"
 
@@ -10,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
 
 type instanceConditionMatcher struct {
 	actual   *metav1.Condition
@@ -39,3 +41,5 @@ func (m *instanceConditionMatcher) FailureMessage(_ interface{}) (message string
 func (m *instanceConditionMatcher) NegatedFailureMessage(_ interface{}) (message string) {
 	return fmt.Sprintf("Expected\n\t%v\nnot to contain\n\t%s", m.actual, m.expected)
 }
+
+*/
