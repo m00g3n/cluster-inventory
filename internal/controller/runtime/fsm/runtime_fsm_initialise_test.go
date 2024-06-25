@@ -3,6 +3,7 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/meta"
 
 	gardener_mocks "github.com/kyma-project/infrastructure-manager/internal/gardener/mocks"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,13 +48,30 @@ var _ = Describe("KIM sFnInitialise", func() {
 		},
 	}
 
-	testRtWithFinalizer := imv1.Runtime{
+	testRtWithFinalizerNoProvisioningCondition := imv1.Runtime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       "test-instance",
 			Namespace:  "default",
 			Finalizers: []string{"test-me-plz"},
 		},
 	}
+
+	testRtWithFinalizerAndProvisioningCondition := imv1.Runtime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       "test-instance",
+			Namespace:  "default",
+			Finalizers: []string{"test-me-plz"},
+		},
+	}
+
+	provisioningCondition := metav1.Condition{
+		Type:               string(imv1.ConditionTypeRuntimeProvisioned),
+		Status:             metav1.ConditionUnknown,
+		LastTransitionTime: now,
+		Reason:             "Test reason",
+		Message:            "Test message",
+	}
+	meta.SetStatusCondition(&testRtWithFinalizerAndProvisioningCondition.Status.Conditions, provisioningCondition)
 
 	testRtWithDeletionTimestamp := imv1.Runtime{
 		ObjectMeta: metav1.ObjectMeta{
@@ -120,20 +138,20 @@ var _ = Describe("KIM sFnInitialise", func() {
 			},
 		),
 		Entry(
-			"should return sFnCreateShoot and no error when CR has been created and shoot exists",
+			"should return sFnUpdateStatus and no error when there is no Provisioning Condition",
 			testCtx,
-			must(newFakeFSM, withTestFinalizer, withMockedShootClient(&testShootClient)),
-			&systemState{instance: testRtWithFinalizer},
+			must(newFakeFSM, withTestFinalizer, withMockedShootClient(&testShootClientWithError)),
+			&systemState{instance: testRtWithFinalizerNoProvisioningCondition},
 			testOpts{
 				MatchExpectedErr: BeNil(),
-				MatchNextFnState: haveName("sFnCreateShoot"),
+				MatchNextFnState: haveName("sFnUpdateStatus"),
 			},
 		),
 		Entry(
-			"should return sFnCreateShoot and no error when shoot is missing",
+			"should return sFnCreateStatus and no error when exists Provisioning Condition and shoot is missing",
 			testCtx,
 			must(newFakeFSM, withTestFinalizer, withMockedShootClient(&testShootClientWithError)),
-			&systemState{instance: testRtWithFinalizer},
+			&systemState{instance: testRtWithFinalizerAndProvisioningCondition},
 			testOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: haveName("sFnCreateShoot"),
