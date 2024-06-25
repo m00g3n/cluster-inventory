@@ -39,7 +39,7 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 
 	if instanceIsNotBeingDeleted && s.shoot != nil {
 		m.log.Info("Gardener shoot exists, processing")
-		return switchState(sFnPrepareCluster) // wait for operation to complete
+		return switchState(sFnPrepareCluster) // wait for pending shoot operation to complete
 	}
 
 	if !instanceIsNotBeingDeleted && instanceHasFinalizer && s.shoot != nil {
@@ -62,7 +62,7 @@ func addFinalizerAndRequeue(ctx context.Context, m *fsm, s *systemState) (stateF
 	if err != nil {
 		return stopWithErrorAndNoRequeue(err)
 	}
-	return nil, nil, nil
+	return nil, &ctrl.Result{Requeue: true}, nil
 }
 
 func removeFinalizerAndStop(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
