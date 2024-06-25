@@ -4,9 +4,8 @@ import (
 	"context"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/meta"
-
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -15,7 +14,6 @@ import (
 // All the states we set in the operator are about to be read only by the external clients
 
 func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
-
 	instanceIsNotBeingDeleted := s.instance.GetDeletionTimestamp().IsZero()
 	instanceHasFinalizer := controllerutil.ContainsFinalizer(&s.instance, m.Finalizer)
 
@@ -56,10 +54,10 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 
 	} else {
 		if instanceHasFinalizer {
-			//if s.shoot.GetDeletionTimestamp().IsZero() {
+			// if s.shoot.GetDeletionTimestamp().IsZero() {
 			m.log.Info("Instance is being deleted")
 			return switchState(sFnDeleteShoot)
-			//}
+			// }
 
 			//return switchState(sFnWaitForShootDeletion)
 		}

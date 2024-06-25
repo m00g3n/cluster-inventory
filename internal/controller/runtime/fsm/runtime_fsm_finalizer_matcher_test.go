@@ -3,7 +3,7 @@ package fsm
 import (
 	"fmt"
 
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega" //nolint:revive
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/onsi/gomega/types"
