@@ -3,12 +3,13 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"runtime"
+
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"k8s.io/client-go/tools/record"
-	"reflect"
-	"runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"

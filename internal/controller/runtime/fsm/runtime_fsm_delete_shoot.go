@@ -2,6 +2,7 @@ package fsm
 
 import (
 	"context"
+
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
