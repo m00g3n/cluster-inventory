@@ -6,7 +6,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func sFnProcessShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
+func sFnProcessShoot(_ context.Context, _ *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 
 	// TODO: now let's process shoot get kubeconfig and create cluster role bindings
 

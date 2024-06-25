@@ -2,8 +2,6 @@ package fsm
 
 import (
 	"context"
-	"time"
-
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -59,7 +57,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 		return switchState(sFnPersistShoot)
 	}
 
-	return stopWithRequeueAfter(15 * time.Second)
+	return stopWithRequeueAfter(gardenerRequeueDuration)
 }
 
 func FixConverterConfig() gardener_shoot.ConverterConfig {

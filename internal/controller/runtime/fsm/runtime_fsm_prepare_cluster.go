@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strings"
 
-	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerhelper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 )
 
 type ErrReason string
@@ -122,7 +122,6 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 
 		// Runtime update is failed
 		if lastOperation.State == gardener.LastOperationStateFailed {
-
 			var reason ErrReason
 
 			if len(s.shoot.Status.LastErrors) > 0 {
