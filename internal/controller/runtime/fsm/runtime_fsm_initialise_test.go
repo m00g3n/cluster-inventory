@@ -2,16 +2,14 @@ package fsm
 
 import (
 	"context"
-	"fmt"
+
 	"k8s.io/apimachinery/pkg/api/meta"
 
-	gardener_mocks "github.com/kyma-project/infrastructure-manager/internal/gardener/mocks"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"time"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/stretchr/testify/mock"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	util "k8s.io/apimachinery/pkg/util/runtime"
@@ -93,12 +91,6 @@ var _ = Describe("KIM sFnInitialise", func() {
 		},
 	}
 
-	testShootClient := gardener_mocks.ShootClient{}
-	testShootClient.On("Get", mock.Anything, testShoot.Name, mock.Anything).Return(&testShoot, nil)
-
-	testShootClientWithError := gardener_mocks.ShootClient{}
-	testShootClientWithError.On("Get", mock.Anything, testShoot.Name, mock.Anything).Return(nil, fmt.Errorf("test error"))
-
 	testFunction := buildTestFunction(sFnInitialize)
 
 	// WHEN/THAN
@@ -107,7 +99,7 @@ var _ = Describe("KIM sFnInitialise", func() {
 		"transition graph validation",
 		testFunction,
 		Entry(
-			"should return nothing when CR is being deleted without finalizer",
+			"should return nothing when CR is being deleted without finalizer and shoot is missing",
 			testCtx,
 			must(newFakeFSM, withTestFinalizer),
 			&systemState{instance: testRtWithDeletionTimestamp},
@@ -117,17 +109,27 @@ var _ = Describe("KIM sFnInitialise", func() {
 			},
 		),
 		Entry(
-			"should return sFnDeleteShoot and no error when CR is being deleted with finalizer",
+			"should return sFnUpdateStatus when CR is being deleted with finalizer and shoot is missing - Remove finalizer",
+			testCtx,
+			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(&testRt)),
+			&systemState{instance: testRtWithDeletionTimestampAndFinalizer},
+			testOpts{
+				MatchExpectedErr: BeNil(),
+				MatchNextFnState: haveName("sFnUpdateStatus"),
+			},
+		),
+		Entry(
+			"should return sFnDeleteShoot and no error when CR is being deleted with finalizer and shoot exists",
 			testCtx,
 			must(newFakeFSM, withTestFinalizer),
-			&systemState{instance: testRtWithDeletionTimestampAndFinalizer},
+			&systemState{instance: testRtWithDeletionTimestampAndFinalizer, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: haveName("sFnDeleteShoot"),
 			},
 		),
 		Entry(
-			"should return sFnUpdateStatus and no error when CR has been created",
+			"should return sFnUpdateStatus and no error when CR has been created without finalizer - Add finalizer",
 			testCtx,
 			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(&testRt)),
 			&systemState{instance: testRt},
@@ -138,9 +140,9 @@ var _ = Describe("KIM sFnInitialise", func() {
 			},
 		),
 		Entry(
-			"should return sFnUpdateStatus and no error when there is no Provisioning Condition",
+			"should return sFnUpdateStatus and no error when there is no Provisioning Condition - Add condition",
 			testCtx,
-			must(newFakeFSM, withTestFinalizer, withMockedShootClient(&testShootClientWithError)),
+			must(newFakeFSM, withTestFinalizer),
 			&systemState{instance: testRtWithFinalizerNoProvisioningCondition},
 			testOpts{
 				MatchExpectedErr: BeNil(),
@@ -150,11 +152,21 @@ var _ = Describe("KIM sFnInitialise", func() {
 		Entry(
 			"should return sFnCreateStatus and no error when exists Provisioning Condition and shoot is missing",
 			testCtx,
-			must(newFakeFSM, withTestFinalizer, withMockedShootClient(&testShootClientWithError)),
+			must(newFakeFSM, withTestFinalizer),
 			&systemState{instance: testRtWithFinalizerAndProvisioningCondition},
 			testOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: haveName("sFnCreateShoot"),
+			},
+		),
+		Entry(
+			"should return sFnPrepareCluster and no error when exists Provisioning Condition and shoot exists",
+			testCtx,
+			must(newFakeFSM, withTestFinalizer),
+			&systemState{instance: testRtWithFinalizerAndProvisioningCondition, shoot: &testShoot},
+			testOpts{
+				MatchExpectedErr: BeNil(),
+				MatchNextFnState: haveName("sFnPrepareCluster"),
 			},
 		),
 	)

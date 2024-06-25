@@ -29,78 +29,78 @@ var _ = Describe("KIM sFnInitialise", func() {
 		//				MatchNextFnState: BeNil(),
 		//			},
 		//		),
-		/*		Entry(
-					"validate missing DNS",
-					testCtx,
-					must(newFakeFSM),
-					&systemState{
-						shoot: &testing.ShootNoDNS,
-					},
-					testOpts{
-						MatchExpectedErr: BeNil(),
-						MatchNextFnState: haveName("sFnUpdateStatus"),
-					},
-				),
-				Entry(
-					"retry when last operation on shoot is unknown",
-					testCtx,
-					must(newFakeFSM),
-					&systemState{
-						shoot: &testing.ShootNoDNS,
-					},
-					testOpts{
-						MatchExpectedErr: BeNil(),
-						MatchNextFnState: haveName("sFnUpdateStatus"),
-					},
-				),
-				Entry(
-					"validate missing DNS domain",
-					testCtx,
-					must(newFakeFSM),
-					&systemState{
-						shoot: &testing.ShootNoDNSDomain,
-					},
-					testOpts{
-						MatchExpectedErr: BeNil(),
-						MatchNextFnState: haveName("sFnUpdateStatus"),
-					},
-				),
-				Entry(
-					"validate missing last operation",
-					testCtx,
-					must(newFakeFSM),
-					&systemState{
-						shoot: &testing.ShootMissingLastOperation,
-					},
-					testOpts{
-						MatchExpectedErr: BeNil(),
-						MatchNextFnState: haveName("sFnUpdateStatus"),
-					},
-				),
-				Entry(
-					"last operation processing",
-					testCtx,
-					must(newFakeFSM),
-					&systemState{
-						shoot: &testing.ShootLastOperationProcessing,
-					},
-					testOpts{
-						MatchExpectedErr: BeNil(),
-						MatchNextFnState: haveName("sFnUpdateStatus"),
-					},
-				),
-				Entry(
-					"last operation create pending",
-					testCtx,
-					must(newFakeFSM),
-					&systemState{
-						shoot: &testing.ShootLastOperationPending,
-					},
-					testOpts{
-						MatchExpectedErr: BeNil(),
-						MatchNextFnState: haveName("sFnUpdateStatus"),
-					},
-				),*/
+		Entry(
+			"validate missing DNS",
+			testCtx,
+			must(newFakeFSM),
+			&systemState{
+				shoot: &testing.ShootNoDNS,
+			},
+			testOpts{
+				MatchExpectedErr: BeNil(),
+				MatchNextFnState: haveName("sFnUpdateStatus"),
+			},
+		),
+		Entry(
+			"retry when last operation on shoot is unknown",
+			testCtx,
+			must(newFakeFSM),
+			&systemState{
+				shoot: &testing.ShootNoDNS,
+			},
+			testOpts{
+				MatchExpectedErr: BeNil(),
+				MatchNextFnState: haveName("sFnUpdateStatus"),
+			},
+		),
+		Entry(
+			"validate missing DNS domain",
+			testCtx,
+			must(newFakeFSM),
+			&systemState{
+				shoot: &testing.ShootNoDNSDomain,
+			},
+			testOpts{
+				MatchExpectedErr: BeNil(),
+				MatchNextFnState: haveName("sFnUpdateStatus"),
+			},
+		),
+		Entry(
+			"validate missing last operation",
+			testCtx,
+			must(newFakeFSM),
+			&systemState{
+				shoot: &testing.ShootMissingLastOperation,
+			},
+			testOpts{
+				MatchExpectedErr: BeNil(),
+				MatchNextFnState: haveName("sFnUpdateStatus"),
+			},
+		),
+		Entry(
+			"last operation processing",
+			testCtx,
+			must(newFakeFSM),
+			&systemState{
+				shoot: &testing.ShootLastOperationProcessing,
+			},
+			testOpts{
+				MatchExpectedErr: BeNil(),
+				MatchNextFnState: haveName("sFnUpdateStatus"),
+			},
+		),
+		Entry(
+			"last operation create pending",
+			testCtx,
+			must(newFakeFSM),
+			&systemState{
+				shoot: &testing.ShootLastOperationPending,
+			},
+			testOpts{
+				MatchExpectedErr: BeNil(),
+				MatchNextFnState: haveName("sFnUpdateStatus"),
+			},
+		),
 		Entry(
 			"last operation create succeeded",
 			testCtx,
