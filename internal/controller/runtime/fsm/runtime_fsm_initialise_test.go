@@ -135,7 +135,7 @@ var _ = Describe("KIM sFnInitialise", func() {
 			&systemState{instance: testRt},
 			testOpts{
 				MatchExpectedErr: BeNil(),
-				MatchNextFnState: haveName("sFnUpdateStatus"),
+				MatchNextFnState: BeNil(),
 				StateMatch:       []types.GomegaMatcher{haveFinalizer("test-me-plz")},
 			},
 		),

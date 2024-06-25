@@ -2,7 +2,6 @@ package fsm
 
 import (
 	"context"
-	"time"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -30,7 +29,7 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 			"Unknown",
 			"Runtime initialized",
 		)
-		return stopWithRequeueAfter(time.Second)
+		return stopWithRequeue()
 	}
 
 	if instanceIsNotBeingDeleted && s.shoot == nil {
@@ -63,7 +62,7 @@ func addFinalizerAndRequeue(ctx context.Context, m *fsm, s *systemState) (stateF
 	if err != nil {
 		return stopWithErrorAndNoRequeue(err)
 	}
-	return stopWithRequeueAfter(time.Second)
+	return nil, nil, nil
 }
 
 func removeFinalizerAndStop(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
@@ -74,5 +73,5 @@ func removeFinalizerAndStop(ctx context.Context, m *fsm, s *systemState) (stateF
 	if err != nil {
 		return stopWithErrorAndNoRequeue(err)
 	}
-	return stopWithNoRequeue()
+	return nil, nil, nil
 }
