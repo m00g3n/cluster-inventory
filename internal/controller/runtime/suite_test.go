@@ -172,7 +172,7 @@ func fixGardenerShootsForProvisioning(shoot *gardener_api.Shoot) []*gardener_api
 
 	//processedShoot := processingShoot.DeepCopy() // will add specific data later
 
-	return []*gardener_api.Shoot{missingShoot, missingShoot, initialisedShoot, processingShoot, readyShoot, readyShoot}
+	return []*gardener_api.Shoot{missingShoot, missingShoot, initialisedShoot, processingShoot, readyShoot, readyShoot, readyShoot, readyShoot}
 }
 
 func fixConverterConfigForTests() gardener_shoot.ConverterConfig {
