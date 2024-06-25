@@ -42,7 +42,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 			"Gardener API create error",
 		)
 
-		return stopWithRequeueAfter(15 * time.Second)
+		return stopWithRequeueAfter(gardenerRequeueDuration)
 	}
 
 	m.log.Info("Gardener shoot for runtime initialised successfully", "Name", s.shoot.Name, "Namespace", s.shoot.Namespace)

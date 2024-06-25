@@ -32,10 +32,10 @@ func (m *instanceConditionMatcher) Match(actual any) (success bool, err error) {
 	return Equal(m.expected).Match(m.actual)
 }
 
-func (m *instanceConditionMatcher) FailureMessage(actual interface{}) (message string) {
+func (m *instanceConditionMatcher) FailureMessage(_ interface{}) (message string) {
 	return fmt.Sprintf("Expected\n\t%v\nto contain\n\t%s", m.actual, m.expected)
 }
 
-func (m *instanceConditionMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+func (m *instanceConditionMatcher) NegatedFailureMessage(_ interface{}) (message string) {
 	return fmt.Sprintf("Expected\n\t%v\nnot to contain\n\t%s", m.actual, m.expected)
 }

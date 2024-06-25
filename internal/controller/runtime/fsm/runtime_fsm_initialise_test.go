@@ -2,22 +2,18 @@ package fsm
 
 import (
 	"context"
-
-	"k8s.io/apimachinery/pkg/api/meta"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"time"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	util "k8s.io/apimachinery/pkg/util/runtime"
-
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
 	"github.com/onsi/gomega/types"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	util "k8s.io/apimachinery/pkg/util/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var withTestFinalizer = withFinalizer("test-me-plz")

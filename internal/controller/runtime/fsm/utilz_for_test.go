@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	gardener_mocks "github.com/kyma-project/infrastructure-manager/internal/gardener/mocks"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega" //nolint:revive
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
