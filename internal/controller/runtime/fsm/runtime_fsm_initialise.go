@@ -18,7 +18,6 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 	instanceHasFinalizer := controllerutil.ContainsFinalizer(&s.instance, m.Finalizer)
 	provisioningCondition := meta.FindStatusCondition(s.instance.Status.Conditions, string(imv1.ConditionTypeRuntimeProvisioned))
 
-	// in case instance does not have finalizer - add it and update instance
 	if instanceIsNotBeingDeleted && !instanceHasFinalizer {
 		return addFinalizer(ctx, m, s)
 	}
