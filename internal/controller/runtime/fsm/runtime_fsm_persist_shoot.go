@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var getWriter = func(filePath string) (io.Writer, error) {
+func getWriterForFilesystem(filePath string) (io.Writer, error) {
 	file, err := os.Create(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create file: %w", err)
@@ -19,8 +19,8 @@ var getWriter = func(filePath string) (io.Writer, error) {
 	return file, nil
 }
 
-func persist(path string, s *gardener.Shoot) error {
-	writer, err := getWriter(path)
+func persist(path string, s *gardener.Shoot, saveFunc writerGetter) error {
+	writer, err := saveFunc(path)
 	if err != nil {
 		return fmt.Errorf("unable to create file: %w", err)
 	}
@@ -38,7 +38,7 @@ func persist(path string, s *gardener.Shoot) error {
 
 func sFnPersistShoot(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	path := fmt.Sprintf("%s/%s-%s.yaml", m.PVCPath, s.shoot.Namespace, s.shoot.Name)
-	if err := persist(path, s.shoot); err != nil {
+	if err := persist(path, s.shoot, m.writerProvider); err != nil {
 		return updateStatusAndStopWithError(err)
 	}
 	return updateStatusAndRequeue()

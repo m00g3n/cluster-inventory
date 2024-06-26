@@ -12,18 +12,14 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-type writerGetter = func(string) (io.Writer, error)
-
 var _ = Describe("KIM sFnPersist", func() {
 
 	var b bytes.Buffer
-	testStringWriter := func() writerGetter {
+	testWriterGetter := func() writerGetter {
 		return func(string) (io.Writer, error) {
 			return &b, nil
 		}
-	}
-
-	getWriter = testStringWriter()
+	}()
 
 	testCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -32,7 +28,7 @@ var _ = Describe("KIM sFnPersist", func() {
 	Expect(err).ShouldNot(HaveOccurred())
 
 	It("shoutld persist shoot data", func() {
-		next, _, err := sFnPersistShoot(testCtx, must(newFakeFSM), &systemState{shoot: &testing.ShootNoDNS})
+		next, _, err := sFnPersistShoot(testCtx, must(newFakeFSM, withStorageWriter(testWriterGetter)), &systemState{shoot: &testing.ShootNoDNS})
 		Expect(err).To(BeNil())
 		Expect(next).To(haveName("sFnUpdateStatus"))
 		Expect(expectedData).To(Equal(b.Bytes()))

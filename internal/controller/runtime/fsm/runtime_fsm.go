@@ -3,6 +3,7 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"io"
 	"reflect"
 	"runtime"
 	"time"
@@ -23,6 +24,8 @@ const (
 )
 
 type stateFn func(context.Context, *fsm, *systemState) (stateFn, *ctrl.Result, error)
+type writerFn func(filePath string) (io.Writer, error)
+type writerGetter = func(filePath string) (io.Writer, error)
 
 // runtime reconciler specific configuration
 type RCCfg struct {
@@ -52,8 +55,9 @@ type Fsm interface {
 }
 
 type fsm struct {
-	fn  stateFn
-	log logr.Logger
+	fn             stateFn
+	writerProvider writerFn
+	log            logr.Logger
 	K8s
 	RCCfg
 }
@@ -92,11 +96,20 @@ loop:
 	}, err
 }
 
+//func getWriter(filePath string) (io.Writer, error) {
+//	file, err := os.Create(filePath)
+//	if err != nil {
+//		return nil, fmt.Errorf("unable to create file: %w", err)
+//	}
+//	return file, nil
+//}
+
 func NewFsm(log logr.Logger, cfg RCCfg, k8s K8s) Fsm {
 	return &fsm{
-		fn:    sFnTakeSnapshot,
-		RCCfg: cfg,
-		log:   log,
-		K8s:   k8s,
+		fn:             sFnTakeSnapshot,
+		writerProvider: getWriterForFilesystem,
+		RCCfg:          cfg,
+		log:            log,
+		K8s:            k8s,
 	}
 }

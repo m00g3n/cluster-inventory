@@ -2,7 +2,6 @@ package fsm
 
 import (
 	"fmt"
-
 	. "github.com/onsi/gomega" //nolint:revive
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -28,6 +27,13 @@ var (
 		}
 	}
 
+	withStorageWriter = func(testWriterGetter writerGetter) fakeFSMOpt {
+		return func(fsm *fsm) error {
+			fsm.writerProvider = testWriterGetter
+			return nil
+		}
+	}
+
 	withFakedK8sClient = func(
 		scheme *runtime.Scheme,
 		objs ...client.Object) fakeFSMOpt {
@@ -43,7 +49,7 @@ var (
 		}
 	}
 
-	/* linter fix
+	/* linter fix for unused code
 	withMockedShootClient = func(c *gardener_mocks.ShootClient) fakeFSMOpt {
 		return func(fsm *fsm) error {
 			fsm.ShootClient = c
