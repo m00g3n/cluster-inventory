@@ -3,10 +3,9 @@ package fsm
 import (
 	"fmt"
 
+	. "github.com/onsi/gomega" //nolint:revive
 	"github.com/onsi/gomega/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	. "github.com/onsi/gomega" //nolint:revive
 )
 
 type finalizerMatcher struct {

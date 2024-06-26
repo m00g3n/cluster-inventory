@@ -20,14 +20,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
-
-	"k8s.io/client-go/tools/record"
-
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
 	gardener "github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -72,7 +70,6 @@ func (r *RuntimeReconciler) Reconcile(ctx context.Context, request ctrl.Request)
 			EventRecorder: r.EventRecorder,
 		})
 	return stateFSM.Run(ctx, runtime)
-
 }
 
 func NewRuntimeReconciler(mgr ctrl.Manager, shootClient gardener.ShootClient, logger logr.Logger) *RuntimeReconciler {

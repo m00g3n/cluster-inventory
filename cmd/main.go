@@ -22,14 +22,13 @@ import (
 	"os"
 	"time"
 
-	kubeconfig_controller "github.com/kyma-project/infrastructure-manager/internal/controller/kubeconfig"
-	runtime_controller "github.com/kyma-project/infrastructure-manager/internal/controller/runtime"
-	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
-
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	kubeconfig_controller "github.com/kyma-project/infrastructure-manager/internal/controller/kubeconfig"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
+	runtime_controller "github.com/kyma-project/infrastructure-manager/internal/controller/runtime"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/kubeconfig"
 	"github.com/pkg/errors"

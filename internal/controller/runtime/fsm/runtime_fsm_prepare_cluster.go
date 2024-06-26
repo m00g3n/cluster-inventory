@@ -7,9 +7,8 @@ import (
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardenerhelper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
-	ctrl "sigs.k8s.io/controller-runtime"
-
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type ErrReason string
@@ -33,7 +32,6 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 	}
 
 	if lastOperation.Type == gardener.LastOperationTypeCreate {
-
 		if lastOperation.State == gardener.LastOperationStateProcessing ||
 			lastOperation.State == gardener.LastOperationStatePending {
 			msg := fmt.Sprintf("Shoot %s is in %s state, scheduling for retry", s.shoot.Name, lastOperation.State)
@@ -87,7 +85,6 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 
 	// Runtime update is in progress
 	if lastOperation.Type == gardener.LastOperationTypeReconcile {
-
 		if lastOperation.State == gardener.LastOperationStateProcessing ||
 			lastOperation.State == gardener.LastOperationStatePending {
 			msg := fmt.Sprintf("Shoot %s is in %s state, scheduling for retry", s.shoot.Name, lastOperation.State)

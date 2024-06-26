@@ -18,6 +18,8 @@ package runtime
 
 import (
 	"context"
+	"time"
+
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
@@ -25,7 +27,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"time"
 )
 
 var _ = Describe("Runtime Controller", func() {
@@ -98,7 +99,7 @@ var _ = Describe("Runtime Controller", func() {
 
 			}, time.Second*300, time.Second*3).Should(BeTrue())
 
-			//mockShootClient.AssertExpectations(GinkgoT()) //TODO: this fails, investigate why
+			// mockShootClient.AssertExpectations(GinkgoT()) //TODO: this fails, investigate why
 		})
 	})
 })

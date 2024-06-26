@@ -17,17 +17,10 @@ limitations under the License.
 package runtime
 
 import (
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/rest"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
-)
-
-import (
 	"context"
+	"path/filepath"
+	"testing"
+
 	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	gardener_mocks "github.com/kyma-project/infrastructure-manager/internal/gardener/mocks"
@@ -35,11 +28,16 @@ import (
 	. "github.com/onsi/ginkgo/v2"        //nolint:revive
 	. "github.com/onsi/gomega"           //nolint:revive
 	. "github.com/stretchr/testify/mock" //nolint:revive
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
-	"path/filepath"
+	"k8s.io/client-go/rest"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"testing"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -127,7 +125,6 @@ func setupShootClientMockForProvisioning(shootClientMock *gardener_mocks.ShootCl
 	var shoots []*gardener_api.Shoot = fixGardenerShootsForProvisioning(&convertedShoot)
 
 	for _, shoot := range shoots {
-
 		if shoot != nil {
 			shootClientMock.On("Get", anyContext, Anything, Anything).Return(shoot, nil).Once()
 			continue
@@ -146,7 +143,6 @@ var _ = AfterSuite(func() {
 })
 
 func fixGardenerShootsForProvisioning(shoot *gardener_api.Shoot) []*gardener_api.Shoot {
-
 	var missingShoot *gardener_api.Shoot
 
 	initialisedShoot := shoot.DeepCopy()
@@ -170,7 +166,7 @@ func fixGardenerShootsForProvisioning(shoot *gardener_api.Shoot) []*gardener_api
 
 	readyShoot.Status.LastOperation.State = gardener_api.LastOperationStateSucceeded
 
-	//processedShoot := processingShoot.DeepCopy() // will add specific data later
+	// processedShoot := processingShoot.DeepCopy() // will add specific data later
 
 	return []*gardener_api.Shoot{missingShoot, missingShoot, missingShoot, initialisedShoot, processingShoot, readyShoot, readyShoot, readyShoot, readyShoot}
 }
