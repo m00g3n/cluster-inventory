@@ -32,7 +32,7 @@ import (
 )
 
 // RuntimeReconciler reconciles a Runtime object
-
+// nolint:revive
 type RuntimeReconciler struct {
 	client.Client
 	Scheme        *runtime.Scheme

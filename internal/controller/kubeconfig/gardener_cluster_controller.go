@@ -68,6 +68,8 @@ func NewGardenerClusterController(mgr ctrl.Manager, kubeconfigProvider Kubeconfi
 	}
 }
 
+// nolint:revive
+//
 //go:generate mockery --name=KubeconfigProvider
 type KubeconfigProvider interface {
 	Fetch(ctx context.Context, shootName string) (string, error)

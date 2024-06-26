@@ -2,6 +2,7 @@ package fsm
 
 import (
 	"fmt"
+
 	. "github.com/onsi/gomega" //nolint:revive
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
