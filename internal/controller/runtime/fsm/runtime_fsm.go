@@ -96,14 +96,6 @@ loop:
 	}, err
 }
 
-//func getWriter(filePath string) (io.Writer, error) {
-//	file, err := os.Create(filePath)
-//	if err != nil {
-//		return nil, fmt.Errorf("unable to create file: %w", err)
-//	}
-//	return file, nil
-//}
-
 func NewFsm(log logr.Logger, cfg RCCfg, k8s K8s) Fsm {
 	return &fsm{
 		fn:             sFnTakeSnapshot,
