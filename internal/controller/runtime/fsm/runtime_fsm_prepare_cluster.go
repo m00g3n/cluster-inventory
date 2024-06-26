@@ -15,20 +15,20 @@ type ErrReason string
 
 func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	if s.shoot == nil {
-		return stopWithErrorAndNoRequeue(fmt.Errorf("fatal state machine logic problem: Shoot can never be nil in PrepareCluster state"))
+		return updateStatusAndStopWithError(fmt.Errorf("fatal state machine logic problem: Shoot can never be nil in PrepareCluster state"))
 	}
 
 	if s.shoot.Spec.DNS == nil || s.shoot.Spec.DNS.Domain == nil {
 		msg := fmt.Sprintf("DNS Domain is not set yet for shoot: %s, scheduling for retry", s.shoot.Name)
 		m.log.Info(msg)
-		return stopWithRequeueAfter(gardenerRequeueDuration)
+		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 	}
 
 	lastOperation := s.shoot.Status.LastOperation
 	if lastOperation == nil {
 		msg := fmt.Sprintf("Last operation is nil for shoot: %s, scheduling for retry", s.shoot.Name)
 		m.log.Info(msg)
-		return stopWithRequeueAfter(gardenerRequeueDuration)
+		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 	}
 
 	if lastOperation.Type == gardener.LastOperationTypeCreate {
@@ -43,7 +43,7 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 				"Unknown",
 				"Shoot creation in progress")
 
-			return stopWithRequeueAfter(gardenerRequeueDuration)
+			return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 		}
 
 		if lastOperation.State == gardener.LastOperationStateSucceeded {
@@ -57,7 +57,7 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 					"True",
 					"Shoot creation completed")
 
-				return stopWithRequeue()
+				return updateStatusAndRequeue()
 			}
 
 			return switchState(sFnProcessShoot)
@@ -67,7 +67,7 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 			if gardenerhelper.HasErrorCode(s.shoot.Status.LastErrors, gardener.ErrorInfraRateLimitsExceeded) {
 				msg := fmt.Sprintf("Error during cluster provisioning: Rate limits exceeded for Shoot %s, scheduling for retry", s.shoot.Name)
 				m.log.Info(msg)
-				return stopWithRequeueAfter(gardenerRequeueDuration)
+				return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 			}
 
 			msg := fmt.Sprintf("Provisioning failed for shoot: %s ! Last state: %s, Description: %s", s.shoot.Name, lastOperation.State, lastOperation.Description)
@@ -79,7 +79,7 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 				"False",
 				"Shoot creation failed")
 
-			return stopWithNoRequeue()
+			return updateStatusAndStop()
 		}
 	}
 
@@ -96,7 +96,7 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 				"Unknown",
 				"Shoot creation in progress")
 
-			return stopWithRequeue()
+			return updateStatusAndRequeue()
 		}
 
 		// Runtime update is successful
@@ -111,7 +111,7 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 					"True",
 					"Shoot update completed")
 
-				return stopWithRequeue()
+				return updateStatusAndRequeue()
 			}
 
 			return switchState(sFnProcessShoot)
@@ -134,11 +134,11 @@ func sFnPrepareCluster(_ context.Context, m *fsm, s *systemState) (stateFn, *ctr
 				"False",
 				string(reason))
 
-			return stopWithNoRequeue()
+			return updateStatusAndStop()
 		}
 	}
 
-	return stopWithNoRequeue()
+	return updateStatusAndStop()
 }
 
 func gardenerErrCodesToErrReason(lastErrors ...gardener.LastError) ErrReason {

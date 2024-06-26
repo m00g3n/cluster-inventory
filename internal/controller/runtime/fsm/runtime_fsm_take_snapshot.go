@@ -18,7 +18,7 @@ func sFnTakeSnapshot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctr
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			m.log.Info("Failed to get Gardener shoot", "error", err)
-			return stopWithRequeue()
+			return updateStatusAndRequeue()
 		}
 	} else if shoot != nil {
 		s.shoot = shoot.DeepCopy()

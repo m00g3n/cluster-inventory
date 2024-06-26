@@ -24,7 +24,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 			"Runtime conversion error",
 		)
 
-		return stopWithNoRequeue()
+		return updateStatusAndStop()
 	}
 
 	m.log.Info("Shoot converted successfully", "Name", shoot.Name, "Namespace", shoot.Namespace, "Shoot", shoot)
@@ -41,7 +41,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 			"Gardener API create error",
 		)
 
-		return stopWithRequeueAfter(gardenerRequeueDuration)
+		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 	}
 
 	m.log.Info("Gardener shoot for runtime initialised successfully", "Name", s.shoot.Name, "Namespace", s.shoot.Namespace)
@@ -58,7 +58,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 		return switchState(sFnPersistShoot)
 	}
 
-	return stopWithRequeueAfter(gardenerRequeueDuration)
+	return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 }
 
 func FixConverterConfig() gardener_shoot.ConverterConfig {

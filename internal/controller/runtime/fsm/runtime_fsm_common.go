@@ -6,21 +6,28 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-// Przegadać
-func stopWithErrorAndNoRequeue(err error) (stateFn, *ctrl.Result, error) {
-	return sFnUpdateStatus(nil, err), nil, nil
+func updateStatusAndRequeue() (stateFn, *ctrl.Result, error) {
+	return sFnUpdateStatus(&ctrl.Result{Requeue: true}, nil), nil, nil
 }
 
-func stopWithRequeueAfter(duration time.Duration) (stateFn, *ctrl.Result, error) {
+func updateStatusAndRequeueAfter(duration time.Duration) (stateFn, *ctrl.Result, error) {
 	return sFnUpdateStatus(&ctrl.Result{RequeueAfter: duration}, nil), nil, nil
 }
 
-func stopWithNoRequeue() (stateFn, *ctrl.Result, error) {
+func updateStatusAndStop() (stateFn, *ctrl.Result, error) {
 	return sFnUpdateStatus(nil, nil), nil, nil
 }
 
-func stopWithRequeue() (stateFn, *ctrl.Result, error) {
-	return sFnUpdateStatus(&ctrl.Result{Requeue: true}, nil), nil, nil
+func updateStatusAndStopWithError(err error) (stateFn, *ctrl.Result, error) {
+	return sFnUpdateStatus(nil, err), nil, nil
+}
+
+func requeue() (stateFn, *ctrl.Result, error) {
+	return nil, &ctrl.Result{Requeue: true}, nil
+}
+
+func stop() (stateFn, *ctrl.Result, error) {
+	return nil, nil, nil
 }
 
 func switchState(fn stateFn) (stateFn, *ctrl.Result, error) {

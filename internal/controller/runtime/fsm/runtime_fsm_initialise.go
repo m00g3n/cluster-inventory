@@ -29,7 +29,7 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 			"Unknown",
 			"Runtime initialized",
 		)
-		return stopWithRequeue()
+		return updateStatusAndRequeue()
 	}
 
 	if instanceIsNotBeingDeleted && s.shoot == nil {
@@ -51,7 +51,7 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 		return removeFinalizerAndStop(ctx, m, s)
 	}
 
-	return nil, nil, nil
+	return stop()
 }
 
 func addFinalizerAndRequeue(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
@@ -60,9 +60,9 @@ func addFinalizerAndRequeue(ctx context.Context, m *fsm, s *systemState) (stateF
 
 	err := m.Update(ctx, &s.instance)
 	if err != nil {
-		return stopWithErrorAndNoRequeue(err)
+		return updateStatusAndStopWithError(err)
 	}
-	return nil, &ctrl.Result{Requeue: true}, nil
+	return requeue()
 }
 
 func removeFinalizerAndStop(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
@@ -71,7 +71,7 @@ func removeFinalizerAndStop(ctx context.Context, m *fsm, s *systemState) (stateF
 
 	err := m.Update(ctx, &s.instance)
 	if err != nil {
-		return stopWithErrorAndNoRequeue(err)
+		return updateStatusAndStopWithError(err)
 	}
-	return nil, nil, nil
+	return stop()
 }

@@ -16,7 +16,7 @@ func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 			"Unknown",
 			"Runtime deletion initialised",
 		)
-		return stopWithRequeue()
+		return updateStatusAndRequeue()
 	}
 
 	err := m.ShootClient.Delete(ctx, s.instance.Name, v1.DeleteOptions{})
@@ -30,7 +30,7 @@ func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 			"False",
 			"Gardener API delete error",
 		)
-		return stopWithRequeue()
+		return updateStatusAndRequeue()
 	}
-	return stopWithNoRequeue()
+	return updateStatusAndStop()
 }

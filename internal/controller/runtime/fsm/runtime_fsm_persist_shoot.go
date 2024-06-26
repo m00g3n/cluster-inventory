@@ -39,7 +39,7 @@ func persist(path string, s *gardener.Shoot) error {
 func sFnPersistShoot(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	path := fmt.Sprintf("%s/%s-%s.yaml", m.PVCPath, s.shoot.Namespace, s.shoot.Name)
 	if err := persist(path, s.shoot); err != nil {
-		return stopWithErrorAndNoRequeue(err)
+		return updateStatusAndStopWithError(err)
 	}
-	return stopWithRequeue()
+	return updateStatusAndRequeue()
 }

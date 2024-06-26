@@ -14,5 +14,5 @@ func sFnProcessShoot(_ context.Context, _ *fsm, s *systemState) (stateFn, *ctrl.
 		imv1.ConditionReasonConfigurationCompleted,
 		"Runtime creation completed successfully")
 
-	return stopWithNoRequeue()
+	return updateStatusAndStop()
 }
