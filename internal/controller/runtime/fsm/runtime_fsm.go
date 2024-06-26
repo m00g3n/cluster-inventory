@@ -24,7 +24,6 @@ const (
 )
 
 type stateFn func(context.Context, *fsm, *systemState) (stateFn, *ctrl.Result, error)
-type writerFn func(filePath string) (io.Writer, error)
 type writerGetter = func(filePath string) (io.Writer, error)
 
 // runtime reconciler specific configuration
@@ -56,7 +55,7 @@ type Fsm interface {
 
 type fsm struct {
 	fn             stateFn
-	writerProvider writerFn
+	writerProvider writerGetter
 	log            logr.Logger
 	K8s
 	RCCfg
