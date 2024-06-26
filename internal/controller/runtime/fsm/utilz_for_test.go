@@ -3,7 +3,6 @@ package fsm
 import (
 	"fmt"
 
-	gardener_mocks "github.com/kyma-project/infrastructure-manager/internal/gardener/mocks"
 	. "github.com/onsi/gomega" //nolint:revive
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,12 +43,14 @@ var (
 		}
 	}
 
+	/* linter fix
 	withMockedShootClient = func(c *gardener_mocks.ShootClient) fakeFSMOpt {
 		return func(fsm *fsm) error {
 			fsm.ShootClient = c
 			return nil
 		}
 	}
+	*/
 )
 
 func newFakeFSM(opts ...fakeFSMOpt) (*fsm, error) {
