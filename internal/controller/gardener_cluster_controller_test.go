@@ -86,7 +86,7 @@ var _ = Describe("Gardener Cluster controller", func() {
 
 			Eventually(func() string {
 				shootKey := types.NamespacedName{Name: kymaName, Namespace: namespace}
-				k8sClient.Get(context.Background(), shootKey, &newGardenerClusterCr)
+				k8sClient.Get(context.Background(), shootKey, &newGardenerClusterCr) //nolint:errcheck
 
 				if len(newGardenerClusterCr.Status.Conditions) > 0 {
 					return newGardenerClusterCr.Status.Conditions[0].Message
