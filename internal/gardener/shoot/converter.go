@@ -58,6 +58,9 @@ func NewConverter(config ConverterConfig) Converter {
 		extender.NewProviderExtender(config.Provider.AWS.EnableIMDSv2, config.MachineImage.DefaultVersion),
 		extender.NewDNSExtender(config.DNS.SecretName, config.DNS.DomainPrefix, config.DNS.ProviderType),
 		extender.ExtendWithOIDC,
+		extender.ExtendWithCloudProfile,
+		extender.ExtendWithNetworkFilter,
+		extender.ExtendWithExposureClassName,
 	}
 
 	return Converter{
@@ -68,7 +71,6 @@ func NewConverter(config ConverterConfig) Converter {
 
 func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
 	// The original implementation in the Provisioner: https://github.com/kyma-project/control-plane/blob/3dd257826747384479986d5d79eb20f847741aa6/components/provisioner/internal/model/gardener_config.go#L127
-	// Note: shoot.Spec.ExposureClassNames field is ignored as KEB didn't send this field to the Provisioner
 
 	// If you need to enhance the converter please adhere to the following convention:
 	// - fields taken directly from Runtime CR must be added in this function
@@ -89,7 +91,7 @@ func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
 				Pods:     &runtime.Spec.Shoot.Networking.Pods,
 				Services: &runtime.Spec.Shoot.Networking.Services,
 			},
-			ControlPlane: &runtime.Spec.Shoot.ControlPlane, //nolint:godox TODO: check HAavailability (also in migrator)
+			ControlPlane: &runtime.Spec.Shoot.ControlPlane,
 		},
 	}
 
