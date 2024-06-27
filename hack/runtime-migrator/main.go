@@ -44,12 +44,12 @@ func main() {
 	list := getShootList(migratorContext, cfg, gardenerNamespace)
 	provider, err := setupKubernetesKubeconfigProvider(cfg.GardenerKubeconfigPath, gardenerNamespace, expirationTime)
 	if err != nil {
-		log.Fatal("failed to create kubeconfig provider - ", err)
+		log.Print("failed to create kubeconfig provider - ", err)
 	}
 
 	kcpClient, err := migrator.CreateKcpClient(&cfg)
 	if err != nil {
-		log.Fatal("failed to create kcp client - ", kcpClient)
+		log.Print("failed to create kcp client - ", kcpClient)
 	}
 
 	results := make([]migrator.MigrationResult, 0)
@@ -274,7 +274,7 @@ func getShootList(ctx context.Context, cfg migrator.Config, gardenerNamespace st
 	gardenerShootClient := setupGardenerShootClient(cfg.GardenerKubeconfigPath, gardenerNamespace)
 	list, err := gardenerShootClient.List(ctx, metav1.ListOptions{})
 	if err != nil {
-		log.Fatal("Failed to retrieve shoots from Gardener - ", err)
+		log.Print("Failed to retrieve shoots from Gardener - ", err)
 	}
 
 	return list
