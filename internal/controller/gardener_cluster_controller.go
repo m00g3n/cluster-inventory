@@ -110,7 +110,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		return controller.resultWithoutRequeue(&cluster), err
 	}
 
-	secret, err := controller.getSecret(cluster.Spec.Shoot.Name)
+	secret, err := controller.getSecret(reconciliationContext, cluster.Spec.Shoot.Name)
 	if err != nil && !k8serrors.IsNotFound(err) {
 		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetSecret, err)
 		_ = controller.persistStatusChange(reconciliationContext, &cluster)
@@ -129,6 +129,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 	controller.log.WithValues(loggingContextFromCluster(&cluster)...).Info("rotation params",
 		"lastSync", lastSyncTime.Format("2006-01-02 15:04:05"),
 		"requeueAfter", requeueAfter.String(),
+		"gardenerRequestTimeout", controller.gardenerRequestTimeout.String(),
 	)
 
 	kubeconfigStatus, err := controller.handleKubeconfig(reconciliationContext, secret, &cluster, now)
@@ -219,14 +220,14 @@ func (controller *GardenerClusterController) deleteKubeconfigSecret(reconciliati
 	return controller.Delete(reconciliationContext, &secretList.Items[0])
 }
 
-func (controller *GardenerClusterController) getSecret(shootName string) (*corev1.Secret, error) {
+func (controller *GardenerClusterController) getSecret(ctx context.Context, shootName string) (*corev1.Secret, error) {
 	var secretList corev1.SecretList
 
 	shootNameSelector := client.MatchingLabels(map[string]string{
 		"kyma-project.io/shoot-name": shootName,
 	})
 
-	err := controller.List(context.Background(), &secretList, shootNameSelector)
+	err := controller.List(ctx, &secretList, shootNameSelector)
 	if err != nil {
 		return nil, err
 	}

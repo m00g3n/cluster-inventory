@@ -54,7 +54,7 @@ var (
 const TestMinimalRotationTimeRatio = 0.5
 const TestKubeconfigValidityTime = 24 * time.Hour
 const TestKubeconfigRotationPeriod = time.Duration(float64(TestKubeconfigValidityTime) * TestMinimalRotationTimeRatio)
-const TestGardenerRequestTimeout = 6 * time.Second
+const TestGardenerRequestTimeout = 60 * time.Second
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -86,6 +86,7 @@ var _ = BeforeSuite(func() {
 
 	kubeconfigProviderMock := &mocks.KubeconfigProvider{}
 	setupKubeconfigProviderMock(kubeconfigProviderMock)
+
 	metrics := metrics.NewMetrics()
 
 	gardenerClusterController := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger, TestKubeconfigRotationPeriod, TestMinimalRotationTimeRatio, TestGardenerRequestTimeout, metrics)
@@ -123,6 +124,7 @@ func setupKubeconfigProviderMock(kpMock *mocks.KubeconfigProvider) {
 	kpMock.On("Fetch", anyContext, "shootName6").Return("kubeconfig6", nil)
 	kpMock.On("Fetch", anyContext, "shootName4").Return("kubeconfig4", nil)
 	kpMock.On("Fetch", anyContext, "shootName5").Return("kubeconfig5", nil)
+	kpMock.On("Fetch", anyContext, "shootnametimeout").Return("", context.DeadlineExceeded)
 }
 
 func setupShootClientMock(shootClientMock *mocks.ShootClient) {
