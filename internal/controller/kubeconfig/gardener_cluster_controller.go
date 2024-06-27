@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controller
+package kubeconfig
 
 import (
 	"context"
@@ -68,6 +68,8 @@ func NewGardenerClusterController(mgr ctrl.Manager, kubeconfigProvider Kubeconfi
 	}
 }
 
+// nolint:revive
+//
 //go:generate mockery --name=KubeconfigProvider
 type KubeconfigProvider interface {
 	Fetch(ctx context.Context, shootName string) (string, error)
