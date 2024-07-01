@@ -18,6 +18,7 @@ package v1
 
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,6 +26,53 @@ import (
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="STATE",type=string,JSONPath=`.status.state`
 //+kubebuilder:printcolumn:name="SHOOT-NAME",type=string,JSONPath=`.metadata.labels.kyma-project\.io/shoot-name`
+//+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+
+const Finalizer = "runtime-controller.infrastructure-manager.kyma-project.io/deletion-hook"
+
+const (
+	RuntimeStateReady       = "Ready"
+	RuntimeStateFailed      = "Failed"
+	RuntimeStatePending     = "Pending"
+	RuntimeStateTerminating = "Terminating"
+)
+
+type RuntimeConditionType string
+
+const (
+	ConditionTypeRuntimeProvisioned     RuntimeConditionType = "Provisioned"
+	ConditionTypeRuntimeKubeconfigReady RuntimeConditionType = "KubeconfigReady"
+	ConditionTypeRuntimeConfigured      RuntimeConditionType = "Configured"
+)
+
+type RuntimeConditionReason string
+
+const (
+	ConditionReasonProcessing          = RuntimeConditionReason("Processing")
+	ConditionReasonProcessingErr       = RuntimeConditionReason("ProcessingErr")
+	ConditionReasonProcessingCompleted = RuntimeConditionReason("ProcessingCompleted")
+
+	ConditionReasonInitialized            = RuntimeConditionReason("Initialised")
+	ConditionReasonShootCreationPending   = RuntimeConditionReason("Pending")
+	ConditionReasonShootCreationCompleted = RuntimeConditionReason("ShootCreationCompleted")
+
+	ConditionReasonConfigurationStarted   = RuntimeConditionReason("ConfigurationStarted")
+	ConditionReasonConfigurationCompleted = RuntimeConditionReason("ConfigurationCompleted")
+	ConditionReasonConfigurationErr       = RuntimeConditionReason("ConfigurationError")
+
+	ConditionReasonDeletion        = RuntimeConditionReason("Deletion")
+	ConditionReasonDeletionErr     = RuntimeConditionReason("DeletionErr")
+	ConditionReasonConversionError = RuntimeConditionReason("ConversionErr")
+	ConditionReasonCreationError   = RuntimeConditionReason("CreationErr")
+	ConditionReasonGardenerError   = RuntimeConditionReason("GardenerErr")
+	ConditionReasonDeleted         = RuntimeConditionReason("Deleted")
+)
+
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="Provider",type="string",JSONPath=".spec.shoot.provider.type"
+//+kubebuilder:printcolumn:name="Region",type="string",JSONPath=".spec.shoot.region"
+//+kubebuilder:printcolumn:name="STATE",type=string,JSONPath=`.status.state`
 //+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Runtime is the Schema for the runtimes API
@@ -55,7 +103,7 @@ type RuntimeSpec struct {
 type RuntimeStatus struct {
 	// State signifies current state of Runtime
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=Processing;Deleting;Ready;Error
+	// +kubebuilder:validation:Enum=Pending;Ready;Terminating;Failed
 	State State `json:"state,omitempty"`
 
 	// List of status conditions to indicate the status of a ServiceInstance.
@@ -87,6 +135,7 @@ type APIServer struct {
 }
 
 type Provider struct {
+	//+kubebuilder:validation:Enum=aws;azure;gcp;openstack
 	Type    string            `json:"type"`
 	Workers []gardener.Worker `json:"workers"`
 }
@@ -122,4 +171,67 @@ type Egress struct {
 
 func init() {
 	SchemeBuilder.Register(&Runtime{}, &RuntimeList{})
+}
+
+func (k *Runtime) UpdateStateReady(c RuntimeConditionType, r RuntimeConditionReason, msg string) {
+	k.Status.State = RuntimeStateReady
+	condition := metav1.Condition{
+		Type:               string(c),
+		Status:             "True",
+		LastTransitionTime: metav1.Now(),
+		Reason:             string(r),
+		Message:            msg,
+	}
+	meta.SetStatusCondition(&k.Status.Conditions, condition)
+}
+
+func (k *Runtime) UpdateStateDeletion(c RuntimeConditionType, r RuntimeConditionReason, status, msg string) {
+	if status != "False" {
+		k.Status.State = RuntimeStateTerminating
+	} else {
+		k.Status.State = RuntimeStateFailed
+	}
+
+	k.Status.State = RuntimeStateTerminating
+	condition := metav1.Condition{
+		Type:               string(c),
+		Status:             metav1.ConditionStatus(status),
+		LastTransitionTime: metav1.Now(),
+		Reason:             string(r),
+		Message:            msg,
+	}
+	meta.SetStatusCondition(&k.Status.Conditions, condition)
+}
+
+func (k *Runtime) UpdateStatePending(c RuntimeConditionType, r RuntimeConditionReason, status, msg string) {
+	if status != "False" {
+		k.Status.State = RuntimeStatePending
+	} else {
+		k.Status.State = RuntimeStateFailed
+	}
+
+	condition := metav1.Condition{
+		Type:               string(c),
+		Status:             metav1.ConditionStatus(status),
+		LastTransitionTime: metav1.Now(),
+		Reason:             string(r),
+		Message:            msg,
+	}
+	meta.SetStatusCondition(&k.Status.Conditions, condition)
+}
+
+func (k *Runtime) IsStateWithConditionSet(runtimeState State, c RuntimeConditionType, r RuntimeConditionReason) bool {
+	if k.Status.State != runtimeState {
+		return false
+	}
+
+	return k.IsConditionSet(c, r)
+}
+
+func (k *Runtime) IsConditionSet(c RuntimeConditionType, r RuntimeConditionReason) bool {
+	condition := meta.FindStatusCondition(k.Status.Conditions, string(c))
+	if condition != nil && condition.Reason == string(r) {
+		return true
+	}
+	return false
 }

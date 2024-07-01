@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controller
+package kubeconfig
 
 import (
 	"context"
@@ -23,9 +23,8 @@ import (
 	"time"
 
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	kubeconfig_mocks "github.com/kyma-project/infrastructure-manager/internal/controller/kubeconfig/mocks"
 	metrics "github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
-	"github.com/kyma-project/infrastructure-manager/internal/controller/mocks"
-	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
 	"github.com/pkg/errors"
@@ -59,7 +58,7 @@ const TestGardenerRequestTimeout = 60 * time.Second
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecs(t, "Controller Suite")
+	RunSpecs(t, "Kubeconfig Controller Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -68,7 +67,7 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: true,
 	}
 
@@ -84,7 +83,7 @@ var _ = BeforeSuite(func() {
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
 
-	kubeconfigProviderMock := &mocks.KubeconfigProvider{}
+	kubeconfigProviderMock := &kubeconfig_mocks.KubeconfigProvider{}
 	setupKubeconfigProviderMock(kubeconfigProviderMock)
 
 	metrics := metrics.NewMetrics()
@@ -96,10 +95,6 @@ var _ = BeforeSuite(func() {
 	err = gardenerClusterController.SetupWithManager(mgr)
 	Expect(err).To(BeNil())
 
-	mockShootClient := &mocks.ShootClient{}
-	setupShootClientMock(mockShootClient)
-	runtimeReconciler := NewruntimeReconciler(mgr, mockShootClient, logger)
-	err = runtimeReconciler.SetupWithManager(mgr)
 	Expect(gardenerClusterController).NotTo(BeNil())
 	Expect(err).To(BeNil())
 
@@ -117,7 +112,7 @@ var _ = BeforeSuite(func() {
 	}()
 })
 
-func setupKubeconfigProviderMock(kpMock *mocks.KubeconfigProvider) {
+func setupKubeconfigProviderMock(kpMock *kubeconfig_mocks.KubeconfigProvider) {
 	kpMock.On("Fetch", anyContext, "shootName1").Return("kubeconfig1", nil)
 	kpMock.On("Fetch", anyContext, "shootName2").Return("kubeconfig2", nil)
 	kpMock.On("Fetch", anyContext, "shootName3").Return("", errors.New("failed to get kubeconfig"))
@@ -125,18 +120,6 @@ func setupKubeconfigProviderMock(kpMock *mocks.KubeconfigProvider) {
 	kpMock.On("Fetch", anyContext, "shootName4").Return("kubeconfig4", nil)
 	kpMock.On("Fetch", anyContext, "shootName5").Return("kubeconfig5", nil)
 	kpMock.On("Fetch", anyContext, "shootnametimeout").Return("", context.DeadlineExceeded)
-}
-
-func setupShootClientMock(shootClientMock *mocks.ShootClient) {
-	runtimeStub := CreateRuntimeStub("test-resource")
-	converterConfig := FixConverterConfig()
-	converter := gardener_shoot.NewConverter(converterConfig)
-	shoot, err := converter.ToShoot(*runtimeStub)
-	if err != nil {
-		panic(err)
-	}
-
-	shootClientMock.On("Create", anyContext, &shoot, Anything).Return(&shoot, nil)
 }
 
 var _ = AfterSuite(func() {
