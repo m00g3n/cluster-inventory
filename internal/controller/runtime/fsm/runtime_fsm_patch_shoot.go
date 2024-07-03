@@ -39,25 +39,25 @@ func sFnPatchExistingShoot(_ context.Context, m *fsm, s *systemState) (stateFn, 
 	if patched.Generation == s.shoot.Generation {
 		m.log.Info("Gardener shoot for runtime did not change after patch, moving to processing", "Name", s.shoot.Name, "Namespace", s.shoot.Namespace)
 		return switchState(sFnProcessShoot)
-	} else {
-		m.log.Info("Gardener shoot for runtime patched successfully", "Name", s.shoot.Name, "Namespace", s.shoot.Namespace)
-
-		s.shoot = patched.DeepCopy()
-
-		s.instance.UpdateStatePending(
-			imv1.ConditionTypeRuntimeProvisioned,
-			imv1.ConditionReasonProcessing,
-			"Unknown",
-			"Shoot is pending",
-		)
-
-		shouldPersistShoot := m.PVCPath != ""
-		if shouldPersistShoot {
-			return switchState(sFnPersistShoot)
-		}
-
-		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 	}
+
+	m.log.Info("Gardener shoot for runtime patched successfully", "Name", s.shoot.Name, "Namespace", s.shoot.Namespace)
+
+	s.shoot = patched.DeepCopy()
+
+	s.instance.UpdateStatePending(
+		imv1.ConditionTypeRuntimeProvisioned,
+		imv1.ConditionReasonProcessing,
+		"Unknown",
+		"Shoot is pending",
+	)
+
+	shouldPersistShoot := m.PVCPath != ""
+	if shouldPersistShoot {
+		return switchState(sFnPersistShoot)
+	}
+
+	return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 }
 
 func convertShoot(instance *imv1.Runtime) (gardener.Shoot, error) {
@@ -101,7 +101,9 @@ func setObjectFields(shoot *gardener.Shoot) {
 	shoot.ManagedFields = nil
 }
 
-func updateStatePendingWithErrorAndStop(instance *imv1.Runtime, c imv1.RuntimeConditionType, r imv1.RuntimeConditionReason, msg string) (stateFn, *ctrl.Result, error) {
+func updateStatePendingWithErrorAndStop(instance *imv1.Runtime,
+	//nolint:unparam
+	c imv1.RuntimeConditionType, r imv1.RuntimeConditionReason, msg string) (stateFn, *ctrl.Result, error) {
 	instance.UpdateStatePending(c, r, "False", msg)
 	return updateStatusAndStop()
 }

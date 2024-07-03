@@ -3,11 +3,11 @@ package gardener
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/types"
 	"os"
 
 	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
