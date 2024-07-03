@@ -10,11 +10,8 @@ import (
 
 type ErrReason string
 
-func sFnSelectClusterProcessing(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
-	if s.shoot == nil {
-		m.log.Info("Gardener shoot does not exist, creating new one")
-		return switchState(sFnCreateShoot)
-	}
+func sFnSelectShootProcessing(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
+	m.log.Info("Select shoot processing state")
 
 	if s.shoot.Spec.DNS == nil || s.shoot.Spec.DNS.Domain == nil {
 		msg := fmt.Sprintf("DNS Domain is not set yet for shoot: %s, scheduling for retry", s.shoot.Name)

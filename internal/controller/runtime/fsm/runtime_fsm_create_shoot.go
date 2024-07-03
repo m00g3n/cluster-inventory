@@ -9,29 +9,27 @@ import (
 )
 
 func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
-	if s.shoot == nil {
-		m.log.Info("Gardener shoot does not exist, creating new one")
-		newShoot, err := convertShoot(&s.instance)
-		if err != nil {
-			m.log.Error(err, "Failed to convert Runtime instance to shoot object")
-			return updateStatePendingWithErrorAndStop(&s.instance, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonConversionError, "Runtime conversion error")
-		}
-
-		_, err = m.ShootClient.Create(ctx, &newShoot, v1.CreateOptions{})
-
-		if err != nil {
-			m.log.Error(err, "Failed to create new gardener Shoot")
-
-			s.instance.UpdateStatePending(
-				imv1.ConditionTypeRuntimeProvisioned,
-				imv1.ConditionReasonGardenerError,
-				"False",
-				"Gardener API create error",
-			)
-			return updateStatusAndRequeueAfter(gardenerRequeueDuration)
-		}
-		m.log.Info("Gardener shoot for runtime initialised successfully", "Name", newShoot.Name, "Namespace", newShoot.Namespace)
+	m.log.Info("Create shoot")
+	newShoot, err := convertShoot(&s.instance)
+	if err != nil {
+		m.log.Error(err, "Failed to convert Runtime instance to shoot object")
+		return updateStatePendingWithErrorAndStop(&s.instance, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonConversionError, "Runtime conversion error")
 	}
+
+	_, err = m.ShootClient.Create(ctx, &newShoot, v1.CreateOptions{})
+
+	if err != nil {
+		m.log.Error(err, "Failed to create new gardener Shoot")
+
+		s.instance.UpdateStatePending(
+			imv1.ConditionTypeRuntimeProvisioned,
+			imv1.ConditionReasonGardenerError,
+			"False",
+			"Gardener API create error",
+		)
+		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
+	}
+	m.log.Info("Gardener shoot for runtime initialised successfully", "Name", newShoot.Name, "Namespace", newShoot.Namespace)
 
 	s.instance.UpdateStatePending(
 		imv1.ConditionTypeRuntimeProvisioned,
@@ -42,6 +40,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 
 	shouldPersistShoot := m.PVCPath != ""
 	if shouldPersistShoot {
+		s.shoot = newShoot.DeepCopy()
 		return switchState(sFnPersistShoot)
 	}
 

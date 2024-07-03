@@ -12,11 +12,9 @@ import (
 )
 
 func sFnWaitForShootCreation(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
-
-	m.log.Info("Waiting for shoot creation")
+	m.log.Info("Waiting for shoot creation state")
 
 	switch s.shoot.Status.LastOperation.State {
-
 	case gardener.LastOperationStateProcessing, gardener.LastOperationStatePending, gardener.LastOperationStateAborted:
 		msg := fmt.Sprintf("Shoot %s is in %s state, scheduling for retry", s.shoot.Name, s.shoot.Status.LastOperation.State)
 		m.log.Info(msg)
@@ -30,7 +28,6 @@ func sFnWaitForShootCreation(_ context.Context, m *fsm, s *systemState) (stateFn
 		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 
 	case gardener.LastOperationStateSucceeded:
-
 		msg := fmt.Sprintf("Shoot %s successfully created", s.shoot.Name)
 		m.log.Info(msg)
 

@@ -32,9 +32,14 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 		return updateStatusAndRequeue()
 	}
 
+	if instanceIsNotBeingDeleted && s.shoot == nil {
+		m.log.Info("Gardener shoot does not exist, creating new one")
+		return switchState(sFnCreateShoot)
+	}
+
 	if instanceIsNotBeingDeleted {
 		m.log.Info("Gardener shoot exists, processing")
-		return switchState(sFnSelectClusterProcessing)
+		return switchState(sFnSelectShootProcessing)
 	}
 
 	if !instanceIsNotBeingDeleted && instanceHasFinalizer && s.shoot != nil {

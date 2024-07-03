@@ -13,6 +13,7 @@ import (
 )
 
 func sFnPatchExistingShoot(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
+	m.log.Info("Patch shoot state")
 
 	updatedShoot, err := convertShoot(&s.instance)
 	if err != nil {

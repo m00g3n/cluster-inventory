@@ -10,12 +10,15 @@ import (
 )
 
 func sFnWaitForShootReconcile(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
+	m.log.Info("Waiting for shoot reconcile state")
+
 	lastOperation := s.shoot.Status.LastOperation
 
 	switch s.shoot.Status.LastOperation.State {
 	case gardener.LastOperationStateProcessing, gardener.LastOperationStatePending:
 		msg := fmt.Sprintf("Shoot %s is in %s state, scheduling for retry", s.shoot.Name, lastOperation.State)
 		m.log.Info(msg)
+
 		s.instance.UpdateStatePending(
 			imv1.ConditionTypeRuntimeProvisioned,
 			imv1.ConditionReasonProcessing,
@@ -25,7 +28,6 @@ func sFnWaitForShootReconcile(ctx context.Context, m *fsm, s *systemState) (stat
 		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 
 	case gardener.LastOperationStateSucceeded:
-
 		if !s.instance.IsStateWithConditionAndStatusSet(imv1.RuntimeStatePending, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonProcessing, "True") {
 			s.instance.UpdateStatePending(
 				imv1.ConditionTypeRuntimeProvisioned,
