@@ -12,7 +12,7 @@ func sFnProcessShoot(_ context.Context, _ *fsm, s *systemState) (stateFn, *ctrl.
 	s.instance.UpdateStateReady(
 		imv1.ConditionTypeRuntimeProvisioned,
 		imv1.ConditionReasonConfigurationCompleted,
-		"Runtime creation completed successfully")
+		"Runtime processing completed successfully")
 
 	return updateStatusAndStop()
 }

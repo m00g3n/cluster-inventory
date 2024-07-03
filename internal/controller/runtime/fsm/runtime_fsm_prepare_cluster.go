@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -26,6 +27,12 @@ func sFnSelectClusterProcessing(_ context.Context, m *fsm, s *systemState) (stat
 		msg := fmt.Sprintf("Last operation is nil for shoot: %s, scheduling for retry", s.shoot.Name)
 		m.log.Info(msg)
 		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
+	}
+
+	if s.instance.Status.State == imv1.RuntimeStateReady && lastOperation.State == gardener.LastOperationStateSucceeded {
+		// only allow to patch if full previous cycle was completed
+		m.log.Info("Gardener shoot already exists, updating")
+		return switchState(sFnPatchExistingShoot)
 	}
 
 	if lastOperation.Type == gardener.LastOperationTypeCreate {

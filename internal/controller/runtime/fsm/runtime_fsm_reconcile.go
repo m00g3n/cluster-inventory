@@ -10,7 +10,6 @@ import (
 )
 
 func sFnWaitForShootReconcile(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
-
 	lastOperation := s.shoot.Status.LastOperation
 
 	switch s.shoot.Status.LastOperation.State {
@@ -21,25 +20,24 @@ func sFnWaitForShootReconcile(ctx context.Context, m *fsm, s *systemState) (stat
 			imv1.ConditionTypeRuntimeProvisioned,
 			imv1.ConditionReasonProcessing,
 			"Unknown",
-			"Shoot update in progress")
+			"Shoot update is in progress")
 
-		return updateStatusAndRequeue()
+		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 
 	case gardener.LastOperationStateSucceeded:
-		msg := fmt.Sprintf("Shoot %s successfully updated", s.shoot.Name)
-		m.log.Info(msg)
 
-		// shoot completed
-
-		if !s.instance.IsStateWithConditionSet(imv1.RuntimeStatePending, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonProcessing) {
+		if !s.instance.IsStateWithConditionAndStatusSet(imv1.RuntimeStatePending, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonProcessing, "True") {
 			s.instance.UpdateStatePending(
 				imv1.ConditionTypeRuntimeProvisioned,
 				imv1.ConditionReasonProcessing,
 				"True",
-				"Shoot update completed")
+				"Shoot update is completed")
 
 			return updateStatusAndRequeue()
 		}
+
+		msg := fmt.Sprintf("Shoot %s successfully updated, moving to processing", s.shoot.Name)
+		m.log.Info(msg)
 
 		return switchState(sFnProcessShoot)
 
@@ -50,7 +48,7 @@ func sFnWaitForShootReconcile(ctx context.Context, m *fsm, s *systemState) (stat
 			reason = gardenerErrCodesToErrReason(s.shoot.Status.LastErrors...)
 		}
 
-		msg := fmt.Sprintf("error during cluster processing: reconcilation error for shoot %s, reason: %s, scheduling for retry", s.shoot.Name, reason)
+		msg := fmt.Sprintf("error during cluster processing: reconcilation failed for shoot %s, reason: %s, exiting with no retry", s.shoot.Name, reason)
 		m.log.Info(msg)
 
 		s.instance.UpdateStatePending(
