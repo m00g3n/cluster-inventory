@@ -31,7 +31,7 @@ func sFnWaitForShootCreation(_ context.Context, m *fsm, s *systemState) (stateFn
 		msg := fmt.Sprintf("Shoot %s successfully created", s.shoot.Name)
 		m.log.Info(msg)
 
-		if !s.instance.IsStateWithConditionSet(imv1.RuntimeStatePending, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonShootCreationCompleted) {
+		if !s.instance.IsStateWithConditionAndStatusSet(imv1.RuntimeStatePending, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonShootCreationCompleted, "True") {
 			s.instance.UpdateStatePending(
 				imv1.ConditionTypeRuntimeProvisioned,
 				imv1.ConditionReasonShootCreationCompleted,
