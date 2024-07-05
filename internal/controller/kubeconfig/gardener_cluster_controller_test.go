@@ -68,34 +68,6 @@ var _ = Describe("Gardener Cluster controller", func() {
 			expectKubeconfigMetricsAreValid(metricsData, lastSyncTime, "Kubeconfig expiration metrics should be appended after creation", shootName)
 		})
 
-		//
-		It("Should handle gardener timeout", func() {
-			kymaName := "kymanametimeout"
-			secretName := "kubeconfigtimeout"
-			shootName := "shootnametimeout"
-			namespace := "default"
-
-			By("Create GardenerCluster CR")
-
-			gardenerClusterCR := fixGardenerClusterCR(kymaName, namespace, shootName, secretName)
-			Expect(k8sClient.Create(context.Background(), &gardenerClusterCR)).To(Succeed())
-
-			By("Wait for secret creation")
-
-			newGardenerClusterCr := imv1.GardenerCluster{}
-
-			Eventually(func() string {
-				shootKey := types.NamespacedName{Name: kymaName, Namespace: namespace}
-				k8sClient.Get(context.Background(), shootKey, &newGardenerClusterCr) //nolint:errcheck
-
-				if len(newGardenerClusterCr.Status.Conditions) > 0 {
-					return newGardenerClusterCr.Status.Conditions[0].Message
-				}
-				return ""
-
-			}, time.Second*30, time.Second*5).Should(Equal("Failed to get kubeconfig. Error: context deadline exceeded"))
-		})
-
 		It("Should delete secret", func() {
 			kymaName := "kymaname2"
 			secretName := "secret-name2"
@@ -150,7 +122,9 @@ var _ = Describe("Gardener Cluster controller", func() {
 					return false
 				}
 
-				return newGardenerCluster.Status.State == imv1.ErrorState
+				return newGardenerCluster.Status.State == imv1.ErrorState &&
+					len(newGardenerCluster.Status.Conditions) > 0 &&
+					newGardenerCluster.Status.Conditions[0].Reason == string(imv1.ConditionReasonFailedToGetKubeconfig)
 			}, time.Second*30, time.Second*3).Should(BeTrue())
 
 			By("Metrics should contain error label")

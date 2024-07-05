@@ -119,7 +119,6 @@ func setupKubeconfigProviderMock(kpMock *kubeconfig_mocks.KubeconfigProvider) {
 	kpMock.On("Fetch", anyContext, "shootName6").Return("kubeconfig6", nil)
 	kpMock.On("Fetch", anyContext, "shootName4").Return("kubeconfig4", nil)
 	kpMock.On("Fetch", anyContext, "shootName5").Return("kubeconfig5", nil)
-	kpMock.On("Fetch", anyContext, "shootnametimeout").Return("", context.DeadlineExceeded)
 }
 
 var _ = AfterSuite(func() {
