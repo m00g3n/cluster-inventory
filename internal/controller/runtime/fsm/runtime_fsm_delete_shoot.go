@@ -12,6 +12,7 @@ import (
 )
 
 func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
+	m.log.Info("delete shoot state")
 	if !isGardenerCloudDelConfirmationSet(s.shoot.Annotations) {
 		m.log.Info("patching shoot with del-confirmation")
 		// workaround for Gardener client
@@ -36,7 +37,7 @@ func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 				FieldManager: "kim",
 				Force:        ptr.To(true),
 			}); err != nil {
-			m.log.Error(err, "unable to patch shoot:")
+			m.log.Error(err, "unable to patch shoot:", s.shoot.Name)
 			return requeue()
 		}
 	}
