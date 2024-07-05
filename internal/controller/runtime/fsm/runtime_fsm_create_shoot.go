@@ -4,7 +4,6 @@ import (
 	"context"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -16,7 +15,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 		return updateStatePendingWithErrorAndStop(&s.instance, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonConversionError, "Runtime conversion error")
 	}
 
-	_, err = m.ShootClient.Create(ctx, &newShoot, v1.CreateOptions{})
+	err = m.ShootClient.Create(ctx, &newShoot)
 
 	if err != nil {
 		m.log.Error(err, "Failed to create new gardener Shoot")

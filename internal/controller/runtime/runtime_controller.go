@@ -23,7 +23,6 @@ import (
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
-	gardener "github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -34,9 +33,10 @@ import (
 // RuntimeReconciler reconciles a Runtime object
 // nolint:revive
 type RuntimeReconciler struct {
+	// TODO make it a property
 	client.Client
 	Scheme        *runtime.Scheme
-	ShootClient   gardener.ShootClient
+	ShootClient   client.Client
 	Log           logr.Logger
 	Cfg           fsm.RCCfg
 	EventRecorder record.EventRecorder
@@ -73,7 +73,7 @@ func (r *RuntimeReconciler) Reconcile(ctx context.Context, request ctrl.Request)
 	return stateFSM.Run(ctx, runtime)
 }
 
-func NewRuntimeReconciler(mgr ctrl.Manager, shootClient gardener.ShootClient, logger logr.Logger) *RuntimeReconciler {
+func NewRuntimeReconciler(mgr ctrl.Manager, shootClient client.Client, logger logr.Logger) *RuntimeReconciler {
 	return &RuntimeReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),

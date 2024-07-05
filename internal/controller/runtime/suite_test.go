@@ -34,6 +34,7 @@ import (
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -85,9 +86,9 @@ var _ = BeforeSuite(func() {
 		Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
 
-	mockShootClient = &gardener_mocks.ShootClient{}
+	c := fake.NewFakeClient()
 
-	runtimeReconciler := NewRuntimeReconciler(mgr, mockShootClient, logger)
+	runtimeReconciler := NewRuntimeReconciler(mgr, c, logger)
 	Expect(runtimeReconciler).NotTo(BeNil())
 	err = runtimeReconciler.SetupWithManager(mgr)
 	Expect(err).To(BeNil())

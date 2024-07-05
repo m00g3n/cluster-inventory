@@ -118,14 +118,15 @@ func main() {
 	}
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", gardenerProjectName)
-	shootClient, dynamicKubeconfigClient, err := initGardenerClients(gardenerKubeconfigPath, gardenerNamespace)
+	gerdenerClient, shootClient, dynamicKubeconfigClient, err := initGardenerClients(gardenerKubeconfigPath, gardenerNamespace)
 
 	if err != nil {
 		setupLog.Error(err, "unable to initialize gardener clients", "controller", "GardenerCluster")
 		os.Exit(1)
 	}
 
-	kubeconfigProvider := kubeconfig.NewKubeconfigProvider(shootClient,
+	kubeconfigProvider := kubeconfig.NewKubeconfigProvider(
+		shootClient,
 		dynamicKubeconfigClient,
 		gardenerNamespace,
 		int64(expirationTime.Seconds()))
@@ -144,7 +145,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	cfg := fsm.RCCfg{Finalizer: infrastructuremanagerv1.Finalizer}
+	cfg := fsm.RCCfg{
+		Finalizer:       infrastructuremanagerv1.Finalizer,
+		ShootNamesapace: gardenerNamespace,
+	}
 	if persistShoot {
 		cfg.PVCPath = "/testdata/kim"
 	}
@@ -153,7 +157,7 @@ func main() {
 		if err = (&runtime_controller.RuntimeReconciler{
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),
-			ShootClient:   shootClient,
+			ShootClient:   gerdenerClient,
 			Log:           logger,
 			Cfg:           cfg,
 			EventRecorder: mgr.GetEventRecorderFor("runtime-controller"),
@@ -182,20 +186,20 @@ func main() {
 	}
 }
 
-func initGardenerClients(kubeconfigPath string, namespace string) (gardener_apis.ShootInterface, client.SubResourceClient, error) {
+func initGardenerClients(kubeconfigPath string, namespace string) (client.Client, gardener_apis.ShootInterface, client.SubResourceClient, error) {
 	restConfig, err := gardener.NewRestConfigFromFile(kubeconfigPath)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	gardenerClientSet, err := gardener_apis.NewForConfig(restConfig)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	gardenerClient, err := client.New(restConfig, client.Options{})
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	shootClient := gardenerClientSet.Shoots(namespace)
@@ -203,8 +207,8 @@ func initGardenerClients(kubeconfigPath string, namespace string) (gardener_apis
 
 	err = v1beta1.AddToScheme(gardenerClient.Scheme())
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to register Gardener schema")
+		return nil, nil, nil, errors.Wrap(err, "failed to register Gardener schema")
 	}
 
-	return shootClient, dynamicKubeconfigAPI, nil
+	return gardenerClient, shootClient, dynamicKubeconfigAPI, nil
 }
