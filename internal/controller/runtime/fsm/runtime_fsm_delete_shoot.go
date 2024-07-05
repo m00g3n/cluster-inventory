@@ -63,7 +63,7 @@ func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 			"False",
 			"Gardener API delete error",
 		)
-		return updateStatusAndRequeue()
+		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 	}
 
 	return updateStatusAndRequeueAfter(gardenerRequeueDuration)
