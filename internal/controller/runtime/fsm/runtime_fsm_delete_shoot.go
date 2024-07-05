@@ -66,7 +66,7 @@ func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 		return updateStatusAndRequeue()
 	}
 
-	return updateStatusAndRequeue()
+	return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 }
 
 func isGardenerCloudDelConfirmationSet(a map[string]string) bool {
