@@ -37,7 +37,7 @@ func sFnWaitForShootCreation(_ context.Context, m *fsm, s *systemState) (stateFn
 				imv1.ConditionReasonShootCreationCompleted,
 				"True",
 				"Shoot creation completed")
-			return updateStatusAndRequeueAfter(gardenerRequeueDuration)
+			return updateStatusAndRequeue()
 		}
 		return switchState(sFnProcessShoot)
 

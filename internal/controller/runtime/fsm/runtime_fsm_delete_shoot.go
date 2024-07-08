@@ -2,10 +2,10 @@ package fsm
 
 import (
 	"context"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {

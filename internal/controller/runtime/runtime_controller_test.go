@@ -45,17 +45,12 @@ var _ = Describe("Runtime Controller", func() {
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Cleanup the specific resource instance Runtime")
-			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
-
-			By("Cleanup ShootClient mocks")
-			clearMockCalls(mockShootClient)
 		})
 
 		It("Should successfully create new Shoot from provided Runtime and set Ready status on CR", func() {
 
-			By("Setup the mock of ShootClient for Provisioning")
-			setupShootClientMockForProvisioning(mockShootClient)
+			By("Setup the fake gardener client for Provisioning")
+			setupGardenerTestClientForProvisioning()
 
 			By("Create Runtime CR")
 			runtimeStub := CreateRuntimeStub(ResourceName)
@@ -75,10 +70,11 @@ var _ = Describe("Runtime Controller", func() {
 
 			}, time.Second*300, time.Second*3).Should(BeTrue())
 
-			By("Wait for shoot to be created")
+			runtime := imv1.Runtime{}
 
+			By("Wait for Runtime to process shoot creation process and end in ready State")
 			Eventually(func() bool {
-				runtime := imv1.Runtime{}
+
 				err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
 
 				if err != nil {
@@ -96,8 +92,14 @@ var _ = Describe("Runtime Controller", func() {
 				}
 
 				return true
-
 			}, time.Second*300, time.Second*3).Should(BeTrue())
+
+			Expect(customTracker.IsSequenceFullyUsed()).To(BeTrue())
+
+			//objectTestTracker.SetShootListForTracker()
+			//
+			//By("Delete Runtime CR")
+			//Expect(k8sClient.Delete(ctx, &runtime)).To(Succeed())
 
 			// mockShootClient.AssertExpectations(GinkgoT()) //TODO: this fails, investigate why
 		})
@@ -112,6 +114,7 @@ func CreateRuntimeStub(resourceName string) *imv1.Runtime {
 		},
 		Spec: imv1.RuntimeSpec{
 			Shoot: imv1.RuntimeShoot{
+				Name:       resourceName,
 				Networking: imv1.Networking{},
 				Provider: imv1.Provider{
 					Type: "aws",

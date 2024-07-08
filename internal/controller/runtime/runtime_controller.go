@@ -19,7 +19,6 @@ package runtime
 import (
 	"context"
 	"fmt"
-
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
@@ -84,6 +83,10 @@ func NewRuntimeReconciler(mgr ctrl.Manager, shootClient client.Client, logger lo
 			Finalizer: imv1.Finalizer,
 		},
 	}
+}
+
+func (r *RuntimeReconciler) UpdateShootClient(client client.Client) {
+	r.ShootClient = client
 }
 
 // SetupWithManager sets up the controller with the Manager.

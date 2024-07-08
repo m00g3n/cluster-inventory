@@ -18,18 +18,18 @@ package runtime
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	clienttesting "k8s.io/client-go/testing"
 	"path/filepath"
 	"testing"
 
 	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	gardener_mocks "github.com/kyma-project/infrastructure-manager/internal/gardener/mocks"
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	. "github.com/onsi/ginkgo/v2"        //nolint:revive
 	. "github.com/onsi/gomega"           //nolint:revive
 	. "github.com/stretchr/testify/mock" //nolint:revive
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -45,13 +45,15 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	cfg             *rest.Config                                              //nolint:gochecknoglobals
-	mockShootClient *gardener_mocks.ShootClient                               //nolint:gochecknoglobals
-	k8sClient       client.Client                                             //nolint:gochecknoglobals
-	testEnv         *envtest.Environment                                      //nolint:gochecknoglobals
-	suiteCtx        context.Context                                           //nolint:gochecknoglobals
-	cancelSuiteCtx  context.CancelFunc                                        //nolint:gochecknoglobals
-	anyContext      = MatchedBy(func(_ context.Context) bool { return true }) //nolint:gochecknoglobals
+	cfg                *rest.Config                                              //nolint:gochecknoglobals
+	k8sClient          client.Client                                             //nolint:gochecknoglobals
+	gardenerTestClient client.Client                                             //nolint:gochecknoglobals
+	testEnv            *envtest.Environment                                      //nolint:gochecknoglobals
+	suiteCtx           context.Context                                           //nolint:gochecknoglobals
+	cancelSuiteCtx     context.CancelFunc                                        //nolint:gochecknoglobals
+	anyContext         = MatchedBy(func(_ context.Context) bool { return true }) //nolint:gochecknoglobals
+	runtimeReconciler  *RuntimeReconciler                                        //nolint:gochecknoglobals
+	customTracker      *CustomTracker                                            //nolint:gochecknoglobals
 )
 
 func TestControllers(t *testing.T) {
@@ -86,9 +88,15 @@ var _ = BeforeSuite(func() {
 		Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
 
-	c := fake.NewFakeClient()
+	clientScheme := runtime.NewScheme()
+	_ = gardener_api.AddToScheme(clientScheme)
 
-	runtimeReconciler := NewRuntimeReconciler(mgr, c, logger)
+	// tracker will be updated with different shoot sequence for each test case
+	tracker := clienttesting.NewObjectTracker(clientScheme, serializer.NewCodecFactory(clientScheme).UniversalDecoder())
+	customTracker = NewCustomTracker(tracker, []*gardener_api.Shoot{})
+	gardenerTestClient = fake.NewClientBuilder().WithScheme(clientScheme).WithObjectTracker(customTracker).Build()
+
+	runtimeReconciler = NewRuntimeReconciler(mgr, gardenerTestClient, logger)
 	Expect(runtimeReconciler).NotTo(BeNil())
 	err = runtimeReconciler.SetupWithManager(mgr)
 	Expect(err).To(BeNil())
@@ -107,12 +115,14 @@ var _ = BeforeSuite(func() {
 	}()
 })
 
-func clearMockCalls(mock *gardener_mocks.ShootClient) {
-	mock.ExpectedCalls = nil
-	mock.Calls = nil
-}
+var _ = AfterSuite(func() {
+	By("tearing down the test environment")
+	cancelSuiteCtx()
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
+})
 
-func setupShootClientMockForProvisioning(shootClientMock *gardener_mocks.ShootClient) {
+func setupGardenerTestClientForProvisioning() {
 	runtimeStub := CreateRuntimeStub("test-resource")
 	converterConfig := fixConverterConfigForTests()
 	converter := gardener_shoot.NewConverter(converterConfig)
@@ -121,45 +131,53 @@ func setupShootClientMockForProvisioning(shootClientMock *gardener_mocks.ShootCl
 		panic(err)
 	}
 
-	shootClientMock.On("Create", anyContext, &convertedShoot, Anything).Return(&convertedShoot, nil)
+	shoots := fixGardenerShootsForProvisioning(&convertedShoot)
 
-	var shoots []*gardener_api.Shoot = fixGardenerShootsForProvisioning(&convertedShoot)
+	clientScheme := runtime.NewScheme()
+	_ = gardener_api.AddToScheme(clientScheme)
 
-	for _, shoot := range shoots {
-		if shoot != nil {
-			shootClientMock.On("Get", anyContext, Anything, Anything).Return(shoot, nil).Once()
-			continue
-		}
+	// our customTracker will be updated with different shoot sequence for each test case
+	tracker := clienttesting.NewObjectTracker(clientScheme, serializer.NewCodecFactory(clientScheme).UniversalDecoder())
+	customTracker = NewCustomTracker(tracker, shoots)
+	gardenerTestClient = fake.NewClientBuilder().WithScheme(clientScheme).WithObjectTracker(customTracker).Build()
 
-		shootClientMock.On("Get", anyContext, Anything, Anything).Return(nil, errors.NewNotFound(
-			schema.GroupResource{Group: "", Resource: "shoots"}, convertedShoot.Name)).Once()
-	}
+	runtimeReconciler.UpdateShootClient(gardenerTestClient)
 }
 
-var _ = AfterSuite(func() {
-	By("tearing down the test environment")
-	cancelSuiteCtx()
-	err := testEnv.Stop()
-	Expect(err).NotTo(HaveOccurred())
-})
+//func setupGardenerTestClientForDeleting() {
+//	runtimeStub := CreateRuntimeStub("test-resource")
+//	converterConfig := fixConverterConfigForTests()
+//	converter := gardener_shoot.NewConverter(converterConfig)
+//	convertedShoot, err := converter.ToShoot(*runtimeStub)
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//	shoots := fixGardenerShootsForProvisioning(&convertedShoot)
+//
+//	objectTestTracker.SetShootListForTracker(shoots)
+//}
 
 func fixGardenerShootsForProvisioning(shoot *gardener_api.Shoot) []*gardener_api.Shoot {
 	var missingShoot *gardener_api.Shoot
-
 	initialisedShoot := shoot.DeepCopy()
 
-	initialisedShoot.Spec.DNS = &gardener_api.DNS{
+	dnsShoot := initialisedShoot.DeepCopy()
+
+	dnsShoot.Spec.DNS = &gardener_api.DNS{
 		Domain: ptrTo("test.domain"),
 	}
 
-	initialisedShoot.Status = gardener_api.ShootStatus{
+	pendingShoot := dnsShoot.DeepCopy()
+
+	pendingShoot.Status = gardener_api.ShootStatus{
 		LastOperation: &gardener_api.LastOperation{
 			Type:  gardener_api.LastOperationTypeCreate,
 			State: gardener_api.LastOperationStatePending,
 		},
 	}
 
-	processingShoot := initialisedShoot.DeepCopy()
+	processingShoot := pendingShoot.DeepCopy()
 
 	processingShoot.Status.LastOperation.State = gardener_api.LastOperationStateProcessing
 
@@ -169,7 +187,7 @@ func fixGardenerShootsForProvisioning(shoot *gardener_api.Shoot) []*gardener_api
 
 	// processedShoot := processingShoot.DeepCopy() // will add specific data later
 
-	return []*gardener_api.Shoot{missingShoot, missingShoot, missingShoot, initialisedShoot, processingShoot, readyShoot, readyShoot, readyShoot, readyShoot}
+	return []*gardener_api.Shoot{missingShoot, missingShoot, missingShoot, initialisedShoot, dnsShoot, pendingShoot, processingShoot, readyShoot, readyShoot}
 }
 
 func fixConverterConfigForTests() gardener_shoot.ConverterConfig {
