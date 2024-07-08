@@ -2,7 +2,7 @@ package shoot_test
 
 import (
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-project/infrastructure-manager/internal/testing/shoot"
+	"github.com/kyma-project/infrastructure-manager/pkg/testing/shoot"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
 	corev1 "k8s.io/apimachinery/pkg/apis/meta/v1"
