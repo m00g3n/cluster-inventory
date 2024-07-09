@@ -12,11 +12,11 @@ var filesCmd = &cobra.Command{
 	Short:   "Compare files",
 	Args:    cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		firstFile := args[0]
-		secondFile := args[1]
+		leftFile := args[0]
+		rightFile := args[1]
 
-		fmt.Printf("Comparing files: %s and %s \n", firstFile, secondFile)
-		equal, matcherErrorMessage, err := files.CompareFiles(firstFile, secondFile)
+		fmt.Printf("Comparing files: %s and %s \n", leftFile, rightFile)
+		equal, matcherErrorMessage, err := files.CompareFiles(leftFile, rightFile)
 		if err != nil {
 			fmt.Printf("Failed to compare files: %s", err.Error())
 			return
