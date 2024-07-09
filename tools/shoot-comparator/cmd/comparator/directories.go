@@ -25,9 +25,9 @@ var directoriesCmd = &cobra.Command{
 		fmt.Printf("Numer of files in %s directory = %d \n", rightDir, result.RightDirFilesCount)
 
 		if result.Equal {
-			fmt.Print("Directories are equal \n")
+			fmt.Println("Directories are equal")
 		} else {
-			fmt.Print("Directories are NOT equal \n")
+			fmt.Println("Directories are NOT equal")
 			if len(result.LeftOnly) != 0 {
 				fmt.Printf("Files existing in %s folder only: %s", leftDir, result.LeftOnly)
 			}
