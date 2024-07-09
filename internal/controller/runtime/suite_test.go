@@ -18,12 +18,12 @@ package runtime
 
 import (
 	"context"
-	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
 	"path/filepath"
 	"testing"
 
 	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
