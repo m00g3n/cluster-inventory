@@ -28,6 +28,10 @@ func requeue() (stateFn, *ctrl.Result, error) {
 	return nil, &ctrl.Result{Requeue: true}, nil
 }
 
+func requeueAfter(d time.Duration) (stateFn, *ctrl.Result, error) {
+	return nil, &ctrl.Result{RequeueAfter: d}, nil
+}
+
 func stop() (stateFn, *ctrl.Result, error) {
 	return nil, nil, nil
 }
