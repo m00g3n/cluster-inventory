@@ -2,7 +2,6 @@ package fsm
 
 import (
 	"context"
-	"time"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -60,7 +59,7 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 	// instance is being deleted and shoot is being deleted
 	if !instanceIsNotBeingDeleted && instanceHasFinalizer {
 		m.log.Info("Waiting on instance resources being deleted")
-		return requeueAfter(15 * time.Second)
+		return requeueAfter(gardenerRequeueDuration)
 	}
 
 	m.log.Info("noting to reconcile, stopping sfm")
