@@ -144,6 +144,27 @@ func setupGardenerTestClientForProvisioning() {
 	runtimeReconciler.UpdateShootClient(gardenerTestClient)
 }
 
+func setupGardenerTestClientForUpdate() {
+	runtimeStub := CreateRuntimeStub("test-resource")
+	converterConfig := fixConverterConfigForTests()
+	converter := gardener_shoot.NewConverter(converterConfig)
+	convertedShoot, err := converter.ToShoot(*runtimeStub)
+	if err != nil {
+		panic(err)
+	}
+
+	shoots := fixGardenerShootsForUpdate(&convertedShoot)
+
+	clientScheme := runtime.NewScheme()
+	_ = gardener_api.AddToScheme(clientScheme)
+
+	tracker := clienttesting.NewObjectTracker(clientScheme, serializer.NewCodecFactory(clientScheme).UniversalDecoder())
+	customTracker = NewCustomTracker(tracker, shoots)
+	gardenerTestClient = fake.NewClientBuilder().WithScheme(clientScheme).WithObjectTracker(customTracker).Build()
+
+	runtimeReconciler.UpdateShootClient(gardenerTestClient)
+}
+
 // func setupGardenerTestClientForDeleting() {
 //	runtimeStub := CreateRuntimeStub("test-resource")
 //	converterConfig := fixConverterConfigForTests()
@@ -188,6 +209,34 @@ func fixGardenerShootsForProvisioning(shoot *gardener_api.Shoot) []*gardener_api
 	// processedShoot := processingShoot.DeepCopy() // will add specific data later
 
 	return []*gardener_api.Shoot{missingShoot, missingShoot, missingShoot, initialisedShoot, dnsShoot, pendingShoot, processingShoot, readyShoot, readyShoot}
+}
+
+func fixGardenerShootsForUpdate(shoot *gardener_api.Shoot) []*gardener_api.Shoot {
+
+	pendingShoot := shoot.DeepCopy()
+
+	pendingShoot.Spec.DNS = &gardener_api.DNS{
+		Domain: ptrTo("test.domain"),
+	}
+
+	pendingShoot.Status = gardener_api.ShootStatus{
+		LastOperation: &gardener_api.LastOperation{
+			Type:  gardener_api.LastOperationTypeReconcile,
+			State: gardener_api.LastOperationStatePending,
+		},
+	}
+
+	processingShoot := pendingShoot.DeepCopy()
+
+	processingShoot.Status.LastOperation.State = gardener_api.LastOperationStateProcessing
+
+	readyShoot := processingShoot.DeepCopy()
+
+	readyShoot.Status.LastOperation.State = gardener_api.LastOperationStateSucceeded
+
+	// processedShoot := processingShoot.DeepCopy() // will add specific data later
+
+	return []*gardener_api.Shoot{pendingShoot, processingShoot, readyShoot, readyShoot}
 }
 
 func fixConverterConfigForTests() gardener_shoot.ConverterConfig {

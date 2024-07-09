@@ -70,11 +70,31 @@ var _ = Describe("Runtime Controller", func() {
 
 			}, time.Second*300, time.Second*3).Should(BeTrue())
 
-			runtime := imv1.Runtime{}
+			By("Wait for Runtime to process shoot creation process and finish processing in Ready State")
 
-			By("Wait for Runtime to process shoot creation process and end in ready State")
+			// should go into Pending Processing state
 			Eventually(func() bool {
+				runtime := imv1.Runtime{}
+				err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
+				if err != nil {
+					return false
+				}
 
+				// check state
+				if runtime.Status.State != imv1.RuntimeStatePending {
+					return false
+				}
+
+				if !runtime.IsConditionSetWithStatus(imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonShootCreationPending, "Unknown") {
+					return false
+				}
+
+				return true
+			}, time.Second*300, time.Second*3).Should(BeTrue())
+
+			// and end as Ready state with ConfigurationCompleted condition == True
+			Eventually(func() bool {
+				runtime := imv1.Runtime{}
 				err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
 
 				if err != nil {
@@ -85,7 +105,60 @@ var _ = Describe("Runtime Controller", func() {
 				if runtime.Status.State != imv1.RuntimeStateReady {
 					return false
 				}
-				// check conditions
+
+				if !runtime.IsConditionSet(imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonConfigurationCompleted) {
+					return false
+				}
+
+				return true
+			}, time.Second*300, time.Second*3).Should(BeTrue())
+
+			Expect(customTracker.IsSequenceFullyUsed()).To(BeTrue())
+
+			By("Wait for Runtime to process shoot update process and finish processing in Ready State")
+			setupGardenerTestClientForUpdate()
+
+			runtime := imv1.Runtime{}
+			err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
+
+			Expect(err).To(BeNil())
+
+			runtime.Spec.Shoot.Provider.Workers[0].Maximum = 5
+			Expect(k8sClient.Update(ctx, &runtime)).To(Succeed())
+
+			// should go into Pending Processing state
+			Eventually(func() bool {
+				runtime := imv1.Runtime{}
+				err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
+				if err != nil {
+					return false
+				}
+
+				// check state
+				if runtime.Status.State != imv1.RuntimeStatePending {
+					return false
+				}
+
+				if !runtime.IsConditionSetWithStatus(imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonProcessing, "Unknown") {
+					return false
+				}
+
+				return true
+			}, time.Second*300, time.Second*3).Should(BeTrue())
+
+			// and end as Ready state with ConfigurationCompleted condition == True
+			Eventually(func() bool {
+				runtime := imv1.Runtime{}
+				err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
+
+				if err != nil {
+					return false
+				}
+
+				// check state
+				if runtime.Status.State != imv1.RuntimeStateReady {
+					return false
+				}
 
 				if !runtime.IsConditionSet(imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonConfigurationCompleted) {
 					return false
@@ -118,7 +191,8 @@ func CreateRuntimeStub(resourceName string) *imv1.Runtime {
 					Type: "aws",
 					Workers: []gardener.Worker{
 						{
-							Zones: []string{""},
+							Zones:   []string{""},
+							Maximum: 1,
 						},
 					},
 				},

@@ -12,6 +12,7 @@ import (
 )
 
 // CustomTracker implements ObjectTracker with a sequence of Shoot objects
+// it will be updated with a different shoot sequence for each test case
 type CustomTracker struct {
 	clienttesting.ObjectTracker
 	shootSequence []*gardener_api.Shoot
