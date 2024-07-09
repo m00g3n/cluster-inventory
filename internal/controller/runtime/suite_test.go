@@ -18,20 +18,20 @@ package runtime
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	clienttesting "k8s.io/client-go/testing"
 	"path/filepath"
 	"testing"
 
 	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
-	. "github.com/onsi/ginkgo/v2"        //nolint:revive
-	. "github.com/onsi/gomega"           //nolint:revive
-	. "github.com/stretchr/testify/mock" //nolint:revive
+	. "github.com/onsi/ginkgo/v2" //nolint:revive
+	. "github.com/onsi/gomega"    //nolint:revive
+	//nolint:revive
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	clienttesting "k8s.io/client-go/testing"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -45,15 +45,14 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	cfg                *rest.Config                                              //nolint:gochecknoglobals
-	k8sClient          client.Client                                             //nolint:gochecknoglobals
-	gardenerTestClient client.Client                                             //nolint:gochecknoglobals
-	testEnv            *envtest.Environment                                      //nolint:gochecknoglobals
-	suiteCtx           context.Context                                           //nolint:gochecknoglobals
-	cancelSuiteCtx     context.CancelFunc                                        //nolint:gochecknoglobals
-	anyContext         = MatchedBy(func(_ context.Context) bool { return true }) //nolint:gochecknoglobals
-	runtimeReconciler  *RuntimeReconciler                                        //nolint:gochecknoglobals
-	customTracker      *CustomTracker                                            //nolint:gochecknoglobals
+	cfg                *rest.Config         //nolint:gochecknoglobals
+	k8sClient          client.Client        //nolint:gochecknoglobals
+	gardenerTestClient client.Client        //nolint:gochecknoglobals
+	testEnv            *envtest.Environment //nolint:gochecknoglobals
+	suiteCtx           context.Context      //nolint:gochecknoglobals
+	cancelSuiteCtx     context.CancelFunc   //nolint:gochecknoglobals
+	runtimeReconciler  *RuntimeReconciler   //nolint:gochecknoglobals
+	customTracker      *CustomTracker       //nolint:gochecknoglobals
 )
 
 func TestControllers(t *testing.T) {
@@ -144,7 +143,7 @@ func setupGardenerTestClientForProvisioning() {
 	runtimeReconciler.UpdateShootClient(gardenerTestClient)
 }
 
-//func setupGardenerTestClientForDeleting() {
+// func setupGardenerTestClientForDeleting() {
 //	runtimeStub := CreateRuntimeStub("test-resource")
 //	converterConfig := fixConverterConfigForTests()
 //	converter := gardener_shoot.NewConverter(converterConfig)

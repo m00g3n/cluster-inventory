@@ -96,12 +96,10 @@ var _ = Describe("Runtime Controller", func() {
 
 			Expect(customTracker.IsSequenceFullyUsed()).To(BeTrue())
 
-			//objectTestTracker.SetShootListForTracker()
+			// objectTestTracker.SetShootListForTracker()
 			//
 			//By("Delete Runtime CR")
 			//Expect(k8sClient.Delete(ctx, &runtime)).To(Succeed())
-
-			// mockShootClient.AssertExpectations(GinkgoT()) //TODO: this fails, investigate why
 		})
 	})
 })
