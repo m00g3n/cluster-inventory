@@ -29,15 +29,15 @@ var directoriesCmd = &cobra.Command{
 		} else {
 			fmt.Println("Directories are NOT equal")
 			if len(result.LeftOnly) != 0 {
-				fmt.Printf("Files existing in %s folder only: %s", leftDir, result.LeftOnly)
+				fmt.Printf("Files existing in %s folder only: %s \n", leftDir, result.LeftOnly)
 			}
 
 			if len(result.RightOnly) != 0 {
-				fmt.Printf("Files existing in %s folder only: %s", rightDir, result.RightOnly)
+				fmt.Printf("Files existing in %s folder only: %s \n", rightDir, result.RightOnly)
 			}
 
 			if len(result.Diff) != 0 {
-				fmt.Printf("Differences found: %s", result.Diff)
+				fmt.Printf("Differences found: %s \n", result.Diff)
 			}
 		}
 	},
