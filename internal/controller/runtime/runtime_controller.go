@@ -33,7 +33,6 @@ import (
 // RuntimeReconciler reconciles a Runtime object
 // nolint:revive
 type RuntimeReconciler struct {
-	// TODO make it a property
 	client.Client
 	Scheme        *runtime.Scheme
 	ShootClient   client.Client
@@ -73,16 +72,14 @@ func (r *RuntimeReconciler) Reconcile(ctx context.Context, request ctrl.Request)
 	return stateFSM.Run(ctx, runtime)
 }
 
-func NewRuntimeReconciler(mgr ctrl.Manager, shootClient client.Client, logger logr.Logger) *RuntimeReconciler {
+func NewRuntimeReconciler(mgr ctrl.Manager, shootClient client.Client, logger logr.Logger, cfg fsm.RCCfg) *RuntimeReconciler {
 	return &RuntimeReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
 		ShootClient:   shootClient,
 		EventRecorder: mgr.GetEventRecorderFor("runtime-controller"),
 		Log:           logger,
-		Cfg: fsm.RCCfg{
-			Finalizer: imv1.Finalizer,
-		},
+		Cfg:           cfg,
 	}
 }
 

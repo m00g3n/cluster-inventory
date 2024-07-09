@@ -18,6 +18,7 @@ package runtime
 
 import (
 	"context"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
 	"path/filepath"
 	"testing"
 
@@ -95,7 +96,7 @@ var _ = BeforeSuite(func() {
 	customTracker = NewCustomTracker(tracker, []*gardener_api.Shoot{})
 	gardenerTestClient = fake.NewClientBuilder().WithScheme(clientScheme).WithObjectTracker(customTracker).Build()
 
-	runtimeReconciler = NewRuntimeReconciler(mgr, gardenerTestClient, logger)
+	runtimeReconciler = NewRuntimeReconciler(mgr, gardenerTestClient, logger, fsm.RCCfg{Finalizer: infrastructuremanagerv1.Finalizer})
 	Expect(runtimeReconciler).NotTo(BeNil())
 	err = runtimeReconciler.SetupWithManager(mgr)
 	Expect(err).To(BeNil())

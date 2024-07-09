@@ -118,7 +118,7 @@ func main() {
 	}
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", gardenerProjectName)
-	gerdenerClient, shootClient, dynamicKubeconfigClient, err := initGardenerClients(gardenerKubeconfigPath, gardenerNamespace)
+	gardenerClient, shootClient, dynamicKubeconfigClient, err := initGardenerClients(gardenerKubeconfigPath, gardenerNamespace)
 
 	if err != nil {
 		setupLog.Error(err, "unable to initialize gardener clients", "controller", "GardenerCluster")
@@ -154,15 +154,11 @@ func main() {
 	}
 
 	if enableRuntimeReconciler {
-		if err = (&runtime_controller.RuntimeReconciler{
-			Client:        mgr.GetClient(),
-			Scheme:        mgr.GetScheme(),
-			ShootClient:   gerdenerClient,
-			Log:           logger,
-			Cfg:           cfg,
-			EventRecorder: mgr.GetEventRecorderFor("runtime-controller"),
-		}).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Runtime")
+
+		runtimeReconciler := runtime_controller.NewRuntimeReconciler(mgr, gardenerClient, logger, cfg)
+
+		if err = runtimeReconciler.SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to setup controller with Manager", "controller", "Runtime")
 			os.Exit(1)
 		}
 	}
