@@ -169,7 +169,7 @@ var _ = Describe("Runtime Controller", func() {
 
 			Expect(customTracker.IsSequenceFullyUsed()).To(BeTrue())
 
-			// objectTestTracker.SetShootListForTracker()
+			// next test will be for runtime deletion
 			//
 			// By("Delete Runtime CR")
 			// Expect(k8sClient.Delete(ctx, &runtime)).To(Succeed())
