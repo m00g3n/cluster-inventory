@@ -16,16 +16,17 @@ var filesCmd = &cobra.Command{
 		secondFile := args[1]
 
 		fmt.Printf("Comparing files: %s and %s \n", firstFile, secondFile)
-		equal, err := files.CompareFiles(firstFile, secondFile)
+		equal, matcherErrorMessage, err := files.CompareFiles(firstFile, secondFile)
 		if err != nil {
 			fmt.Printf("Failed to compare files: %s", err.Error())
 			return
 		}
 
 		if equal {
-			fmt.Print("Shoot files are equal")
+			fmt.Println("Shoot files are equal")
 		} else {
-			fmt.Print("Shoot files are NOT equal")
+			fmt.Println("Shoot files are NOT equal")
+			fmt.Println(matcherErrorMessage)
 		}
 	},
 }
