@@ -154,7 +154,6 @@ func main() {
 	}
 
 	if enableRuntimeReconciler {
-
 		runtimeReconciler := runtime_controller.NewRuntimeReconciler(mgr, gardenerClient, logger, cfg)
 
 		if err = runtimeReconciler.SetupWithManager(mgr); err != nil {
