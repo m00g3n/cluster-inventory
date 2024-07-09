@@ -3,7 +3,7 @@ module github.com/kyma-project/infrastructure-manager
 go 1.22.5
 
 require (
-	github.com/gardener/gardener v1.98.0
+	github.com/gardener/gardener v1.98.2
 	github.com/gardener/gardener-extension-provider-aws v1.56.0
 	github.com/gardener/gardener-extension-provider-gcp v1.37.0
 	github.com/gardener/gardener-extension-provider-openstack v1.40.1
