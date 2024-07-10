@@ -37,9 +37,9 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 		return switchState(sFnCreateShoot)
 	}
 
-	if instanceIsNotBeingDeleted && s.shoot != nil {
+	if instanceIsNotBeingDeleted {
 		m.log.Info("Gardener shoot exists, processing")
-		return switchState(sFnPrepareCluster) // wait for pending shoot operation to complete
+		return switchState(sFnSelectShootProcessing)
 	}
 
 	// resource cleanup is done;

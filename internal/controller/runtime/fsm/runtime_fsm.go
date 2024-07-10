@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -28,8 +27,9 @@ type writerGetter = func(filePath string) (io.Writer, error)
 
 // runtime reconciler specific configuration
 type RCCfg struct {
-	Finalizer string
-	PVCPath   string
+	Finalizer       string
+	PVCPath         string
+	ShootNamesapace string
 }
 
 func (f stateFn) String() string {
@@ -46,7 +46,7 @@ type Watch = func(src source.Source, eventhandler handler.EventHandler, predicat
 type K8s struct {
 	client.Client
 	record.EventRecorder
-	ShootClient gardener.ShootClient
+	ShootClient client.Client
 }
 
 type Fsm interface {

@@ -156,13 +156,13 @@ var _ = Describe("KIM sFnInitialise", func() {
 			},
 		),
 		Entry(
-			"should return sFnPrepareCluster and no error when exists Provisioning Condition and shoot exists",
+			"should return sFnSelectShootProcessing and no error when exists Provisioning Condition and shoot exists",
 			testCtx,
 			must(newFakeFSM, withTestFinalizer),
 			&systemState{instance: testRtWithFinalizerAndProvisioningCondition, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
-				MatchNextFnState: haveName("sFnPrepareCluster"),
+				MatchNextFnState: haveName("sFnSelectShootProcessing"),
 			},
 		),
 	)

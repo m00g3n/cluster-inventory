@@ -239,3 +239,19 @@ func (k *Runtime) IsConditionSet(c RuntimeConditionType, r RuntimeConditionReaso
 	}
 	return false
 }
+
+func (k *Runtime) IsStateWithConditionAndStatusSet(runtimeState State, c RuntimeConditionType, r RuntimeConditionReason, s metav1.ConditionStatus) bool {
+	if k.Status.State != runtimeState {
+		return false
+	}
+
+	return k.IsConditionSetWithStatus(c, r, s)
+}
+
+func (k *Runtime) IsConditionSetWithStatus(c RuntimeConditionType, r RuntimeConditionReason, s metav1.ConditionStatus) bool {
+	condition := meta.FindStatusCondition(k.Status.Conditions, string(c))
+	if condition != nil && condition.Reason == string(r) && condition.Status == s {
+		return true
+	}
+	return false
+}

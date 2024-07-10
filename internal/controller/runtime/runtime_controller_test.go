@@ -45,17 +45,12 @@ var _ = Describe("Runtime Controller", func() {
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Cleanup the specific resource instance Runtime")
-			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
-
-			By("Cleanup ShootClient mocks")
-			clearMockCalls(mockShootClient)
 		})
 
 		It("Should successfully create new Shoot from provided Runtime and set Ready status on CR", func() {
 
-			By("Setup the mock of ShootClient for Provisioning")
-			setupShootClientMockForProvisioning(mockShootClient)
+			By("Setup the fake gardener client for Provisioning")
+			setupGardenerTestClientForProvisioning()
 
 			By("Create Runtime CR")
 			runtimeStub := CreateRuntimeStub(ResourceName)
@@ -75,8 +70,29 @@ var _ = Describe("Runtime Controller", func() {
 
 			}, time.Second*300, time.Second*3).Should(BeTrue())
 
-			By("Wait for shoot to be created")
+			By("Wait for Runtime to process shoot creation process and finish processing in Ready State")
 
+			// should go into Pending Processing state
+			Eventually(func() bool {
+				runtime := imv1.Runtime{}
+				err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
+				if err != nil {
+					return false
+				}
+
+				// check state
+				if runtime.Status.State != imv1.RuntimeStatePending {
+					return false
+				}
+
+				if !runtime.IsConditionSetWithStatus(imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonShootCreationPending, "Unknown") {
+					return false
+				}
+
+				return true
+			}, time.Second*300, time.Second*3).Should(BeTrue())
+
+			// and end as Ready state with ConfigurationCompleted condition == True
 			Eventually(func() bool {
 				runtime := imv1.Runtime{}
 				err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
@@ -89,17 +105,74 @@ var _ = Describe("Runtime Controller", func() {
 				if runtime.Status.State != imv1.RuntimeStateReady {
 					return false
 				}
-				// check conditions
 
 				if !runtime.IsConditionSet(imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonConfigurationCompleted) {
 					return false
 				}
 
 				return true
-
 			}, time.Second*300, time.Second*3).Should(BeTrue())
 
-			// mockShootClient.AssertExpectations(GinkgoT()) //TODO: this fails, investigate why
+			Expect(customTracker.IsSequenceFullyUsed()).To(BeTrue())
+
+			By("Wait for Runtime to process shoot update process and finish processing in Ready State")
+			setupGardenerTestClientForUpdate()
+
+			runtime := imv1.Runtime{}
+			err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
+
+			Expect(err).To(BeNil())
+
+			runtime.Spec.Shoot.Provider.Workers[0].Maximum = 5
+			Expect(k8sClient.Update(ctx, &runtime)).To(Succeed())
+
+			// should go into Pending Processing state
+			Eventually(func() bool {
+				runtime := imv1.Runtime{}
+				err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
+				if err != nil {
+					return false
+				}
+
+				// check state
+				if runtime.Status.State != imv1.RuntimeStatePending {
+					return false
+				}
+
+				if !runtime.IsConditionSetWithStatus(imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonProcessing, "Unknown") {
+					return false
+				}
+
+				return true
+			}, time.Second*300, time.Second*3).Should(BeTrue())
+
+			// and end as Ready state with ConfigurationCompleted condition == True
+			Eventually(func() bool {
+				runtime := imv1.Runtime{}
+				err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
+
+				if err != nil {
+					return false
+				}
+
+				// check state
+				if runtime.Status.State != imv1.RuntimeStateReady {
+					return false
+				}
+
+				if !runtime.IsConditionSet(imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonConfigurationCompleted) {
+					return false
+				}
+
+				return true
+			}, time.Second*300, time.Second*3).Should(BeTrue())
+
+			Expect(customTracker.IsSequenceFullyUsed()).To(BeTrue())
+
+			// next test will be for runtime deletion
+			//
+			// By("Delete Runtime CR")
+			// Expect(k8sClient.Delete(ctx, &runtime)).To(Succeed())
 		})
 	})
 })
@@ -112,12 +185,14 @@ func CreateRuntimeStub(resourceName string) *imv1.Runtime {
 		},
 		Spec: imv1.RuntimeSpec{
 			Shoot: imv1.RuntimeShoot{
+				Name:       resourceName,
 				Networking: imv1.Networking{},
 				Provider: imv1.Provider{
 					Type: "aws",
 					Workers: []gardener.Worker{
 						{
-							Zones: []string{""},
+							Zones:   []string{""},
+							Maximum: 1,
 						},
 					},
 				},
