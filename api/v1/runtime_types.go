@@ -68,6 +68,7 @@ const (
 	ConditionReasonConversionError    = RuntimeConditionReason("ConversionErr")
 	ConditionReasonCreationError      = RuntimeConditionReason("CreationErr")
 	ConditionReasonGardenerError      = RuntimeConditionReason("GardenerErr")
+	ConditionReasonKubernetesAPIErr   = RuntimeConditionReason("KubernetesErr")
 	ConditionReasonSerializationError = RuntimeConditionReason("SerializationErr")
 	ConditionReasonDeleted            = RuntimeConditionReason("Deleted")
 )

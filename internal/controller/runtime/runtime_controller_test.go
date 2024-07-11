@@ -60,9 +60,7 @@ var _ = Describe("Runtime Controller", func() {
 
 			Eventually(func() bool {
 				runtime := imv1.Runtime{}
-				err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
-
-				if err != nil {
+				if err := k8sClient.Get(ctx, typeNamespacedName, &runtime); err != nil {
 					return false
 				}
 
@@ -75,8 +73,7 @@ var _ = Describe("Runtime Controller", func() {
 			// should go into Pending Processing state
 			Eventually(func() bool {
 				runtime := imv1.Runtime{}
-				err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
-				if err != nil {
+				if err := k8sClient.Get(ctx, typeNamespacedName, &runtime); err != nil {
 					return false
 				}
 
@@ -95,9 +92,7 @@ var _ = Describe("Runtime Controller", func() {
 			// and end as Ready state with ConfigurationCompleted condition == True
 			Eventually(func() bool {
 				runtime := imv1.Runtime{}
-				err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
-
-				if err != nil {
+				if err := k8sClient.Get(ctx, typeNamespacedName, &runtime); err != nil {
 					return false
 				}
 
@@ -129,8 +124,7 @@ var _ = Describe("Runtime Controller", func() {
 			// should go into Pending Processing state
 			Eventually(func() bool {
 				runtime := imv1.Runtime{}
-				err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
-				if err != nil {
+				if err := k8sClient.Get(ctx, typeNamespacedName, &runtime); err != nil {
 					return false
 				}
 
@@ -149,9 +143,7 @@ var _ = Describe("Runtime Controller", func() {
 			// and end as Ready state with ConfigurationCompleted condition == True
 			Eventually(func() bool {
 				runtime := imv1.Runtime{}
-				err := k8sClient.Get(ctx, typeNamespacedName, &runtime)
-
-				if err != nil {
+				if err := k8sClient.Get(ctx, typeNamespacedName, &runtime); err != nil {
 					return false
 				}
 
