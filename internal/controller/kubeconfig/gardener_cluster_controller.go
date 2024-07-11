@@ -108,7 +108,7 @@ func (controller *GardenerClusterController) Reconcile(ctx context.Context, req 
 		return controller.resultWithoutRequeue(&cluster), err
 	}
 
-	secret, err := controller.getSecret(cluster.Spec.Kubeconfig.Secret.Name)
+	secret, err := controller.getSecret(cluster.Spec.Shoot.Name)
 	if err != nil && !k8serrors.IsNotFound(err) {
 		cluster.UpdateConditionForErrorState(imv1.ConditionTypeKubeconfigManagement, imv1.ConditionReasonFailedToGetSecret, err)
 		_ = controller.persistStatusChange(ctx, &cluster)
