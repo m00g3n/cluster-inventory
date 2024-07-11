@@ -67,28 +67,6 @@ func convertShoot(instance *imv1.Runtime, cfg shoot.ConverterConfig) (gardener.S
 	return shoot, err
 }
 
-func FixConverterConfig() gardener_shoot.ConverterConfig {
-	return gardener_shoot.ConverterConfig{
-		Kubernetes: gardener_shoot.KubernetesConfig{
-			DefaultVersion: "1.29", //nolint:godox TODO: Should be parametrised
-		},
-
-		DNS: gardener_shoot.DNSConfig{
-			SecretName:   "aws-route53-secret-dev",
-			DomainPrefix: "dev.kyma.ondemand.com",
-			ProviderType: "aws-route53",
-		},
-		Provider: gardener_shoot.ProviderConfig{
-			AWS: gardener_shoot.AWSConfig{
-				EnableIMDSv2: true, //nolint:godox TODO: Should be parametrised
-			},
-		},
-		Gardener: gardener_shoot.GardenerConfig{
-			ProjectName: "kyma-dev", //nolint:godox TODO: should be parametrised
-		},
-	}
-}
-
 // workaround
 func setObjectFields(shoot *gardener.Shoot) {
 	shoot.Kind = "Shoot"
