@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -26,6 +25,7 @@ import (
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
+	"github.com/go-playground/validator/v10"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	kubeconfig_controller "github.com/kyma-project/infrastructure-manager/internal/controller/kubeconfig"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
@@ -157,9 +157,15 @@ func main() {
 	getReader := func() (io.Reader, error) {
 		return os.Open(converterConfigFilepath)
 	}
-	converterConfig, err := loadConverterConfiguration(getReader)
-	if err != nil {
+	var converterConfig shoot.ConverterConfig
+	if err := converterConfig.Load(getReader); err != nil {
 		setupLog.Error(err, "unable to load converter configuration")
+		os.Exit(1)
+	}
+
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	if err := validate.Struct(converterConfig); err != nil {
+		setupLog.Error(err, "invalid converter configuration")
 		os.Exit(1)
 	}
 
@@ -231,15 +237,4 @@ func initGardenerClients(kubeconfigPath string, namespace string) (client.Client
 	}
 
 	return gardenerClient, shootClient, dynamicKubeconfigAPI, nil
-}
-
-type readerGetter = func() (io.Reader, error)
-
-func loadConverterConfiguration(f readerGetter) (result shoot.ConverterConfig, err error) {
-	r, err := f()
-	if err != nil {
-		return result, err
-	}
-	err = json.NewDecoder(r).Decode(&result)
-	return result, err
 }
