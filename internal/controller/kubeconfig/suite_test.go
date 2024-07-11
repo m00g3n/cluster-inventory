@@ -53,6 +53,7 @@ var (
 const TestMinimalRotationTimeRatio = 0.5
 const TestKubeconfigValidityTime = 24 * time.Hour
 const TestKubeconfigRotationPeriod = time.Duration(float64(TestKubeconfigValidityTime) * TestMinimalRotationTimeRatio)
+const TestGardenerRequestTimeout = 60 * time.Second
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -84,9 +85,10 @@ var _ = BeforeSuite(func() {
 
 	kubeconfigProviderMock := &kubeconfig_mocks.KubeconfigProvider{}
 	setupKubeconfigProviderMock(kubeconfigProviderMock)
+
 	metrics := metrics.NewMetrics()
 
-	gardenerClusterController := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger, TestKubeconfigRotationPeriod, TestMinimalRotationTimeRatio, metrics)
+	gardenerClusterController := NewGardenerClusterController(mgr, kubeconfigProviderMock, logger, TestKubeconfigRotationPeriod, TestMinimalRotationTimeRatio, TestGardenerRequestTimeout, metrics)
 
 	Expect(gardenerClusterController).NotTo(BeNil())
 
@@ -113,7 +115,7 @@ var _ = BeforeSuite(func() {
 func setupKubeconfigProviderMock(kpMock *kubeconfig_mocks.KubeconfigProvider) {
 	kpMock.On("Fetch", anyContext, "shootName1").Return("kubeconfig1", nil)
 	kpMock.On("Fetch", anyContext, "shootName2").Return("kubeconfig2", nil)
-	kpMock.On("Fetch", anyContext, "shootName3").Return("", errors.New("failed to get kubeconfig"))
+	kpMock.On("Fetch", anyContext, "shootName3").Return("", errors.New("this could be context deadline exceeded"))
 	kpMock.On("Fetch", anyContext, "shootName6").Return("kubeconfig6", nil)
 	kpMock.On("Fetch", anyContext, "shootName4").Return("kubeconfig4", nil)
 	kpMock.On("Fetch", anyContext, "shootName5").Return("kubeconfig5", nil)
