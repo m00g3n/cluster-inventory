@@ -1026,7 +1026,6 @@ spec:
                     type: string
                 required:
                 - controlPlane
-                - kubernetes
                 - name
                 - networking
                 - platformRegion
