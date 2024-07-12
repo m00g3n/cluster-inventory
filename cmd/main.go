@@ -158,13 +158,13 @@ func main() {
 		return os.Open(converterConfigFilepath)
 	}
 	var converterConfig shoot.ConverterConfig
-	if err := converterConfig.Load(getReader); err != nil {
+	if err = converterConfig.Load(getReader); err != nil {
 		setupLog.Error(err, "unable to load converter configuration")
 		os.Exit(1)
 	}
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
-	if err := validate.Struct(converterConfig); err != nil {
+	if err = validate.Struct(converterConfig); err != nil {
 		setupLog.Error(err, "invalid converter configuration")
 		os.Exit(1)
 	}
