@@ -17,7 +17,10 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
+
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -31,6 +34,21 @@ import (
 const (
 	Finalizer                              = "runtime-controller.infrastructure-manager.kyma-project.io/deletion-hook"
 	AnnotationGardenerCloudDelConfirmation = "confirmation.gardener.cloud/deletion"
+)
+
+const (
+	LabelKymaInstanceId         = "kyma-project.io/instance-id"
+	LabelKymaRuntimeId          = "kyma-project.io/runtime-id"
+	LabelKymaShootName          = "kyma-project.io/shootName"
+	LabelKymaRegion             = "kyma-project.io/region"
+	LabelKymaName               = "kyma-project.io/kyma-name"
+	LabelKymaBrokerPlanId       = "kyma-project.io/broker-plan-id"
+	LabelKymaBrokerPlanName     = "kyma-project.io/broker-plan-name"
+	LabelKymaGlobalAccountId    = "kyma-project.io/global-account-id"
+	LabelKymaGlobalSubaccountId = "kyma-project.io/subaccount-id"
+	LabelKymaManagedBy          = "operator.kyma-project.io/managed-by"
+	LabelKymaInternal           = "operator.kyma-project.io/internal"
+	LabelKymaPlatformRegion     = "kyma-project.io/platform-region"
 )
 
 const (
@@ -59,9 +77,9 @@ const (
 	ConditionReasonShootCreationPending   = RuntimeConditionReason("Pending")
 	ConditionReasonShootCreationCompleted = RuntimeConditionReason("ShootCreationCompleted")
 
-	ConditionReasonConfigurationStarted   = RuntimeConditionReason("ConfigurationStarted")
-	ConditionReasonConfigurationCompleted = RuntimeConditionReason("ConfigurationCompleted")
-	ConditionReasonConfigurationErr       = RuntimeConditionReason("ConfigurationError")
+	ConditionReasonGardenerCRCreated = RuntimeConditionReason("GardenerClusterCRCreated")
+	ConditionReasonGardenerCRReady   = RuntimeConditionReason("GardenerClusterCRReady")
+	ConditionReasonConfigurationErr  = RuntimeConditionReason("ConfigurationError")
 
 	ConditionReasonDeletion           = RuntimeConditionReason("Deletion")
 	ConditionReasonDeletionErr        = RuntimeConditionReason("DeletionErr")
@@ -255,4 +273,28 @@ func (k *Runtime) IsConditionSetWithStatus(c RuntimeConditionType, r RuntimeCond
 		return true
 	}
 	return false
+}
+
+func (k *Runtime) ValidateRequiredLabels() error {
+	var requiredLabelKeys = []string{
+		LabelKymaInstanceId,
+		LabelKymaRuntimeId,
+		LabelKymaShootName,
+		LabelKymaRegion,
+		LabelKymaName,
+		LabelKymaBrokerPlanId,
+		LabelKymaBrokerPlanName,
+		LabelKymaGlobalAccountId,
+		LabelKymaGlobalSubaccountId,
+		LabelKymaManagedBy,
+		LabelKymaInternal,
+		LabelKymaPlatformRegion,
+	}
+
+	for _, key := range requiredLabelKeys {
+		if k.Labels[key] == "" {
+			return errors.New(fmt.Sprintf("Missing required label %s", key))
+		}
+	}
+	return nil
 }

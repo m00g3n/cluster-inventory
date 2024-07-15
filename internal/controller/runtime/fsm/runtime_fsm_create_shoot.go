@@ -37,6 +37,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 		"Shoot is pending",
 	)
 
+	// it will be executed only once because created shoot is executed only once
 	shouldPersistShoot := m.PVCPath != ""
 	if shouldPersistShoot {
 		s.shoot = newShoot.DeepCopy()

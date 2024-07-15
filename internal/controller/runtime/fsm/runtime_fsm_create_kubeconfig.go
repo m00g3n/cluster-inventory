@@ -5,46 +5,18 @@ import (
 	"fmt"
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-
-	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const (
-	labelKymaInstanceId         = "kyma-project.io/instance-id"
-	labelKymaRuntimeId          = "kyma-project.io/runtime-id"
-	labelKymaShootName          = "kyma-project.io/shootName"
-	labelKymaRegion             = "kyma-project.io/region"
-	labelKymaName               = "kyma-project.io/kyma-name"
-	labelKymaBrokerPlanId       = "kyma-project.io/broker-plan-id"
-	labelKymaBrokerPlanName     = "kyma-project.io/broker-plan-name"
-	labelKymaGlobalAccountId    = "kyma-project.io/global-account-id"
-	labelKymaGlobalSubaccountId = "kyma-project.io/subaccount-id"
-	labelKymaManagedBy          = "operator.kyma-project.io/managed-by"
-	labelKymaInternal           = "operator.kyma-project.io/internal"
-	labelKymaPlatformRegion     = "kyma-project.io/platform-region"
-)
-
-func markFailedStatus(m *fsm, s *systemState, condType imv1.RuntimeConditionType, condReason imv1.RuntimeConditionReason, message string) {
-	m.log.Error(errors.New(message), message)
-
-	s.instance.UpdateStatePending(
-		condType,
-		condReason,
-		"False",
-		message,
-	)
-}
-
 func sFnCreateKubeconfig(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
-	m.log.Info("Create Gardener Cluster CR state - the last one")
+	m.log.Info("Create Gardener Cluster CR state")
 
-	if s.instance.Annotations["labelKymaRuntimeId"] == "" {
-		markFailedStatus(m, s, imv1.ConditionTypeRuntimeKubeconfigReady, imv1.ConditionReasonConversionError, "Missing Runtime ID in label \"kyma-project.io/runtime-id\"")
+	if err := s.instance.ValidateRequiredLabels(); err != nil {
+		m.log.Error(err, "Failed to validate required Runtime labels", "name", s.instance.Name)
+		s.instance.UpdateStatePending(imv1.ConditionTypeRuntimeKubeconfigReady, imv1.ConditionReasonConversionError, "False", err.Error())
 		return updateStatusAndStop()
 	}
 
@@ -58,52 +30,34 @@ func sFnCreateKubeconfig(ctx context.Context, m *fsm, s *systemState) (stateFn, 
 
 	if err != nil {
 		if !k8serrors.IsNotFound(err) {
-			markFailedStatus(m, s, imv1.ConditionTypeRuntimeKubeconfigReady, imv1.ConditionReasonKubernetesAPIErr, "GardenerCluster CR read error")
+			m.log.Error(err, "GardenerCluster CR read error", "name", runtimeID)
+			s.instance.UpdateStatePending(imv1.ConditionTypeRuntimeKubeconfigReady, imv1.ConditionReasonKubernetesAPIErr, "False", err.Error())
 			return updateStatusAndStop()
 		}
 
 		m.log.Info("GardenerCluster CR not found, creating a new one", "Name", runtimeID)
 		err = m.Create(ctx, makeGardenerClusterForRuntime(s.instance, s.shoot))
 		if err != nil {
-			markFailedStatus(m, s, imv1.ConditionTypeRuntimeKubeconfigReady, imv1.ConditionReasonKubernetesAPIErr, "GardenerCluster CR create error")
+			m.log.Error(err, "GardenerCluster CR read error", "name", runtimeID)
+			s.instance.UpdateStatePending(imv1.ConditionTypeRuntimeKubeconfigReady, imv1.ConditionReasonKubernetesAPIErr, "False", err.Error())
 			return updateStatusAndStop()
 		}
 
-		m.log.Info("Gardener Cluster CR created successfully")
-		s.instance.UpdateStateReady(imv1.ConditionTypeRuntimeKubeconfigReady, imv1.ConditionReasonConfigurationCompleted, "Gardener Cluster CR created successfully")
+		m.log.Info("Gardener Cluster CR executed successfully", "Name", runtimeID)
+		s.instance.UpdateStatePending(imv1.ConditionTypeRuntimeKubeconfigReady, imv1.ConditionReasonGardenerCRCreated, "Unknown", "Gardener Cluster CR create operation executed successfully")
 		return updateStatusAndRequeueAfter(controlPlaneRequeueDuration)
 	}
 
-	// Gardener cluster exists, check if kubeconfig exists
-	kubeConfigExists, err := kubeconfigSecretExists(ctx, m, cluster)
-	if err != nil {
-		markFailedStatus(m, s, imv1.ConditionTypeRuntimeKubeconfigReady, imv1.ConditionReasonKubernetesAPIErr, err.Error())
-		return updateStatusAndStop()
-	}
-
-	if !kubeConfigExists {
-		// waiting for new kubeconfig to be created
+	if cluster.Status.State != imv1.ReadyState {
+		m.log.Info("GardenerCluster CR not ready yet, requeue", "Name", runtimeID, "State", cluster.Status.State)
 		return requeueAfter(controlPlaneRequeueDuration)
 	}
-	return switchState(sFnProcessShoot)
-}
 
-func kubeconfigSecretExists(ctx context.Context, m *fsm, cluster imv1.GardenerCluster) (bool, error) {
-	secret := corev1.Secret{}
-
-	err := m.Get(ctx, types.NamespacedName{
-		Namespace: cluster.Spec.Kubeconfig.Secret.Namespace,
-		Name:      cluster.Spec.Kubeconfig.Secret.Name,
-	}, &secret)
-
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return false, nil
-		}
-		m.log.Error(err, "Error when reading kubeconfig secret for GardenerCluster CR")
-		return false, err
-	}
-	return true, nil
+	return ensureStatusConditionIsDoneAndContinue(&s.instance,
+		imv1.ConditionTypeRuntimeKubeconfigReady,
+		imv1.ConditionReasonGardenerCRReady,
+		"Gardener Cluster CR is ready, processing shoot configuration",
+		sFnProcessShoot)
 }
 
 func makeGardenerClusterForRuntime(runtime imv1.Runtime, shoot *gardener.Shoot) *imv1.GardenerCluster {
@@ -119,23 +73,22 @@ func makeGardenerClusterForRuntime(runtime imv1.Runtime, shoot *gardener.Shoot) 
 				"skr-domain": *shoot.Spec.DNS.Domain,
 			},
 			Labels: map[string]string{
-				// values taken from Runtime CR labels
-				labelKymaInstanceId:         runtime.Labels[labelKymaInstanceId],
-				labelKymaRuntimeId:          runtime.Labels[labelKymaRuntimeId],
-				labelKymaBrokerPlanId:       runtime.Labels[labelKymaBrokerPlanId],
-				labelKymaBrokerPlanName:     runtime.Labels[labelKymaBrokerPlanName],
-				labelKymaGlobalAccountId:    runtime.Labels[labelKymaGlobalAccountId],
-				labelKymaGlobalSubaccountId: runtime.Labels[labelKymaGlobalSubaccountId], // most likely this value will be missing
-				labelKymaName:               runtime.Labels[labelKymaName],
+				imv1.LabelKymaInstanceId:         runtime.Labels[imv1.LabelKymaInstanceId],
+				imv1.LabelKymaRuntimeId:          runtime.Labels[imv1.LabelKymaRuntimeId],
+				imv1.LabelKymaBrokerPlanId:       runtime.Labels[imv1.LabelKymaBrokerPlanId],
+				imv1.LabelKymaBrokerPlanName:     runtime.Labels[imv1.LabelKymaBrokerPlanName],
+				imv1.LabelKymaGlobalAccountId:    runtime.Labels[imv1.LabelKymaGlobalAccountId],
+				imv1.LabelKymaGlobalSubaccountId: runtime.Labels[imv1.LabelKymaGlobalSubaccountId], // BTW most likely this value will be missing
+				imv1.LabelKymaName:               runtime.Labels[imv1.LabelKymaName],
 
 				// values from Runtime CR fields
-				labelKymaPlatformRegion: runtime.Spec.Shoot.PlatformRegion,
-				labelKymaRegion:         runtime.Spec.Shoot.Region,
-				labelKymaShootName:      shoot.Name,
+				imv1.LabelKymaPlatformRegion: runtime.Spec.Shoot.PlatformRegion,
+				imv1.LabelKymaRegion:         runtime.Spec.Shoot.Region,
+				imv1.LabelKymaShootName:      shoot.Name,
 
 				// hardcoded values
-				labelKymaManagedBy: "lifecycle-manager",
-				labelKymaInternal:  "true",
+				imv1.LabelKymaManagedBy: "lifecycle-manager",
+				imv1.LabelKymaInternal:  "true",
 			},
 		},
 		Spec: imv1.GardenerClusterSpec{
@@ -144,7 +97,7 @@ func makeGardenerClusterForRuntime(runtime imv1.Runtime, shoot *gardener.Shoot) 
 			},
 			Kubeconfig: imv1.Kubeconfig{
 				Secret: imv1.Secret{
-					Name:      fmt.Sprintf("kubeconfig-%s ", runtime.Labels[labelKymaRuntimeId]),
+					Name:      fmt.Sprintf("kubeconfig-%s ", runtime.Labels[imv1.LabelKymaRuntimeId]),
 					Namespace: runtime.Namespace,
 					Key:       "config",
 				},
