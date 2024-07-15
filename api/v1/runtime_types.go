@@ -77,9 +77,10 @@ const (
 	ConditionReasonShootCreationPending   = RuntimeConditionReason("Pending")
 	ConditionReasonShootCreationCompleted = RuntimeConditionReason("ShootCreationCompleted")
 
-	ConditionReasonGardenerCRCreated = RuntimeConditionReason("GardenerClusterCRCreated")
-	ConditionReasonGardenerCRReady   = RuntimeConditionReason("GardenerClusterCRReady")
-	ConditionReasonConfigurationErr  = RuntimeConditionReason("ConfigurationError")
+	ConditionReasonGardenerCRCreated      = RuntimeConditionReason("GardenerClusterCRCreated")
+	ConditionReasonGardenerCRReady        = RuntimeConditionReason("GardenerClusterCRReady")
+	ConditionReasonConfigurationCompleted = RuntimeConditionReason("ConfigurationCompleted")
+	ConditionReasonConfigurationErr       = RuntimeConditionReason("ConfigurationError")
 
 	ConditionReasonDeletion           = RuntimeConditionReason("Deletion")
 	ConditionReasonDeletionErr        = RuntimeConditionReason("DeletionErr")
