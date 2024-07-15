@@ -1,0 +1,19 @@
+{
+  "kubernetes": {
+    "defaultVersion": "1.29"
+  },
+  "dns": {
+    "secretName": "aws-route53-secret-dev",
+    "domainPrefix": "dev.kyma.ondemand.com",
+    "providerType": "aws-route53"
+  },
+  "aws": {
+    "enableIMDSv2": "true"
+  },
+  "machineImage": {
+    "defaultVersion": "1312.3.0"
+  },
+  "gardener": {
+    "projectName": "kyma-dev"
+  }
+}

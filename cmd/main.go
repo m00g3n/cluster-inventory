@@ -87,7 +87,7 @@ func main() {
 	flag.DurationVar(&gardenerRequestTimeout, "gardener-request-timeout", defaultGardenerRequestTimeout, "Timeout duration for requests to Gardener")
 	flag.BoolVar(&enableRuntimeReconciler, "runtime-reconciler-enabled", defaultRuntimeReconcilerEnabled, "Feature flag for all runtime reconciler functionalities")
 	flag.BoolVar(&persistShoot, "persist-shoot", false, "Feature flag to allow persisting created shoots")
-	flag.StringVar(&converterConfigFilepath, "converter-config-filepath", "converter_config.json", "A file path to the gardener shoot coverter configuration.")
+	flag.StringVar(&converterConfigFilepath, "converter-config-filepath", "converter_config.json", "A file path to the gardener shoot converter configuration.")
 
 	opts := zap.Options{
 		Development: true,
