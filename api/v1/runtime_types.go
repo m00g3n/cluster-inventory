@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -290,7 +289,7 @@ func (k *Runtime) ValidateRequiredLabels() error {
 
 	for _, key := range requiredLabelKeys {
 		if k.Labels[key] == "" {
-			return errors.New(fmt.Sprintf("Missing required label %s", key))
+			return fmt.Errorf("missing required label %s", key)
 		}
 	}
 	return nil
