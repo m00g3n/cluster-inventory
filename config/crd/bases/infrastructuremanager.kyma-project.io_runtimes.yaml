@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: runtimes.infrastructuremanager.kyma-project.io
 spec:
   group: infrastructuremanager.kyma-project.io
@@ -33,14 +33,19 @@ spec:
         description: Runtime is the Schema for the runtimes API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -88,8 +93,9 @@ spec:
                       settings for the control plane of a shoot.
                     properties:
                       highAvailability:
-                        description: HighAvailability holds the configuration settings
-                          for high availability of the control plane of a shoot.
+                        description: |-
+                          HighAvailability holds the configuration settings for high availability of the
+                          control plane of a shoot.
                         properties:
                           failureTolerance:
                             description: FailureTolerance holds information about
@@ -114,9 +120,9 @@ spec:
                         properties:
                           additionalOidcConfig:
                             items:
-                              description: 'OIDCConfig contains configuration settings
-                                for the OIDC provider. Note: Descriptions were taken
-                                from the Kubernetes documentation.'
+                              description: |-
+                                OIDCConfig contains configuration settings for the OIDC provider.
+                                Note: Descriptions were taken from the Kubernetes documentation.
                               properties:
                                 caBundle:
                                   description: If set, the OpenID server's certificate
@@ -132,11 +138,9 @@ spec:
                                     extraConfig:
                                       additionalProperties:
                                         type: string
-                                      description: Extra configuration added to kubeconfig's
-                                        auth-provider. Must not be any of idp-issuer-url,
-                                        client-id, client-secret, idp-certificate-authority,
-                                        idp-certificate-authority-data, id-token or
-                                        refresh-token
+                                      description: |-
+                                        Extra configuration added to kubeconfig's auth-provider.
+                                        Must not be any of idp-issuer-url, client-id, client-secret, idp-certificate-authority, idp-certificate-authority-data, id-token or refresh-token
                                       type: object
                                     secret:
                                       description: The client Secret for the OpenID
@@ -198,9 +202,9 @@ spec:
                               type: object
                             type: array
                           oidcConfig:
-                            description: 'OIDCConfig contains configuration settings
-                              for the OIDC provider. Note: Descriptions were taken
-                              from the Kubernetes documentation.'
+                            description: |-
+                              OIDCConfig contains configuration settings for the OIDC provider.
+                              Note: Descriptions were taken from the Kubernetes documentation.
                             properties:
                               caBundle:
                                 description: If set, the OpenID server's certificate
@@ -215,11 +219,9 @@ spec:
                                   extraConfig:
                                     additionalProperties:
                                       type: string
-                                    description: Extra configuration added to kubeconfig's
-                                      auth-provider. Must not be any of idp-issuer-url,
-                                      client-id, client-secret, idp-certificate-authority,
-                                      idp-certificate-authority-data, id-token or
-                                      refresh-token
+                                    description: |-
+                                      Extra configuration added to kubeconfig's auth-provider.
+                                      Must not be any of idp-issuer-url, client-id, client-secret, idp-certificate-authority, idp-certificate-authority-data, id-token or refresh-token
                                     type: object
                                   secret:
                                     description: The client Secret for the OpenID
@@ -359,9 +361,9 @@ spec:
                                   type: number
                               type: object
                             cri:
-                              description: CRI contains configurations of CRI support
-                                of every machine in the worker pool. Defaults to a
-                                CRI with name `containerd`.
+                              description: |-
+                                CRI contains configurations of CRI support of every machine in the worker pool.
+                                Defaults to a CRI with name `containerd`.
                               properties:
                                 containerRuntimes:
                                   description: ContainerRuntimes is the list of the
@@ -426,11 +428,9 @@ spec:
                                 components related to this worker pool.
                               properties:
                                 kubelet:
-                                  description: Kubelet contains configuration settings
-                                    for all kubelets of this worker pool. If set,
-                                    all `spec.kubernetes.kubelet` settings will be
-                                    overwritten for this worker pool (no merge of
-                                    settings).
+                                  description: |-
+                                    Kubelet contains configuration settings for all kubelets of this worker pool.
+                                    If set, all `spec.kubernetes.kubelet` settings will be overwritten for this worker pool (no merge of settings).
                                   properties:
                                     containerLogMaxFiles:
                                       description: Maximum number of container log
@@ -441,10 +441,9 @@ spec:
                                       anyOf:
                                       - type: integer
                                       - type: string
-                                      description: 'A quantity defines the maximum
-                                        size of the container log file before it is
-                                        rotated. For example: "5Mi" or "256Ki". Default:
-                                        100Mi'
+                                      description: |-
+                                        A quantity defines the maximum size of the container log file before it is rotated. For example: "5Mi" or "256Ki".
+                                        Default: 100Mi
                                       pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                       x-kubernetes-int-or-string: true
                                     cpuCFSQuota:
@@ -457,13 +456,14 @@ spec:
                                         none).'
                                       type: string
                                     evictionHard:
-                                      description: 'EvictionHard describes a set of
-                                        eviction thresholds (e.g. memory.available<1Gi)
-                                        that if met would trigger a Pod eviction.
-                                        Default: memory.available:   "100Mi/1Gi/5%"
-                                        nodefs.available:   "5%" nodefs.inodesFree:  "5%"
-                                        imagefs.available:  "5%" imagefs.inodesFree:
-                                        "5%"'
+                                      description: |-
+                                        EvictionHard describes a set of eviction thresholds (e.g. memory.available<1Gi) that if met would trigger a Pod eviction.
+                                        Default:
+                                          memory.available:   "100Mi/1Gi/5%"
+                                          nodefs.available:   "5%"
+                                          nodefs.inodesFree:  "5%"
+                                          imagefs.available:  "5%"
+                                          imagefs.inodesFree: "5%"
                                       properties:
                                         imageFSAvailable:
                                           description: ImageFSAvailable is the threshold
@@ -492,19 +492,15 @@ spec:
                                           type: string
                                       type: object
                                     evictionMaxPodGracePeriod:
-                                      description: 'EvictionMaxPodGracePeriod describes
-                                        the maximum allowed grace period (in seconds)
-                                        to use when terminating pods in response to
-                                        a soft eviction threshold being met. Default:
-                                        90'
+                                      description: |-
+                                        EvictionMaxPodGracePeriod describes the maximum allowed grace period (in seconds) to use when terminating pods in response to a soft eviction threshold being met.
+                                        Default: 90
                                       format: int32
                                       type: integer
                                     evictionMinimumReclaim:
-                                      description: 'EvictionMinimumReclaim configures
-                                        the amount of resources below the configured
-                                        eviction threshold that the kubelet attempts
-                                        to reclaim whenever the kubelet observes resource
-                                        pressure. Default: 0 for each resource'
+                                      description: |-
+                                        EvictionMinimumReclaim configures the amount of resources below the configured eviction threshold that the kubelet attempts to reclaim whenever the kubelet observes resource pressure.
+                                        Default: 0 for each resource
                                       properties:
                                         imageFSAvailable:
                                           anyOf:
@@ -552,19 +548,19 @@ spec:
                                           x-kubernetes-int-or-string: true
                                       type: object
                                     evictionPressureTransitionPeriod:
-                                      description: 'EvictionPressureTransitionPeriod
-                                        is the duration for which the kubelet has
-                                        to wait before transitioning out of an eviction
-                                        pressure condition. Default: 4m0s'
+                                      description: |-
+                                        EvictionPressureTransitionPeriod is the duration for which the kubelet has to wait before transitioning out of an eviction pressure condition.
+                                        Default: 4m0s
                                       type: string
                                     evictionSoft:
-                                      description: 'EvictionSoft describes a set of
-                                        eviction thresholds (e.g. memory.available<1.5Gi)
-                                        that if met over a corresponding grace period
-                                        would trigger a Pod eviction. Default: memory.available:   "200Mi/1.5Gi/10%"
-                                        nodefs.available:   "10%" nodefs.inodesFree:  "10%"
-                                        imagefs.available:  "10%" imagefs.inodesFree:
-                                        "10%"'
+                                      description: |-
+                                        EvictionSoft describes a set of eviction thresholds (e.g. memory.available<1.5Gi) that if met over a corresponding grace period would trigger a Pod eviction.
+                                        Default:
+                                          memory.available:   "200Mi/1.5Gi/10%"
+                                          nodefs.available:   "10%"
+                                          nodefs.inodesFree:  "10%"
+                                          imagefs.available:  "10%"
+                                          imagefs.inodesFree: "10%"
                                       properties:
                                         imageFSAvailable:
                                           description: ImageFSAvailable is the threshold
@@ -593,14 +589,14 @@ spec:
                                           type: string
                                       type: object
                                     evictionSoftGracePeriod:
-                                      description: 'EvictionSoftGracePeriod describes
-                                        a set of eviction grace periods (e.g. memory.available=1m30s)
-                                        that correspond to how long a soft eviction
-                                        threshold must hold before triggering a Pod
-                                        eviction. Default: memory.available:   1m30s
-                                        nodefs.available:   1m30s nodefs.inodesFree:  1m30s
-                                        imagefs.available:  1m30s imagefs.inodesFree:
-                                        1m30s'
+                                      description: |-
+                                        EvictionSoftGracePeriod describes a set of eviction grace periods (e.g. memory.available=1m30s) that correspond to how long a soft eviction threshold must hold before triggering a Pod eviction.
+                                        Default:
+                                          memory.available:   1m30s
+                                          nodefs.available:   1m30s
+                                          nodefs.inodesFree:  1m30s
+                                          imagefs.available:  1m30s
+                                          imagefs.inodesFree: 1m30s
                                       properties:
                                         imageFSAvailable:
                                           description: ImageFSAvailable is the grace
@@ -640,26 +636,22 @@ spec:
                                         about enabled feature gates.
                                       type: object
                                     imageGCHighThresholdPercent:
-                                      description: 'ImageGCHighThresholdPercent describes
-                                        the percent of the disk usage which triggers
-                                        image garbage collection. Default: 50'
+                                      description: |-
+                                        ImageGCHighThresholdPercent describes the percent of the disk usage which triggers image garbage collection.
+                                        Default: 50
                                       format: int32
                                       type: integer
                                     imageGCLowThresholdPercent:
-                                      description: 'ImageGCLowThresholdPercent describes
-                                        the percent of the disk to which garbage collection
-                                        attempts to free. Default: 40'
+                                      description: |-
+                                        ImageGCLowThresholdPercent describes the percent of the disk to which garbage collection attempts to free.
+                                        Default: 40
                                       format: int32
                                       type: integer
                                     kubeReserved:
-                                      description: 'KubeReserved is the configuration
-                                        for resources reserved for kubernetes node
-                                        components (mainly kubelet and container runtime).
-                                        When updating these values, be aware that
-                                        cgroup resizes may not succeed on active worker
-                                        nodes. Look for the NodeAllocatableEnforced
-                                        event to determine if the configuration was
-                                        applied. Default: cpu=80m,memory=1Gi,pid=20k'
+                                      description: |-
+                                        KubeReserved is the configuration for resources reserved for kubernetes node components (mainly kubelet and container runtime).
+                                        When updating these values, be aware that cgroup resizes may not succeed on active worker nodes. Look for the NodeAllocatableEnforced event to determine if the configuration was applied.
+                                        Default: cpu=80m,memory=1Gi,pid=20k
                                       properties:
                                         cpu:
                                           anyOf:
@@ -692,9 +684,9 @@ spec:
                                           x-kubernetes-int-or-string: true
                                       type: object
                                     maxPods:
-                                      description: 'MaxPods is the maximum number
-                                        of Pods that are allowed by the Kubelet. Default:
-                                        110'
+                                      description: |-
+                                        MaxPods is the maximum number of Pods that are allowed by the Kubelet.
+                                        Default: 110
                                       format: int32
                                       type: integer
                                     memorySwap:
@@ -702,10 +694,9 @@ spec:
                                         available to container workloads.
                                       properties:
                                         swapBehavior:
-                                          description: 'SwapBehavior configures swap
-                                            memory available to container workloads.
-                                            May be one of {"LimitedSwap", "UnlimitedSwap"}
-                                            defaults to: LimitedSwap'
+                                          description: |-
+                                            SwapBehavior configures swap memory available to container workloads. May be one of {"LimitedSwap", "UnlimitedSwap"}
+                                            defaults to: LimitedSwap
                                           type: string
                                       type: object
                                     podPidsLimit:
@@ -714,63 +705,51 @@ spec:
                                       format: int64
                                       type: integer
                                     protectKernelDefaults:
-                                      description: ProtectKernelDefaults ensures that
-                                        the kernel tunables are equal to the kubelet
-                                        defaults. Defaults to true for Kubernetes
-                                        v1.26 or later.
+                                      description: |-
+                                        ProtectKernelDefaults ensures that the kernel tunables are equal to the kubelet defaults.
+                                        Defaults to true for Kubernetes v1.26 or later.
                                       type: boolean
                                     registryBurst:
-                                      description: 'RegistryBurst is the maximum size
-                                        of bursty pulls, temporarily allows pulls
-                                        to burst to this number, while still not exceeding
-                                        registryPullQPS. The value must not be a negative
-                                        number. Only used if registryPullQPS is greater
-                                        than 0. Default: 10'
+                                      description: |-
+                                        RegistryBurst is the maximum size of bursty pulls, temporarily allows pulls to burst to this number,
+                                        while still not exceeding registryPullQPS. The value must not be a negative number.
+                                        Only used if registryPullQPS is greater than 0.
+                                        Default: 10
                                       format: int32
                                       type: integer
                                     registryPullQPS:
-                                      description: 'RegistryPullQPS is the limit of
-                                        registry pulls per second. The value must
-                                        not be a negative number. Setting it to 0
-                                        means no limit. Default: 5'
+                                      description: |-
+                                        RegistryPullQPS is the limit of registry pulls per second. The value must not be a negative number.
+                                        Setting it to 0 means no limit.
+                                        Default: 5
                                       format: int32
                                       type: integer
                                     seccompDefault:
-                                      description: SeccompDefault enables the use
-                                        of `RuntimeDefault` as the default seccomp
-                                        profile for all workloads. This requires the
-                                        corresponding SeccompDefault feature gate
-                                        to be enabled as well. This field is only
-                                        available for Kubernetes v1.25 or later.
+                                      description: |-
+                                        SeccompDefault enables the use of `RuntimeDefault` as the default seccomp profile for all workloads.
+                                        This requires the corresponding SeccompDefault feature gate to be enabled as well.
+                                        This field is only available for Kubernetes v1.25 or later.
                                       type: boolean
                                     serializeImagePulls:
-                                      description: 'SerializeImagePulls describes
-                                        whether the images are pulled one at a time.
-                                        Default: true'
+                                      description: |-
+                                        SerializeImagePulls describes whether the images are pulled one at a time.
+                                        Default: true
                                       type: boolean
                                     streamingConnectionIdleTimeout:
-                                      description: 'StreamingConnectionIdleTimeout
-                                        is the maximum time a streaming connection
-                                        can be idle before the connection is automatically
-                                        closed. This field cannot be set lower than
-                                        "30s" or greater than "4h". Default: "4h"
-                                        for Kubernetes < v1.26. "5m" for Kubernetes
-                                        >= v1.26.'
+                                      description: |-
+                                        StreamingConnectionIdleTimeout is the maximum time a streaming connection can be idle before the connection is automatically closed.
+                                        This field cannot be set lower than "30s" or greater than "4h".
+                                        Default:
+                                         "4h" for Kubernetes < v1.26.
+                                         "5m" for Kubernetes >= v1.26.
                                       type: string
                                     systemReserved:
-                                      description: 'SystemReserved is the configuration
-                                        for resources reserved for system processes
-                                        not managed by kubernetes (e.g. journald).
-                                        When updating these values, be aware that
-                                        cgroup resizes may not succeed on active worker
-                                        nodes. Look for the NodeAllocatableEnforced
-                                        event to determine if the configuration was
-                                        applied. Deprecated: Separately configuring
-                                        resource reservations for system processes
-                                        is deprecated in Gardener and will be removed
-                                        soon. Please merge existing resource reservations
-                                        into the kubeReserved field. TODO(MichaelEischer):
-                                        Drop this field after v1.113 has been released.'
+                                      description: |-
+                                        SystemReserved is the configuration for resources reserved for system processes not managed by kubernetes (e.g. journald).
+                                        When updating these values, be aware that cgroup resizes may not succeed on active worker nodes. Look for the NodeAllocatableEnforced event to determine if the configuration was applied.
+                                        Deprecated: Separately configuring resource reservations for system processes is deprecated in Gardener and will be removed soon.
+                                        Please merge existing resource reservations into the kubeReserved field.
+                                        TODO(MichaelEischer): Drop this field after v1.113 has been released.
                                       properties:
                                         cpu:
                                           anyOf:
@@ -804,14 +783,11 @@ spec:
                                       type: object
                                   type: object
                                 version:
-                                  description: Version is the semantic Kubernetes
-                                    version to use for the Kubelet in this Worker
-                                    Group. If not specified the kubelet version is
-                                    derived from the global shoot cluster kubernetes
-                                    version. version must be equal or lower than the
-                                    version of the shoot kubernetes version. Only
-                                    one minor version difference to other worker groups
-                                    and global kubernetes version is allowed.
+                                  description: |-
+                                    Version is the semantic Kubernetes version to use for the Kubelet in this Worker Group.
+                                    If not specified the kubelet version is derived from the global shoot cluster kubernetes version.
+                                    version must be equal or lower than the version of the shoot kubernetes version.
+                                    Only one minor version difference to other worker groups and global kubernetes version is allowed.
                                   type: string
                               type: object
                             labels:
@@ -829,11 +805,9 @@ spec:
                                     machines in this worker pool.
                                   type: string
                                 image:
-                                  description: Image holds information about the machine
-                                    image to use for all nodes of this pool. It will
-                                    default to the latest version of the first image
-                                    stated in the referenced CloudProfile if no value
-                                    has been provided.
+                                  description: |-
+                                    Image holds information about the machine image to use for all nodes of this pool. It will default to the
+                                    latest version of the first image stated in the referenced CloudProfile if no value has been provided.
                                   properties:
                                     name:
                                       description: Name is the name of the image.
@@ -844,10 +818,9 @@ spec:
                                       type: object
                                       x-kubernetes-preserve-unknown-fields: true
                                     version:
-                                      description: Version is the version of the shoot's
-                                        image. If version is not provided, it will
-                                        be defaulted to the latest version from the
-                                        CloudProfile.
+                                      description: |-
+                                        Version is the version of the shoot's image.
+                                        If version is not provided, it will be defaulted to the latest version from the CloudProfile.
                                       type: string
                                   required:
                                   - name
@@ -895,29 +868,28 @@ spec:
                               anyOf:
                               - type: integer
                               - type: string
-                              description: MaxSurge is maximum number of machines
-                                that are created during an update. This value is divided
-                                by the number of configured zones for a fair distribution.
+                              description: |-
+                                MaxSurge is maximum number of machines that are created during an update.
+                                This value is divided by the number of configured zones for a fair distribution.
                               x-kubernetes-int-or-string: true
                             maxUnavailable:
                               anyOf:
                               - type: integer
                               - type: string
-                              description: MaxUnavailable is the maximum number of
-                                machines that can be unavailable during an update.
-                                This value is divided by the number of configured
-                                zones for a fair distribution.
+                              description: |-
+                                MaxUnavailable is the maximum number of machines that can be unavailable during an update.
+                                This value is divided by the number of configured zones for a fair distribution.
                               x-kubernetes-int-or-string: true
                             maximum:
-                              description: Maximum is the maximum number of machines
-                                to create. This value is divided by the number of
-                                configured zones for a fair distribution.
+                              description: |-
+                                Maximum is the maximum number of machines to create.
+                                This value is divided by the number of configured zones for a fair distribution.
                               format: int32
                               type: integer
                             minimum:
-                              description: Minimum is the minimum number of machines
-                                to create. This value is divided by the number of
-                                configured zones for a fair distribution.
+                              description: |-
+                                Minimum is the minimum number of machines to create.
+                                This value is divided by the number of configured zones for a fair distribution.
                               format: int32
                               type: integer
                             name:
@@ -950,24 +922,24 @@ spec:
                               description: Taints is a list of taints for all the
                                 `Node` objects in this worker pool.
                               items:
-                                description: The node this Taint is attached to has
-                                  the "effect" on any pod that does not tolerate the
-                                  Taint.
+                                description: |-
+                                  The node this Taint is attached to has the "effect" on
+                                  any pod that does not tolerate the Taint.
                                 properties:
                                   effect:
-                                    description: Required. The effect of the taint
-                                      on pods that do not tolerate the taint. Valid
-                                      effects are NoSchedule, PreferNoSchedule and
-                                      NoExecute.
+                                    description: |-
+                                      Required. The effect of the taint on pods
+                                      that do not tolerate the taint.
+                                      Valid effects are NoSchedule, PreferNoSchedule and NoExecute.
                                     type: string
                                   key:
                                     description: Required. The taint key to be applied
                                       to a node.
                                     type: string
                                   timeAdded:
-                                    description: TimeAdded represents the time at
-                                      which the taint was added. It is only written
-                                      for NoExecute taints.
+                                    description: |-
+                                      TimeAdded represents the time at which the taint was added.
+                                      It is only written for NoExecute taints.
                                     format: date-time
                                     type: string
                                   value:
@@ -1000,8 +972,8 @@ spec:
                               - size
                               type: object
                             zones:
-                              description: Zones is a list of availability zones that
-                                are used to evenly distribute this worker pool. Optional
+                              description: |-
+                                Zones is a list of availability zones that are used to evenly distribute this worker pool. Optional
                                 as not every provider may support availability zones.
                               items:
                                 type: string
@@ -1026,7 +998,6 @@ spec:
                     type: string
                 required:
                 - controlPlane
-                - kubernetes
                 - name
                 - networking
                 - platformRegion
@@ -1047,42 +1018,42 @@ spec:
                   ServiceInstance.
                 items:
                   description: "Condition contains details for one aspect of the current
-                    state of this API Resource. --- This struct is intended for direct
-                    use as an array at the field path .status.conditions.  For example,
-                    \n type FooStatus struct{ // Represents the observations of a
-                    foo's current state. // Known .status.conditions.type are: \"Available\",
-                    \"Progressing\", and \"Degraded\" // +patchMergeKey=type // +patchStrategy=merge
-                    // +listType=map // +listMapKey=type Conditions []metav1.Condition
-                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
-                    protobuf:\"bytes,1,rep,name=conditions\"` \n // other fields }"
+                    state of this API Resource.\n---\nThis struct is intended for
+                    direct use as an array at the field path .status.conditions.  For
+                    example,\n\n\n\ttype FooStatus struct{\n\t    // Represents the
+                    observations of a foo's current state.\n\t    // Known .status.conditions.type
+                    are: \"Available\", \"Progressing\", and \"Degraded\"\n\t    //
+                    +patchMergeKey=type\n\t    // +patchStrategy=merge\n\t    // +listType=map\n\t
+                    \   // +listMapKey=type\n\t    Conditions []metav1.Condition `json:\"conditions,omitempty\"
+                    patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`\n\n\n\t
+                    \   // other fields\n\t}"
                   properties:
                     lastTransitionTime:
-                      description: lastTransitionTime is the last time the condition
-                        transitioned from one status to another. This should be when
-                        the underlying condition changed.  If that is not known, then
-                        using the time when the API field changed is acceptable.
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
                       format: date-time
                       type: string
                     message:
-                      description: message is a human readable message indicating
-                        details about the transition. This may be an empty string.
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
                       maxLength: 32768
                       type: string
                     observedGeneration:
-                      description: observedGeneration represents the .metadata.generation
-                        that the condition was set based upon. For instance, if .metadata.generation
-                        is currently 12, but the .status.conditions[x].observedGeneration
-                        is 9, the condition is out of date with respect to the current
-                        state of the instance.
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
                       format: int64
                       minimum: 0
                       type: integer
                     reason:
-                      description: reason contains a programmatic identifier indicating
-                        the reason for the condition's last transition. Producers
-                        of specific condition types may define expected values and
-                        meanings for this field, and whether the values are considered
-                        a guaranteed API. The value should be a CamelCase string.
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
                         This field may not be empty.
                       maxLength: 1024
                       minLength: 1
@@ -1096,11 +1067,12 @@ spec:
                       - Unknown
                       type: string
                     type:
-                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
-                        --- Many .condition.type values are consistent across resources
-                        like Available, but because arbitrary conditions can be useful
-                        (see .node.status.conditions), the ability to deconflict is
-                        important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      description: |-
+                        type of condition in CamelCase or in foo.example.com/CamelCase.
+                        ---
+                        Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
+                        useful (see .node.status.conditions), the ability to deconflict is important.
+                        The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
                       maxLength: 316
                       pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                       type: string

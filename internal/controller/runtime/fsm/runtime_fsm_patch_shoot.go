@@ -5,6 +5,7 @@ import (
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -13,7 +14,7 @@ import (
 func sFnPatchExistingShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	m.log.Info("Patch shoot state")
 
-	updatedShoot, err := convertShoot(&s.instance)
+	updatedShoot, err := convertShoot(&s.instance, m.ConverterConfig)
 	if err != nil {
 		m.log.Error(err, "Failed to convert Runtime instance to shoot object, exiting with no retry")
 		return updateStatePendingWithErrorAndStop(&s.instance, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonConversionError, "Runtime conversion error")
@@ -55,13 +56,12 @@ func sFnPatchExistingShoot(ctx context.Context, m *fsm, s *systemState) (stateFn
 	return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 }
 
-func convertShoot(instance *imv1.Runtime) (gardener.Shoot, error) {
+func convertShoot(instance *imv1.Runtime, cfg shoot.ConverterConfig) (gardener.Shoot, error) {
 	if err := instance.ValidateRequiredLabels(); err != nil {
 		return gardener.Shoot{}, err
 	}
 
-	converterConfig := FixConverterConfig()
-	converter := gardener_shoot.NewConverter(converterConfig)
+	converter := gardener_shoot.NewConverter(cfg)
 	shoot, err := converter.ToShoot(*instance)
 
 	if err == nil {
@@ -69,28 +69,6 @@ func convertShoot(instance *imv1.Runtime) (gardener.Shoot, error) {
 	}
 
 	return shoot, err
-}
-
-func FixConverterConfig() gardener_shoot.ConverterConfig {
-	return gardener_shoot.ConverterConfig{
-		Kubernetes: gardener_shoot.KubernetesConfig{
-			DefaultVersion: "1.29", //nolint:godox TODO: Should be parametrised
-		},
-
-		DNS: gardener_shoot.DNSConfig{
-			SecretName:   "aws-route53-secret-dev",
-			DomainPrefix: "dev.kyma.ondemand.com",
-			ProviderType: "aws-route53",
-		},
-		Provider: gardener_shoot.ProviderConfig{
-			AWS: gardener_shoot.AWSConfig{
-				EnableIMDSv2: true, //nolint:godox TODO: Should be parametrised
-			},
-		},
-		Gardener: gardener_shoot.GardenerConfig{
-			ProjectName: "kyma-dev", //nolint:godox TODO: should be parametrised
-		},
-	}
 }
 
 // workaround

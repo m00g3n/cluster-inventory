@@ -122,7 +122,10 @@ var _ = Describe("Gardener Cluster controller", func() {
 					return false
 				}
 
-				return newGardenerCluster.Status.State == imv1.ErrorState
+				return newGardenerCluster.Status.State == imv1.ErrorState &&
+					len(newGardenerCluster.Status.Conditions) > 0 &&
+					newGardenerCluster.Status.Conditions[0].Reason == string(imv1.ConditionReasonFailedToGetKubeconfig) &&
+					newGardenerCluster.Status.Conditions[0].Message == "Failed to get kubeconfig. Error: this could be context deadline exceeded"
 			}, time.Second*30, time.Second*3).Should(BeTrue())
 
 			By("Metrics should contain error label")
@@ -404,7 +407,7 @@ func newTestGardenerClusterCR(name, namespace, shootName, secretName string) *Te
 					Secret: imv1.Secret{
 						Name:      secretName,
 						Namespace: namespace,
-						Key:       "config", //nolint:all TODO: fill it up with the actual data
+						Key:       "config", //nolint:godox TODO: fill it up with the actual data
 					},
 				},
 			},

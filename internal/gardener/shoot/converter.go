@@ -1,7 +1,9 @@
 package shoot
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -17,37 +19,47 @@ type Converter struct {
 }
 
 type ProviderConfig struct {
-	AWS AWSConfig
+	AWS AWSConfig `json:"aws"`
 }
 
 type AWSConfig struct {
-	EnableIMDSv2 bool
+	EnableIMDSv2 bool `json:"enableIMDSv2"`
 }
 
 type DNSConfig struct {
-	SecretName   string
-	DomainPrefix string
-	ProviderType string
+	SecretName   string `json:"secretName" validate:"required"`
+	DomainPrefix string `json:"domainPrefix" validate:"required"`
+	ProviderType string `json:"providerType" validate:"required"`
 }
 
 type KubernetesConfig struct {
-	DefaultVersion string
+	DefaultVersion string `json:"defaultVersion" validate:"required"`
 }
 
+type ReaderGetter = func() (io.Reader, error)
+
 type ConverterConfig struct {
-	Kubernetes   KubernetesConfig
-	DNS          DNSConfig
-	Provider     ProviderConfig
-	MachineImage MachineImageConfig
-	Gardener     GardenerConfig
+	Kubernetes   KubernetesConfig   `json:"kubernetes" validate:"required"`
+	DNS          DNSConfig          `json:"dns" validate:"required"`
+	Provider     ProviderConfig     `json:"provider"`
+	MachineImage MachineImageConfig `json:"machineImage" validate:"required"`
+	Gardener     GardenerConfig     `json:"gardener" validate:"required"`
+}
+
+func (c *ConverterConfig) Load(f ReaderGetter) error {
+	r, err := f()
+	if err != nil {
+		return err
+	}
+	return json.NewDecoder(r).Decode(c)
 }
 
 type GardenerConfig struct {
-	ProjectName string
+	ProjectName string `json:"projectName" validate:"required"`
 }
 
 type MachineImageConfig struct {
-	DefaultVersion string
+	DefaultVersion string `json:"defaultVersion" validate:"required"`
 }
 
 func NewConverter(config ConverterConfig) Converter {

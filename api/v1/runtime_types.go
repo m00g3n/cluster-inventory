@@ -142,7 +142,7 @@ type RuntimeShoot struct {
 	LicenceType         *string               `json:"licenceType,omitempty"`
 	SecretBindingName   string                `json:"secretBindingName"`
 	EnforceSeedLocation *bool                 `json:"enforceSeedLocation,omitempty"`
-	Kubernetes          Kubernetes            `json:"kubernetes"`
+	Kubernetes          Kubernetes            `json:"kubernetes,omitempty"`
 	Provider            Provider              `json:"provider"`
 	Networking          Networking            `json:"networking"`
 	ControlPlane        gardener.ControlPlane `json:"controlPlane"`
