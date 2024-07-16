@@ -34,10 +34,13 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 
 	if instanceIsNotBeingDeleted && s.shoot == nil {
 		m.log.Info("Gardener shoot does not exist, creating new one")
+		if s.instance.IsControlledByProvisioner() {
+			return switchState(sFnCreateShootDryRun)
+		}
 		return switchState(sFnCreateShoot)
 	}
 
-	if instanceIsNotBeingDeleted {
+	if instanceIsNotBeingDeleted && !s.instance.IsControlledByProvisioner() {
 		m.log.Info("Gardener shoot exists, processing")
 		return switchState(sFnSelectShootProcessing)
 	}
