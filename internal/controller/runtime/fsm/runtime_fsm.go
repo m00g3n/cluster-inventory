@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,6 +31,7 @@ type RCCfg struct {
 	Finalizer       string
 	PVCPath         string
 	ShootNamesapace string
+	shoot.ConverterConfig
 }
 
 func (f stateFn) String() string {

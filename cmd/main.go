@@ -19,11 +19,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
+	"github.com/go-playground/validator/v10"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	kubeconfig_controller "github.com/kyma-project/infrastructure-manager/internal/controller/kubeconfig"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
@@ -31,6 +33,7 @@ import (
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/kubeconfig"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -70,6 +73,7 @@ func main() {
 	var gardenerRequestTimeout time.Duration
 	var enableRuntimeReconciler bool
 	var persistShoot bool
+	var converterConfigFilepath string
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -83,6 +87,7 @@ func main() {
 	flag.DurationVar(&gardenerRequestTimeout, "gardener-request-timeout", defaultGardenerRequestTimeout, "Timeout duration for requests to Gardener")
 	flag.BoolVar(&enableRuntimeReconciler, "runtime-reconciler-enabled", defaultRuntimeReconcilerEnabled, "Feature flag for all runtime reconciler functionalities")
 	flag.BoolVar(&persistShoot, "persist-shoot", false, "Feature flag to allow persisting created shoots")
+	flag.StringVar(&converterConfigFilepath, "converter-config-filepath", "hack/converter_config.json", "A file path to the gardener shoot converter configuration.")
 
 	opts := zap.Options{
 		Development: true,
@@ -91,7 +96,6 @@ func main() {
 	flag.Parse()
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
-
 	ctrl.SetLogger(logger)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -149,16 +153,39 @@ func main() {
 		os.Exit(1)
 	}
 
+	// load converter configuration
+	getReader := func() (io.Reader, error) {
+		return os.Open(converterConfigFilepath)
+	}
+	var converterConfig shoot.ConverterConfig
+	if err = converterConfig.Load(getReader); err != nil {
+		setupLog.Error(err, "unable to load converter configuration")
+		os.Exit(1)
+	}
+
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	if err = validate.Struct(converterConfig); err != nil {
+		setupLog.Error(err, "invalid converter configuration")
+		os.Exit(1)
+	}
+
 	cfg := fsm.RCCfg{
 		Finalizer:       infrastructuremanagerv1.Finalizer,
 		ShootNamesapace: gardenerNamespace,
+		ConverterConfig: converterConfig,
 	}
+
 	if persistShoot {
 		cfg.PVCPath = "/testdata/kim"
 	}
 
 	if enableRuntimeReconciler {
-		runtimeReconciler := runtime_controller.NewRuntimeReconciler(mgr, gardenerClient, logger, cfg)
+		runtimeReconciler := runtime_controller.NewRuntimeReconciler(
+			mgr,
+			gardenerClient,
+			logger,
+			cfg,
+		)
 
 		if err = runtimeReconciler.SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to setup controller with Manager", "controller", "Runtime")
