@@ -37,15 +37,15 @@ const (
 )
 
 const (
-	LabelKymaInstanceId         = "kyma-project.io/instance-id"
-	LabelKymaRuntimeId          = "kyma-project.io/runtime-id"
+	LabelKymaInstanceID         = "kyma-project.io/instance-id"
+	LabelKymaRuntimeID          = "kyma-project.io/runtime-id"
 	LabelKymaShootName          = "kyma-project.io/shootName"
 	LabelKymaRegion             = "kyma-project.io/region"
 	LabelKymaName               = "kyma-project.io/kyma-name"
-	LabelKymaBrokerPlanId       = "kyma-project.io/broker-plan-id"
+	LabelKymaBrokerPlanID       = "kyma-project.io/broker-plan-id"
 	LabelKymaBrokerPlanName     = "kyma-project.io/broker-plan-name"
-	LabelKymaGlobalAccountId    = "kyma-project.io/global-account-id"
-	LabelKymaGlobalSubaccountId = "kyma-project.io/subaccount-id"
+	LabelKymaGlobalAccountID    = "kyma-project.io/global-account-id"
+	LabelKymaGlobalSubaccountID = "kyma-project.io/subaccount-id"
 	LabelKymaManagedBy          = "operator.kyma-project.io/managed-by"
 	LabelKymaInternal           = "operator.kyma-project.io/internal"
 	LabelKymaPlatformRegion     = "kyma-project.io/platform-region"
@@ -278,18 +278,14 @@ func (k *Runtime) IsConditionSetWithStatus(c RuntimeConditionType, r RuntimeCond
 
 func (k *Runtime) ValidateRequiredLabels() error {
 	var requiredLabelKeys = []string{
-		LabelKymaInstanceId,
-		LabelKymaRuntimeId,
-		LabelKymaShootName,
+		LabelKymaInstanceID,
+		LabelKymaRuntimeID,
 		LabelKymaRegion,
 		LabelKymaName,
-		LabelKymaBrokerPlanId,
+		LabelKymaBrokerPlanID,
 		LabelKymaBrokerPlanName,
-		LabelKymaGlobalAccountId,
-		LabelKymaGlobalSubaccountId,
-		LabelKymaManagedBy,
-		LabelKymaInternal,
-		LabelKymaPlatformRegion,
+		LabelKymaGlobalAccountID,
+		LabelKymaGlobalSubaccountID,
 	}
 
 	for _, key := range requiredLabelKeys {

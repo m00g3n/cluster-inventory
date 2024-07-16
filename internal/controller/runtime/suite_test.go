@@ -212,7 +212,6 @@ func fixGardenerShootsForProvisioning(shoot *gardener_api.Shoot) []*gardener_api
 }
 
 func fixGardenerShootsForUpdate(shoot *gardener_api.Shoot) []*gardener_api.Shoot {
-
 	pendingShoot := shoot.DeepCopy()
 
 	pendingShoot.Spec.DNS = &gardener_api.DNS{
