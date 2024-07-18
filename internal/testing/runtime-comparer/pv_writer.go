@@ -20,7 +20,7 @@ func WriteToPV(instance v1.Runtime, path string) error {
 	b, err := yaml.Marshal(instance)
 	if err != nil {
 		file.Close()
-		return fmt.Errorf("failed to marshal Runtime object: %w", err, b)
+		return fmt.Errorf("failed to marshal Runtime object: %w", err)
 	}
 
 	_, err = file.Write(b)
