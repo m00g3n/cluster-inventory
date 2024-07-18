@@ -1,4 +1,4 @@
-package shoot
+qpackage shoot
 
 import (
 	"fmt"
@@ -130,7 +130,6 @@ func Test_ConverterConfig_Load_Err(t *testing.T) {
 	if err := cfg.Load(failingReaderGetter); err != errTestReaderGetterFailed {
 		t.Error("ConverterConfig load should fail")
 	}
-
 }
 
 var testReader io.Reader = strings.NewReader(`{
