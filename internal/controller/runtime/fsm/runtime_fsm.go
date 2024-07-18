@@ -30,6 +30,7 @@ type writerGetter = func(filePath string) (io.Writer, error)
 type RCCfg struct {
 	Finalizer       string
 	PVCPath         string
+	SaveToPV        bool
 	ShootNamesapace string
 	shoot.ConverterConfig
 }
