@@ -1,4 +1,4 @@
-qpackage shoot
+package shoot
 
 import (
 	"fmt"
