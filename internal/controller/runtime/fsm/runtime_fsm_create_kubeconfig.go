@@ -33,7 +33,7 @@ func sFnCreateKubeconfig(ctx context.Context, m *fsm, s *systemState) (stateFn, 
 		m.log.Info("GardenerCluster CR not found, creating a new one", "Name", runtimeID)
 		err = m.Create(ctx, makeGardenerClusterForRuntime(s.instance, s.shoot))
 		if err != nil {
-			m.log.Error(err, "GardenerCluster CR read error", "name", runtimeID)
+			m.log.Error(err, "GardenerCluster CR create error", "name", runtimeID)
 			s.instance.UpdateStatePending(imv1.ConditionTypeRuntimeKubeconfigReady, imv1.ConditionReasonKubernetesAPIErr, "False", err.Error())
 			return updateStatusAndStop()
 		}
@@ -70,13 +70,13 @@ func makeGardenerClusterForRuntime(runtime imv1.Runtime, shoot *gardener.Shoot) 
 				"skr-domain": *shoot.Spec.DNS.Domain,
 			},
 			Labels: map[string]string{
-				imv1.LabelKymaInstanceID:         runtime.Labels[imv1.LabelKymaInstanceID],
-				imv1.LabelKymaRuntimeID:          runtime.Labels[imv1.LabelKymaRuntimeID],
-				imv1.LabelKymaBrokerPlanID:       runtime.Labels[imv1.LabelKymaBrokerPlanID],
-				imv1.LabelKymaBrokerPlanName:     runtime.Labels[imv1.LabelKymaBrokerPlanName],
-				imv1.LabelKymaGlobalAccountID:    runtime.Labels[imv1.LabelKymaGlobalAccountID],
-				imv1.LabelKymaGlobalSubaccountID: runtime.Labels[imv1.LabelKymaGlobalSubaccountID], // BTW most likely this value will be missing
-				imv1.LabelKymaName:               runtime.Labels[imv1.LabelKymaName],
+				imv1.LabelKymaInstanceID:      runtime.Labels[imv1.LabelKymaInstanceID],
+				imv1.LabelKymaRuntimeID:       runtime.Labels[imv1.LabelKymaRuntimeID],
+				imv1.LabelKymaBrokerPlanID:    runtime.Labels[imv1.LabelKymaBrokerPlanID],
+				imv1.LabelKymaBrokerPlanName:  runtime.Labels[imv1.LabelKymaBrokerPlanName],
+				imv1.LabelKymaGlobalAccountID: runtime.Labels[imv1.LabelKymaGlobalAccountID],
+				imv1.LabelKymaSubaccountID:    runtime.Labels[imv1.LabelKymaSubaccountID], // BTW most likely this value will be missing
+				imv1.LabelKymaName:            runtime.Labels[imv1.LabelKymaName],
 
 				// values from Runtime CR fields
 				imv1.LabelKymaPlatformRegion: runtime.Spec.Shoot.PlatformRegion,
@@ -84,7 +84,7 @@ func makeGardenerClusterForRuntime(runtime imv1.Runtime, shoot *gardener.Shoot) 
 				imv1.LabelKymaShootName:      shoot.Name,
 
 				// hardcoded values
-				imv1.LabelKymaManagedBy: "lifecycle-manager",
+				imv1.LabelKymaManagedBy: "infrastructure-manager",
 				imv1.LabelKymaInternal:  "true",
 			},
 		},

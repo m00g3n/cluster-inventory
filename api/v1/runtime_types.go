@@ -36,18 +36,18 @@ const (
 )
 
 const (
-	LabelKymaInstanceID         = "kyma-project.io/instance-id"
-	LabelKymaRuntimeID          = "kyma-project.io/runtime-id"
-	LabelKymaShootName          = "kyma-project.io/shootName"
-	LabelKymaRegion             = "kyma-project.io/region"
-	LabelKymaName               = "kyma-project.io/kyma-name"
-	LabelKymaBrokerPlanID       = "kyma-project.io/broker-plan-id"
-	LabelKymaBrokerPlanName     = "kyma-project.io/broker-plan-name"
-	LabelKymaGlobalAccountID    = "kyma-project.io/global-account-id"
-	LabelKymaGlobalSubaccountID = "kyma-project.io/subaccount-id"
-	LabelKymaManagedBy          = "operator.kyma-project.io/managed-by"
-	LabelKymaInternal           = "operator.kyma-project.io/internal"
-	LabelKymaPlatformRegion     = "kyma-project.io/platform-region"
+	LabelKymaInstanceID      = "kyma-project.io/instance-id"
+	LabelKymaRuntimeID       = "kyma-project.io/runtime-id"
+	LabelKymaShootName       = "kyma-project.io/shootName"
+	LabelKymaRegion          = "kyma-project.io/region"
+	LabelKymaName            = "kyma-project.io/kyma-name"
+	LabelKymaBrokerPlanID    = "kyma-project.io/broker-plan-id"
+	LabelKymaBrokerPlanName  = "kyma-project.io/broker-plan-name"
+	LabelKymaGlobalAccountID = "kyma-project.io/global-account-id"
+	LabelKymaSubaccountID    = "kyma-project.io/subaccount-id"
+	LabelKymaManagedBy       = "operator.kyma-project.io/managed-by"
+	LabelKymaInternal        = "operator.kyma-project.io/internal"
+	LabelKymaPlatformRegion  = "kyma-project.io/platform-region"
 )
 
 const (
@@ -284,7 +284,7 @@ func (k *Runtime) ValidateRequiredLabels() error {
 		LabelKymaBrokerPlanID,
 		LabelKymaBrokerPlanName,
 		LabelKymaGlobalAccountID,
-		LabelKymaGlobalSubaccountID,
+		LabelKymaSubaccountID,
 	}
 
 	for _, key := range requiredLabelKeys {

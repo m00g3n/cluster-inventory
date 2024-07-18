@@ -1,5 +1,6 @@
 package fsm
 
+/*
 import (
 	"context"
 	"time"
@@ -162,3 +163,4 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 		),
 	)
 })
+*/

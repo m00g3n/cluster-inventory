@@ -91,6 +91,8 @@ var _ = BeforeSuite(func() {
 	clientScheme := runtime.NewScheme()
 	_ = gardener_api.AddToScheme(clientScheme)
 
+	infrastructuremanagerv1.AddToScheme(clientScheme)
+
 	// tracker will be updated with different shoot sequence for each test case
 	tracker := clienttesting.NewObjectTracker(clientScheme, serializer.NewCodecFactory(clientScheme).UniversalDecoder())
 	customTracker = NewCustomTracker(tracker, []*gardener_api.Shoot{})
@@ -123,20 +125,21 @@ var _ = AfterSuite(func() {
 })
 
 func setupGardenerTestClientForProvisioning() {
-	runtimeStub := CreateRuntimeStub("test-resource")
-	converterConfig := fixConverterConfigForTests()
-	converter := gardener_shoot.NewConverter(converterConfig)
-	convertedShoot, err := converter.ToShoot(*runtimeStub)
-	if err != nil {
-		panic(err)
-	}
+	baseShoot := getBaseShootForTestingSequence()
+	shoots := fixShootsSequenceForProvisioning(&baseShoot)
+	setupShootClientWithSequence(shoots)
+}
 
-	shoots := fixGardenerShootsForProvisioning(&convertedShoot)
+func setupGardenerTestClientForUpdate() {
+	baseShoot := getBaseShootForTestingSequence()
+	shoots := fixShootsSequenceForUpdate(&baseShoot)
+	setupShootClientWithSequence(shoots)
+}
 
+func setupShootClientWithSequence(shoots []*gardener_api.Shoot) {
 	clientScheme := runtime.NewScheme()
 	_ = gardener_api.AddToScheme(clientScheme)
 
-	// our customTracker will be updated with different shoot sequence for each test case
 	tracker := clienttesting.NewObjectTracker(clientScheme, serializer.NewCodecFactory(clientScheme).UniversalDecoder())
 	customTracker = NewCustomTracker(tracker, shoots)
 	gardenerTestClient = fake.NewClientBuilder().WithScheme(clientScheme).WithObjectTracker(customTracker).Build()
@@ -144,7 +147,7 @@ func setupGardenerTestClientForProvisioning() {
 	runtimeReconciler.UpdateShootClient(gardenerTestClient)
 }
 
-func setupGardenerTestClientForUpdate() {
+func getBaseShootForTestingSequence() gardener_api.Shoot {
 	runtimeStub := CreateRuntimeStub("test-resource")
 	converterConfig := fixConverterConfigForTests()
 	converter := gardener_shoot.NewConverter(converterConfig)
@@ -152,17 +155,7 @@ func setupGardenerTestClientForUpdate() {
 	if err != nil {
 		panic(err)
 	}
-
-	shoots := fixGardenerShootsForUpdate(&convertedShoot)
-
-	clientScheme := runtime.NewScheme()
-	_ = gardener_api.AddToScheme(clientScheme)
-
-	tracker := clienttesting.NewObjectTracker(clientScheme, serializer.NewCodecFactory(clientScheme).UniversalDecoder())
-	customTracker = NewCustomTracker(tracker, shoots)
-	gardenerTestClient = fake.NewClientBuilder().WithScheme(clientScheme).WithObjectTracker(customTracker).Build()
-
-	runtimeReconciler.UpdateShootClient(gardenerTestClient)
+	return convertedShoot
 }
 
 // func setupGardenerTestClientForDeleting() {
@@ -179,7 +172,7 @@ func setupGardenerTestClientForUpdate() {
 //	objectTestTracker.SetShootListForTracker(shoots)
 //}
 
-func fixGardenerShootsForProvisioning(shoot *gardener_api.Shoot) []*gardener_api.Shoot {
+func fixShootsSequenceForProvisioning(shoot *gardener_api.Shoot) []*gardener_api.Shoot {
 	var missingShoot *gardener_api.Shoot
 	initialisedShoot := shoot.DeepCopy()
 
@@ -208,10 +201,10 @@ func fixGardenerShootsForProvisioning(shoot *gardener_api.Shoot) []*gardener_api
 
 	// processedShoot := processingShoot.DeepCopy() // will add specific data later
 
-	return []*gardener_api.Shoot{missingShoot, missingShoot, missingShoot, initialisedShoot, dnsShoot, pendingShoot, processingShoot, readyShoot, readyShoot}
+	return []*gardener_api.Shoot{missingShoot, missingShoot, missingShoot, initialisedShoot, dnsShoot, pendingShoot, processingShoot, readyShoot, readyShoot, readyShoot, readyShoot}
 }
 
-func fixGardenerShootsForUpdate(shoot *gardener_api.Shoot) []*gardener_api.Shoot {
+func fixShootsSequenceForUpdate(shoot *gardener_api.Shoot) []*gardener_api.Shoot {
 	pendingShoot := shoot.DeepCopy()
 
 	pendingShoot.Spec.DNS = &gardener_api.DNS{
