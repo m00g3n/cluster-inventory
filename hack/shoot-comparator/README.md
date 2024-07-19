@@ -2,7 +2,7 @@
 
 ## Overview
 
-This tool compares shoot files created by KIM, and Provisioner. It was created to ensure the KIM generated exactly the same shoots as Provisioner does.
+This tool compares shoot files created by KIM, and Provisioner. It was created to ensure the KIM generates exactly the same shoots as Provisioner does.
 For more details, please refer to the following issues:
 - https://github.com/kyma-project/infrastructure-manager/issues/185
 - https://github.com/kyma-project/infrastructure-manager/issues/250
