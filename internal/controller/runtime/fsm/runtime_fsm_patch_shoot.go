@@ -57,8 +57,12 @@ func sFnPatchExistingShoot(ctx context.Context, m *fsm, s *systemState) (stateFn
 }
 
 func convertShoot(instance *imv1.Runtime, cfg shoot.ConverterConfig) (gardener.Shoot, error) {
+	if err := instance.ValidateRequiredLabels(); err != nil {
+		return gardener.Shoot{}, err
+	}
+
 	converter := gardener_shoot.NewConverter(cfg)
-	shoot, err := converter.ToShoot(*instance) // returned error is always nil BTW
+	shoot, err := converter.ToShoot(*instance)
 
 	if err == nil {
 		setObjectFields(&shoot)

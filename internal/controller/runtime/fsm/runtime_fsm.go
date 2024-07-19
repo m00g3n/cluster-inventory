@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	gardenerRequeueDuration = 15 * time.Second
+	gardenerRequeueDuration     = 15 * time.Second
+	controlPlaneRequeueDuration = 10 * time.Second
 )
 
 type stateFn func(context.Context, *fsm, *systemState) (stateFn, *ctrl.Result, error)
