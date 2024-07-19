@@ -1,9 +1,10 @@
-package runtime_comparer
+package comparer
 
 import (
 	"fmt"
-	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"os"
+
+	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"sigs.k8s.io/yaml"
 )
 

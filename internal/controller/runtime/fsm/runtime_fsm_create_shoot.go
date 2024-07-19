@@ -2,9 +2,9 @@ package fsm
 
 import (
 	"context"
-	runtime_comparer "github.com/kyma-project/infrastructure-manager/internal/testing/runtime-comparer"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	runtimeComparer "github.com/kyma-project/infrastructure-manager/internal/testing/comparer"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -12,7 +12,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 	m.log.Info("Create shoot")
 
 	if m.SaveToPV {
-		err := runtime_comparer.WriteToPV(s.instance, m.PVCPath)
+		err := runtimeComparer.WriteToPV(s.instance, m.PVCPath)
 		if err != nil {
 			m.log.Error(err, "Failed to write Runtime CR to Persistent Volume")
 
