@@ -1,8 +1,7 @@
-package shoot_test
+package shoot
 
 import (
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-project/infrastructure-manager/tools/shoot-comparator/pkg/shoot"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
 )
@@ -49,13 +48,13 @@ func deepCp(s v1beta1.Shoot, opts ...deepCpOpts) v1beta1.Shoot {
 }
 
 func testInvalidArgs(actual, expected interface{}) {
-	matcher := shoot.NewMatcher(expected)
+	matcher := NewMatcher(expected)
 	_, err := matcher.Match(actual)
 	Expect(err).To(HaveOccurred())
 }
 
 func testResults(actual, expected interface{}, expectedMatch bool) {
-	matcher := shoot.NewMatcher(expected)
+	matcher := NewMatcher(expected)
 	actualMatch, err := matcher.Match(actual)
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(actualMatch).Should(Equal(expectedMatch), matcher.FailureMessage(actual))
