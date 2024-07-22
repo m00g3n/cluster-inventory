@@ -37,20 +37,29 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 		return switchState(sFnCreateShoot)
 	}
 
-	if instanceIsNotBeingDeleted && s.shoot != nil {
+	if instanceIsNotBeingDeleted {
 		m.log.Info("Gardener shoot exists, processing")
-		return switchState(sFnPrepareCluster) // wait for pending shoot operation to complete
+		return switchState(sFnSelectShootProcessing)
 	}
 
-	shootInOrAfterDeleting := s.shoot == nil || !s.shoot.GetDeletionTimestamp().IsZero()
+	// resource cleanup is done;
+	// instance is being deleted and shoot was already deleted
+	if !instanceIsNotBeingDeleted && instanceHasFinalizer && s.shoot == nil {
+		return removeFinalizerAndStop(ctx, m, s)
+	}
 
-	if !instanceIsNotBeingDeleted && instanceHasFinalizer && !shootInOrAfterDeleting {
+	// resource cleanup did not start;
+	// instance is being deleted and shoot is not being deleted
+	if !instanceIsNotBeingDeleted && instanceHasFinalizer && s.shoot.DeletionTimestamp.IsZero() {
 		m.log.Info("Delete instance resources")
 		return switchState(sFnDeleteShoot)
 	}
 
-	if !instanceIsNotBeingDeleted && instanceHasFinalizer && shootInOrAfterDeleting {
-		return removeFinalizerAndStop(ctx, m, s)
+	// resource cleanup in progress;
+	// instance is being deleted and shoot is being deleted
+	if !instanceIsNotBeingDeleted && instanceHasFinalizer {
+		m.log.Info("Waiting on instance resources being deleted")
+		return requeueAfter(gardenerRequeueDuration)
 	}
 
 	m.log.Info("noting to reconcile, stopping sfm")

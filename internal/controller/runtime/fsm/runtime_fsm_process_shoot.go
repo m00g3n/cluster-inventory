@@ -7,12 +7,14 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func sFnProcessShoot(_ context.Context, _ *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
+func sFnProcessShoot(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
+	m.log.Info("Process cluster state - the last one")
+
 	// process shoot get kubeconfig and create cluster role bindings
 	s.instance.UpdateStateReady(
 		imv1.ConditionTypeRuntimeProvisioned,
 		imv1.ConditionReasonConfigurationCompleted,
-		"Runtime creation completed successfully")
+		"Runtime processing completed successfully")
 
 	return updateStatusAndStop()
 }

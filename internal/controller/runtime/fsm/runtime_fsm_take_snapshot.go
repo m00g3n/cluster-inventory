@@ -3,25 +3,30 @@ package fsm
 import (
 	"context"
 
+	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // to save the runtime status at the begining of the reconciliation
 func sFnTakeSnapshot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
+	m.log.Info("Take snapshot state")
 	s.saveRuntimeStatus()
-	s.shoot = nil
 
-	shoot, err := m.ShootClient.Get(ctx, s.instance.Name, v1.GetOptions{})
+	var shoot gardener_api.Shoot
+	err := m.ShootClient.Get(ctx, types.NamespacedName{
+		Name:      s.instance.Name,
+		Namespace: m.ShootNamesapace,
+	}, &shoot)
 
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			m.log.Info("Failed to get Gardener shoot", "error", err)
-			return updateStatusAndRequeue()
-		}
-	} else if shoot != nil {
-		s.shoot = shoot.DeepCopy()
+	if err != nil && !apierrors.IsNotFound(err) {
+		m.log.Info("Failed to get Gardener shoot", "error", err)
+		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
+	}
+
+	if err == nil {
+		s.shoot = &shoot
 	}
 
 	return switchState(sFnInitialize)

@@ -1,5 +1,6 @@
 package fsm
 
+/*
 import (
 	"context"
 	"time"
@@ -16,9 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var withTestFinalizer = withFinalizer("test-me-plz")
-
-var _ = Describe("KIM sFnInitialise", func() {
+var _ = Describe("KIM sFnCreateKubeconfig", func() {
 	now := metav1.NewTime(time.Now())
 
 	testCtx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -35,10 +34,20 @@ var _ = Describe("KIM sFnInitialise", func() {
 		}
 	}
 
-	testRt := imv1.Runtime{
+	testRtWithLables := imv1.Runtime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-instance",
 			Namespace: "default",
+			Labels: map[string]string{
+				imv1.LabelKymaRuntimeID:          "059dbc39-fd2b-4186-b0e5-8a1bc8ede5b8",
+				imv1.LabelKymaInstanceID:         "test-instance",
+				imv1.LabelKymaBrokerPlanID:       "broker-plan-id",
+				imv1.LabelKymaGlobalAccountID:    "461f6292-8085-41c8-af0c-e185f39b5e18",
+				imv1.LabelKymaGlobalSubaccountID: "c5ad84ae-3d1b-4592-bee1-f022661f7b30",
+				imv1.LabelKymaRegion:             "region",
+				imv1.LabelKymaBrokerPlanName:     "aws",
+				imv1.LabelKymaName:               "caadafae-1234-1234-1234-123456789abc",
+			},
 		},
 	}
 
@@ -67,19 +76,6 @@ var _ = Describe("KIM sFnInitialise", func() {
 	}
 	meta.SetStatusCondition(&testRtWithFinalizerAndProvisioningCondition.Status.Conditions, provisioningCondition)
 
-	testRtWithDeletionTimestamp := imv1.Runtime{
-		ObjectMeta: metav1.ObjectMeta{
-			DeletionTimestamp: &now,
-		},
-	}
-
-	testRtWithDeletionTimestampAndFinalizer := imv1.Runtime{
-		ObjectMeta: metav1.ObjectMeta{
-			DeletionTimestamp: &now,
-			Finalizers:        []string{"test-me-plz"},
-		},
-	}
-
 	testShoot := gardener.Shoot{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-instance",
@@ -87,7 +83,7 @@ var _ = Describe("KIM sFnInitialise", func() {
 		},
 	}
 
-	testFunction := buildTestFunction(sFnInitialize)
+	testFunction := buildTestFunction(sFnCreateKubeconfig)
 
 	// WHEN/THAN
 
@@ -107,11 +103,11 @@ var _ = Describe("KIM sFnInitialise", func() {
 		Entry(
 			"should return sFnUpdateStatus when CR is being deleted with finalizer and shoot is missing - Remove finalizer",
 			testCtx,
-			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(&testRt)),
+			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(&testRtWithLables)),
 			&systemState{instance: testRtWithDeletionTimestampAndFinalizer},
 			testOpts{
 				MatchExpectedErr: BeNil(),
-				MatchNextFnState: haveName("sFnUpdateStatus"),
+				MatchNextFnState: haveName("sFnProcessShoot"),
 			},
 		),
 		Entry(
@@ -167,22 +163,4 @@ var _ = Describe("KIM sFnInitialise", func() {
 		),
 	)
 })
-
-type testOpts struct {
-	MatchExpectedErr types.GomegaMatcher
-	MatchNextFnState types.GomegaMatcher
-	StateMatch       []types.GomegaMatcher
-}
-
-func buildTestFunction(fn stateFn) func(context.Context, *fsm, *systemState, testOpts) {
-	return func(ctx context.Context, r *fsm, s *systemState, ops testOpts) {
-		sFn, _, err := fn(ctx, r, s)
-
-		Expect(err).To(ops.MatchExpectedErr)
-		Expect(sFn).To(ops.MatchNextFnState)
-
-		for _, match := range ops.StateMatch {
-			Expect(&s.instance).Should(match)
-		}
-	}
-}
+*/

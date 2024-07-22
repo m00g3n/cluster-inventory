@@ -19,11 +19,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
+	"github.com/go-playground/validator/v10"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	kubeconfig_controller "github.com/kyma-project/infrastructure-manager/internal/controller/kubeconfig"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
@@ -31,6 +33,7 @@ import (
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/kubeconfig"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -57,6 +60,7 @@ func init() {
 const defaultMinimalRotationTimeRatio = 0.6
 const defaultExpirationTime = 24 * time.Hour
 const defaultRuntimeReconcilerEnabled = false
+const defaultGardenerRequestTimeout = 60 * time.Second
 
 func main() {
 	var metricsAddr string
@@ -66,8 +70,10 @@ func main() {
 	var gardenerProjectName string
 	var minimalRotationTimeRatio float64
 	var expirationTime time.Duration
+	var gardenerRequestTimeout time.Duration
 	var enableRuntimeReconciler bool
 	var persistShoot bool
+	var converterConfigFilepath string
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -78,8 +84,10 @@ func main() {
 	flag.StringVar(&gardenerProjectName, "gardener-project-name", "gardener-project", "Name of the Gardener project")
 	flag.Float64Var(&minimalRotationTimeRatio, "minimal-rotation-time", defaultMinimalRotationTimeRatio, "The ratio determines what is the minimal time that needs to pass to rotate certificate.")
 	flag.DurationVar(&expirationTime, "kubeconfig-expiration-time", defaultExpirationTime, "Dynamic kubeconfig expiration time")
+	flag.DurationVar(&gardenerRequestTimeout, "gardener-request-timeout", defaultGardenerRequestTimeout, "Timeout duration for requests to Gardener")
 	flag.BoolVar(&enableRuntimeReconciler, "runtime-reconciler-enabled", defaultRuntimeReconcilerEnabled, "Feature flag for all runtime reconciler functionalities")
 	flag.BoolVar(&persistShoot, "persist-shoot", false, "Feature flag to allow persisting created shoots")
+	flag.StringVar(&converterConfigFilepath, "converter-config-filepath", "hack/converter_config.json", "A file path to the gardener shoot converter configuration.")
 
 	opts := zap.Options{
 		Development: true,
@@ -88,7 +96,6 @@ func main() {
 	flag.Parse()
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
-
 	ctrl.SetLogger(logger)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -118,14 +125,15 @@ func main() {
 	}
 
 	gardenerNamespace := fmt.Sprintf("garden-%s", gardenerProjectName)
-	shootClient, dynamicKubeconfigClient, err := initGardenerClients(gardenerKubeconfigPath, gardenerNamespace)
+	gardenerClient, shootClient, dynamicKubeconfigClient, err := initGardenerClients(gardenerKubeconfigPath, gardenerNamespace)
 
 	if err != nil {
 		setupLog.Error(err, "unable to initialize gardener clients", "controller", "GardenerCluster")
 		os.Exit(1)
 	}
 
-	kubeconfigProvider := kubeconfig.NewKubeconfigProvider(shootClient,
+	kubeconfigProvider := kubeconfig.NewKubeconfigProvider(
+		shootClient,
 		dynamicKubeconfigClient,
 		gardenerNamespace,
 		int64(expirationTime.Seconds()))
@@ -138,27 +146,49 @@ func main() {
 		logger,
 		rotationPeriod,
 		minimalRotationTimeRatio,
+		gardenerRequestTimeout,
 		metrics,
 	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GardenerCluster")
 		os.Exit(1)
 	}
 
-	cfg := fsm.RCCfg{Finalizer: infrastructuremanagerv1.Finalizer}
+	// load converter configuration
+	getReader := func() (io.Reader, error) {
+		return os.Open(converterConfigFilepath)
+	}
+	var converterConfig shoot.ConverterConfig
+	if err = converterConfig.Load(getReader); err != nil {
+		setupLog.Error(err, "unable to load converter configuration")
+		os.Exit(1)
+	}
+
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	if err = validate.Struct(converterConfig); err != nil {
+		setupLog.Error(err, "invalid converter configuration")
+		os.Exit(1)
+	}
+
+	cfg := fsm.RCCfg{
+		Finalizer:       infrastructuremanagerv1.Finalizer,
+		ShootNamesapace: gardenerNamespace,
+		ConverterConfig: converterConfig,
+	}
+
 	if persistShoot {
 		cfg.PVCPath = "/testdata/kim"
 	}
 
 	if enableRuntimeReconciler {
-		if err = (&runtime_controller.RuntimeReconciler{
-			Client:        mgr.GetClient(),
-			Scheme:        mgr.GetScheme(),
-			ShootClient:   shootClient,
-			Log:           logger,
-			Cfg:           cfg,
-			EventRecorder: mgr.GetEventRecorderFor("runtime-controller"),
-		}).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Runtime")
+		runtimeReconciler := runtime_controller.NewRuntimeReconciler(
+			mgr,
+			gardenerClient,
+			logger,
+			cfg,
+		)
+
+		if err = runtimeReconciler.SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to setup controller with Manager", "controller", "Runtime")
 			os.Exit(1)
 		}
 	}
@@ -182,20 +212,20 @@ func main() {
 	}
 }
 
-func initGardenerClients(kubeconfigPath string, namespace string) (gardener_apis.ShootInterface, client.SubResourceClient, error) {
+func initGardenerClients(kubeconfigPath string, namespace string) (client.Client, gardener_apis.ShootInterface, client.SubResourceClient, error) {
 	restConfig, err := gardener.NewRestConfigFromFile(kubeconfigPath)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	gardenerClientSet, err := gardener_apis.NewForConfig(restConfig)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	gardenerClient, err := client.New(restConfig, client.Options{})
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	shootClient := gardenerClientSet.Shoots(namespace)
@@ -203,8 +233,8 @@ func initGardenerClients(kubeconfigPath string, namespace string) (gardener_apis
 
 	err = v1beta1.AddToScheme(gardenerClient.Scheme())
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to register Gardener schema")
+		return nil, nil, nil, errors.Wrap(err, "failed to register Gardener schema")
 	}
 
-	return shootClient, dynamicKubeconfigAPI, nil
+	return gardenerClient, shootClient, dynamicKubeconfigAPI, nil
 }

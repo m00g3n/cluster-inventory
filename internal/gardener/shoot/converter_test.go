@@ -1,9 +1,13 @@
 package shoot
 
 import (
+	"fmt"
+	"io"
+	"strings"
 	"testing"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/go-playground/validator/v10"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler"
 	"github.com/stretchr/testify/assert"
@@ -115,4 +119,73 @@ func fixRuntime() imv1.Runtime {
 			},
 		},
 	}
+}
+
+func Test_ConverterConfig_Load_Err(t *testing.T) {
+	errTestReaderGetterFailed := fmt.Errorf("test reader getter fail")
+	failingReaderGetter := func() (io.Reader, error) {
+		return nil, errTestReaderGetterFailed
+	}
+	var cfg ConverterConfig
+	if err := cfg.Load(failingReaderGetter); err != errTestReaderGetterFailed {
+		t.Error("ConverterConfig load should fail")
+	}
+}
+
+var testReader io.Reader = strings.NewReader(`{
+  "kubernetes": {
+    "defaultVersion": "0.1.2.3"
+  },
+  "dns": {
+    "secretName": "test-secret-name",
+    "domainPrefix": "test-domain-prefix",
+    "providerType": "test-provider-type"
+  },
+  "provider": {
+    "aws": {
+      "enableIMDSv2": true
+    }
+  },
+  "machineImage": {
+    "defaultVersion": "0.1.2.3.4"
+  },
+  "gardener": {
+    "projectName": "test-project"
+  }
+}`)
+
+func Test_ConverterConfig_Load_OK(t *testing.T) {
+	readerGetter := func() (io.Reader, error) {
+		return testReader, nil
+	}
+	var cfg ConverterConfig
+	if err := cfg.Load(readerGetter); err != nil {
+		t.Errorf("ConverterConfig load failed: %s", err)
+	}
+
+	expected := ConverterConfig{
+		Kubernetes: KubernetesConfig{
+			DefaultVersion: "0.1.2.3",
+		},
+		DNS: DNSConfig{
+			SecretName:   "test-secret-name",
+			DomainPrefix: "test-domain-prefix",
+			ProviderType: "test-provider-type",
+		},
+		Provider: ProviderConfig{
+			AWS: AWSConfig{
+				EnableIMDSv2: true,
+			},
+		},
+		MachineImage: MachineImageConfig{
+			DefaultVersion: "0.1.2.3.4",
+		},
+		Gardener: GardenerConfig{
+			ProjectName: "test-project",
+		},
+	}
+	assert.Equal(t, expected, cfg)
+
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	assert.Nil(t, validate.Struct(cfg))
 }

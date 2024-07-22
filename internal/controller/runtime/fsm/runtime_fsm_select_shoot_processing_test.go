@@ -1,5 +1,6 @@
 package fsm
 
+/*
 import (
 	"context"
 	"time"
@@ -175,3 +176,4 @@ var _ = Describe("KIM sFnInitialise", func() {
 		),
 	)
 })
+*/

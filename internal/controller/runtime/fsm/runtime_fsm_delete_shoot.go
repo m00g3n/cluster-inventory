@@ -2,13 +2,10 @@ package fsm
 
 import (
 	"context"
-	"encoding/json"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
@@ -16,27 +13,15 @@ func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 	if !isGardenerCloudDelConfirmationSet(s.shoot.Annotations) {
 		m.log.Info("patching shoot with del-confirmation")
 		// workaround for Gardener client
-		s.shoot.Kind = "Shoot"
-		s.shoot.APIVersion = "core.gardener.cloud/v1beta1"
+		setObjectFields(s.shoot)
 		s.shoot.Annotations = addGardenerCloudDelConfirmation(s.shoot.Annotations)
-		s.shoot.ManagedFields = nil
-		// attempt to marshall patched instance
-		shootData, err := json.Marshal(&s.shoot)
+
+		err := m.ShootClient.Patch(ctx, s.shoot, client.Apply, &client.PatchOptions{
+			FieldManager: "kim",
+			Force:        ptrTo(true),
+		})
+
 		if err != nil {
-			// unrecoverable error
-			s.instance.UpdateStateDeletion(
-				imv1.ConditionTypeRuntimeProvisioned,
-				imv1.ConditionReasonSerializationError,
-				"False",
-				err.Error())
-			return updateStatusAndStop()
-		}
-		// see: https://gardener.cloud/docs/gardener/projects/#four-eyes-principle-for-resource-deletion
-		if s.shoot, err = m.ShootClient.Patch(ctx, s.shoot.Name, types.ApplyPatchType, shootData,
-			metav1.PatchOptions{
-				FieldManager: "kim",
-				Force:        ptr.To(true),
-			}); err != nil {
 			m.log.Error(err, "unable to patch shoot:", s.shoot.Name)
 			return requeue()
 		}
@@ -54,7 +39,7 @@ func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 	}
 
 	m.log.Info("deleting shoot")
-	err := m.ShootClient.Delete(ctx, s.instance.Name, metav1.DeleteOptions{})
+	err := m.ShootClient.Delete(ctx, s.shoot)
 	if err != nil {
 		m.log.Error(err, "Failed to delete gardener Shoot")
 
