@@ -38,7 +38,7 @@ const (
 const (
 	LabelKymaInstanceID      = "kyma-project.io/instance-id"
 	LabelKymaRuntimeID       = "kyma-project.io/runtime-id"
-	LabelKymaShootName       = "kyma-project.io/shootName"
+	LabelKymaShootName       = "kyma-project.io/shoot-name"
 	LabelKymaRegion          = "kyma-project.io/region"
 	LabelKymaName            = "operator.kyma-project.io/kyma-name"
 	LabelKymaBrokerPlanID    = "kyma-project.io/broker-plan-id"
