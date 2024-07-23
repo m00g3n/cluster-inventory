@@ -1,0 +1,62 @@
+name: shoot-comparator
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  push-to-ghrc:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read  
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      # detect changes in the tests directory that require a new image build
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            src:
+              - 'hack/shoot-comparator/**'
+              - '!hack/shoot-comparator/**/*.md'
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}/test-images/shoot-comparator
+
+      - if: |
+          steps.changes.outputs.src == 'true' ||
+          github.event_name == 'push'
+
+        name: Build and push Docker images
+        uses: docker/build-push-action@v5
+        with:
+          context: ./hack/shoot-comparator
+          file: ./hack/shoot-comparator/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - if: |
+          steps.changes.outputs.src == 'false' &&
+          github.event_name != 'push'
+
+        name: Tag docker image
+        run: |
+          docker pull ghcr.io/${{ github.repository }}/test-images/shoot-comparator:main  \
+          && docker tag ghcr.io/${{ github.repository }}/test-images/shoot-comparator:main ghcr.io/${{ github.repository }}/test-images/shoot-comparator:pr-${{ github.event.number }} \
+          && docker push ghcr.io/${{ github.repository }}/test-images/shoot-comparator:pr-${{ github.event.number }}
+
