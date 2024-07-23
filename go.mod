@@ -4,7 +4,7 @@ go 1.22.5
 
 require (
 	github.com/gardener/gardener v1.99.1
-	github.com/gardener/gardener-extension-provider-aws v1.56.0
+	github.com/gardener/gardener-extension-provider-aws v1.56.1
 	github.com/gardener/gardener-extension-provider-gcp v1.37.0
 	github.com/gardener/gardener-extension-provider-openstack v1.41.0
 	github.com/go-logr/logr v1.4.2
@@ -14,9 +14,9 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.1
 	github.com/stretchr/testify v1.9.0
-	k8s.io/api v0.30.2
-	k8s.io/apimachinery v0.30.2
-	k8s.io/client-go v0.30.2
+	k8s.io/api v0.30.3
+	k8s.io/apimachinery v0.30.3
+	k8s.io/client-go v0.30.3
 	sigs.k8s.io/controller-runtime v0.18.4
 	sigs.k8s.io/yaml v1.4.0
 )
