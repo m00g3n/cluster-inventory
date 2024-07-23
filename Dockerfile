@@ -14,6 +14,7 @@ RUN go mod download
 # Copy the go source
 COPY cmd/main.go cmd/main.go
 COPY api/ api/
+COPY hack/converter_config.json hack/converter_config.json
 COPY internal/ internal/
 
 # Build
