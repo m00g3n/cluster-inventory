@@ -90,16 +90,6 @@ func (m *Matcher) Match(actual interface{}) (success bool, err error) {
 			path:          "metadata/annotations",
 		},
 		{
-			GomegaMatcher: gomega.Equal(eShoot.OwnerReferences),
-			expected:      aShoot.OwnerReferences,
-			path:          "metadata/ownerReferences",
-		},
-		{
-			GomegaMatcher: gomega.Equal(eShoot.Finalizers),
-			expected:      aShoot.Finalizers,
-			path:          "metadata/finalizers",
-		},
-		{
 			GomegaMatcher: gomega.Equal(eShoot.Spec),
 			expected:      aShoot.Spec,
 			path:          "spec",

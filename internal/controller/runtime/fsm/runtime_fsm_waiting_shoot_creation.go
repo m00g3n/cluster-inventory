@@ -11,13 +11,20 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
+func ensureStatusConditionIsSetAndContinue(instance *imv1.Runtime, condType imv1.RuntimeConditionType, condReason imv1.RuntimeConditionReason, message string, next stateFn) (stateFn, *ctrl.Result, error) {
+	if !instance.IsStateWithConditionAndStatusSet(imv1.RuntimeStatePending, condType, condReason, "True") {
+		instance.UpdateStatePending(condType, condReason, "True", message)
+		return updateStatusAndRequeue()
+	}
+	return switchState(next)
+}
+
 func sFnWaitForShootCreation(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	m.log.Info("Waiting for shoot creation state")
 
 	switch s.shoot.Status.LastOperation.State {
 	case gardener.LastOperationStateProcessing, gardener.LastOperationStatePending, gardener.LastOperationStateAborted:
-		msg := fmt.Sprintf("Shoot %s is in %s state, scheduling for retry", s.shoot.Name, s.shoot.Status.LastOperation.State)
-		m.log.Info(msg)
+		m.log.Info(fmt.Sprintf("Shoot %s is in %s state, scheduling for retry", s.shoot.Name, s.shoot.Status.LastOperation.State))
 
 		s.instance.UpdateStatePending(
 			imv1.ConditionTypeRuntimeProvisioned,
@@ -27,24 +34,9 @@ func sFnWaitForShootCreation(_ context.Context, m *fsm, s *systemState) (stateFn
 
 		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 
-	case gardener.LastOperationStateSucceeded:
-		msg := fmt.Sprintf("Shoot %s successfully created", s.shoot.Name)
-		m.log.Info(msg)
-
-		if !s.instance.IsStateWithConditionAndStatusSet(imv1.RuntimeStatePending, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonShootCreationCompleted, "True") {
-			s.instance.UpdateStatePending(
-				imv1.ConditionTypeRuntimeProvisioned,
-				imv1.ConditionReasonShootCreationCompleted,
-				"True",
-				"Shoot creation completed")
-			return updateStatusAndRequeue()
-		}
-		return switchState(sFnProcessShoot)
-
 	case gardener.LastOperationStateFailed:
 		if gardenerhelper.HasErrorCode(s.shoot.Status.LastErrors, gardener.ErrorInfraRateLimitsExceeded) {
-			msg := fmt.Sprintf("Error during cluster provisioning: Rate limits exceeded for Shoot %s, scheduling for retry", s.shoot.Name)
-			m.log.Info(msg)
+			m.log.Info(fmt.Sprintf("Error during cluster provisioning: Rate limits exceeded for Shoot %s, scheduling for retry", s.shoot.Name))
 			return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 		}
 
@@ -62,6 +54,10 @@ func sFnWaitForShootCreation(_ context.Context, m *fsm, s *systemState) (stateFn
 			"Shoot creation failed")
 
 		return updateStatusAndStop()
+
+	case gardener.LastOperationStateSucceeded:
+		m.log.Info(fmt.Sprintf("Shoot %s successfully created", s.shoot.Name))
+		return ensureStatusConditionIsSetAndContinue(&s.instance, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonShootCreationCompleted, "Shoot creation completed", sFnCreateKubeconfig)
 
 	default:
 		m.log.Info("Unknown shoot operation state, exiting with no retry")

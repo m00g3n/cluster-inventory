@@ -1,11 +1,9 @@
-package shoot_test
+package shoot
 
 import (
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-project/infrastructure-manager/internal/testing/shoot"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
-	corev1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type deepCpOpts = func(*v1beta1.Shoot)
@@ -25,18 +23,6 @@ func withNamespace(namespace string) deepCpOpts {
 func withLabels(labels map[string]string) deepCpOpts {
 	return func(s *v1beta1.Shoot) {
 		s.Labels = labels
-	}
-}
-
-func withFinalizers(finalizers []string) deepCpOpts {
-	return func(s *v1beta1.Shoot) {
-		s.Finalizers = finalizers
-	}
-}
-
-func withOwnerReferences(ownerReferences []corev1.OwnerReference) deepCpOpts {
-	return func(s *v1beta1.Shoot) {
-		s.OwnerReferences = ownerReferences
 	}
 }
 
@@ -62,13 +48,13 @@ func deepCp(s v1beta1.Shoot, opts ...deepCpOpts) v1beta1.Shoot {
 }
 
 func testInvalidArgs(actual, expected interface{}) {
-	matcher := shoot.NewMatcher(expected)
+	matcher := NewMatcher(expected)
 	_, err := matcher.Match(actual)
 	Expect(err).To(HaveOccurred())
 }
 
 func testResults(actual, expected interface{}, expectedMatch bool) {
-	matcher := shoot.NewMatcher(expected)
+	matcher := NewMatcher(expected)
 	actualMatch, err := matcher.Match(actual)
 	Expect(err).ShouldNot(HaveOccurred())
 	Expect(actualMatch).Should(Equal(expectedMatch), matcher.FailureMessage(actual))
@@ -121,24 +107,6 @@ var _ = Describe(":: shoot matcher :: ", func() {
 			"should detect difference in annotations",
 			deepCp(empty, withAnnotations(map[string]string{"test": "me"})),
 			deepCp(empty, withAnnotations(map[string]string{"test": "it"})),
-			false,
-		),
-		Entry(
-			"should detect differences in finalizers",
-			deepCp(empty, withFinalizers([]string{"test", "me"})),
-			deepCp(empty, withFinalizers([]string{"test", "me 2"})),
-			false,
-		),
-		Entry(
-			"should detect differences in owner references",
-			deepCp(empty, withOwnerReferences([]corev1.OwnerReference{
-				{Name: "test1", UID: "1"},
-				{Name: "test2", UID: "2"},
-			})),
-			deepCp(empty, withOwnerReferences([]corev1.OwnerReference{
-				{Name: "test1", UID: "1"},
-				{Name: "test3", UID: "3"},
-			})),
 			false,
 		),
 		Entry(

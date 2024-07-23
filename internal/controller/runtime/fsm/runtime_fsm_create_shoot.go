@@ -9,7 +9,7 @@ import (
 )
 
 func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
-	m.log.Info("Create shoot")
+	m.log.Info("Create shoot state")
 
 	if m.SaveToPV {
 		err := runtimeComparer.WriteToPV(s.instance, m.PVCPath)
@@ -25,7 +25,6 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 			return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 		}
 	}
-
 	newShoot, err := convertShoot(&s.instance, m.ConverterConfig)
 	if err != nil {
 		m.log.Error(err, "Failed to convert Runtime instance to shoot object")
@@ -54,6 +53,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 		"Shoot is pending",
 	)
 
+	// it will be executed only once because created shoot is executed only once
 	shouldPersistShoot := m.PVCPath != ""
 	if shouldPersistShoot {
 		s.shoot = newShoot.DeepCopy()
