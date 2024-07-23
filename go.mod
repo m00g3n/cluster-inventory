@@ -4,7 +4,7 @@ go 1.22.5
 
 require (
 	github.com/gardener/gardener v1.99.1
-	github.com/gardener/gardener-extension-provider-aws v1.56.0
+	github.com/gardener/gardener-extension-provider-aws v1.56.1
 	github.com/gardener/gardener-extension-provider-gcp v1.37.0
 	github.com/gardener/gardener-extension-provider-openstack v1.41.0
 	github.com/go-logr/logr v1.4.2
