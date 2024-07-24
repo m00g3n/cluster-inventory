@@ -1,7 +1,11 @@
 package directories
 
+import "time"
+
 type Result struct {
 	Equal              bool
+	LeftDir            string
+	RightDir           string
 	LeftOnly           []string
 	RightOnly          []string
 	LeftDirFilesCount  int
@@ -10,11 +14,15 @@ type Result struct {
 }
 
 type Difference struct {
+	Filename  string
 	LeftFile  string
 	RightFile string
 	Message   string
 }
 
-func CompareDirectories(leftDir, rightDir string) (Result, error) {
-	return Result{}, nil
+func CompareDirectories(leftDir, rightDir string, olderThan time.Time) (Result, error) {
+	return Result{
+		LeftDir:  leftDir,
+		RightDir: rightDir,
+	}, nil
 }
