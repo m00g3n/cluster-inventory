@@ -48,9 +48,9 @@ func sFnPatchExistingShoot(ctx context.Context, m *fsm, s *systemState) (stateFn
 		"Shoot is pending",
 	)
 
-	shouldPersistShoot := m.PVCPath != ""
-	if shouldPersistShoot {
-		return switchState(sFnPersistShoot)
+	shouldDumpShootSpec := m.PVCPath != ""
+	if shouldDumpShootSpec {
+		return switchState(sFnDumpShootSpec)
 	}
 
 	return updateStatusAndRequeueAfter(gardenerRequeueDuration)

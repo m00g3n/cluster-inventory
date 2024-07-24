@@ -17,6 +17,7 @@ You can configure the Infrastructure Manager deployment with the following argum
 4. `kubeconfig-expiration-time` - maximum time after which kubeconfig is rotated. The rotation happens between (`minimal-rotation-time` * `kubeconfig-expiration-time`) and `kubeconfig-expiration-time`.
 4. `gardener-request-timeout` - specifies the timeout for requests to Gardener. Default value is `60s`.
 5. `runtime-reconciler-enabled` - feature flag responsible for enabling the runtime reconciler. Default value is `false`.
+6. `shoot-spec-dump-enabled` - feature flag responsible for enabling the shoot spec dump. Default value is `false`.
 
 
 See [manager_gardener_secret_patch.yaml](../config/default/manager_gardener_secret_patch.yaml) for default values.

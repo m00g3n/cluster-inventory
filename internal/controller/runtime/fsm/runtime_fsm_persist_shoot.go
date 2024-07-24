@@ -39,7 +39,7 @@ func persist(path string, s *gardener.Shoot, saveFunc writerGetter) error {
 	return nil
 }
 
-func sFnPersistShoot(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
+func sFnDumpShootSpec(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	path := fmt.Sprintf("%s/%s-%s-shootCR.yaml", m.PVCPath, s.shoot.Namespace, s.shoot.Name)
 	if err := persist(path, s.shoot, m.writerProvider); err != nil {
 		return updateStatusAndStopWithError(err)
