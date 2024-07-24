@@ -9,7 +9,7 @@ import (
 )
 
 func WriteToPV(instance v1.Runtime, path string) error {
-	fileName := path + "/" + instance.Name + ".yaml"
+	fileName := path + "/" + instance.Name + "-runtimeCR" + ".yaml"
 	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 
 	if err != nil {

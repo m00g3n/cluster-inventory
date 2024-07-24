@@ -25,7 +25,10 @@ func persist(path string, s *gardener.Shoot, saveFunc writerGetter) error {
 		return fmt.Errorf("unable to create file: %w", err)
 	}
 
-	b, err := yaml.Marshal(s)
+	objToWrite := s.DeepCopy()
+	objToWrite.ManagedFields = nil
+
+	b, err := yaml.Marshal(objToWrite)
 	if err != nil {
 		return fmt.Errorf("unable to marshal shoot: %w", err)
 	}
@@ -37,7 +40,7 @@ func persist(path string, s *gardener.Shoot, saveFunc writerGetter) error {
 }
 
 func sFnPersistShoot(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
-	path := fmt.Sprintf("%s/%s-%s.yaml", m.PVCPath, s.shoot.Namespace, s.shoot.Name)
+	path := fmt.Sprintf("%s/%s-%s-shootCR.yaml", m.PVCPath, s.shoot.Namespace, s.shoot.Name)
 	if err := persist(path, s.shoot, m.writerProvider); err != nil {
 		return updateStatusAndStopWithError(err)
 	}
