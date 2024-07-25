@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kyma-project/infrastructure-manager/tools/shoot-comparator/internal/directories"
 	"github.com/spf13/cobra"
+	"log/slog"
 	"time"
 )
 
@@ -30,34 +31,35 @@ var directoriesCmd = &cobra.Command{
 
 		fromDate, err := parseStartFromDate(fromDateString)
 		if err != nil {
-			fmt.Printf("Error occurred when parsing command line arguments: %q", err)
+			slog.Error("Error occurred when parsing command line arguments: %q", err)
 			return
 		}
 
 		outputDir, err := cmd.Flags().GetString("outputDir")
 		if err != nil {
-			fmt.Printf("Error occurred when parsing command line arguments: %q", err)
+			slog.Error(fmt.Sprintf("Error occurred when parsing command line arguments: %q", err))
 			return
 		}
 
-		if fromDate.IsZero() {
-			fmt.Printf("Only files created after the following date: %v will be compared.\n", fromDate)
+		if !fromDate.IsZero() {
+			slog.Info(fmt.Sprintf("Only files created after the following date: %v will be compared.", fromDate))
 		}
 
-		fmt.Printf("Comparing directories: %s and %s \n", leftDir, rightDir)
+		slog.Info(fmt.Sprintf("Comparing directories: %s and %s", leftDir, rightDir))
 		result, err := directories.CompareDirectories(leftDir, rightDir, time.Time{})
 		if err != nil {
-			fmt.Printf("Failed to compare directories: %s \n", err.Error())
+			slog.Error(fmt.Sprintf("Failed to compare directories: %v", err.Error()))
 			return
 		}
 		logComparisonResults(result, leftDir, rightDir)
 
 		if outputDir != "" {
-			fmt.Printf("Saving comparison details in the directory: %q", outputDir)
-			err := directories.SaveComparisonResults(result, outputDir, fromDate)
+			slog.Info("Saving comparison details")
+			resultsDir, err := directories.SaveComparisonReport(result, outputDir, fromDate)
 			if err != nil {
 				fmt.Printf("Failed to compare directories: %s \n", err.Error())
 			}
+			slog.Info(fmt.Sprintf("Results stored in %q", resultsDir))
 			return
 		}
 	},
@@ -77,12 +79,9 @@ func parseStartFromDate(fromDateString string) (time.Time, error) {
 }
 
 func logComparisonResults(comparisonResult directories.Result, leftDir, rightDir string) {
-	fmt.Printf("Numer of files in %s directory = %d \n", leftDir, comparisonResult.LeftDirFilesCount)
-	fmt.Printf("Numer of files in %s directory = %d \n", rightDir, comparisonResult.RightDirFilesCount)
-
 	if comparisonResult.Equal {
-		fmt.Println("Directories are equal")
+		slog.Info("Directories are equal")
 	} else {
-		fmt.Println("Directories are NOT equal")
+		slog.Warn("Directories are NOT equal")
 	}
 }

@@ -7,41 +7,59 @@ import (
 	"time"
 )
 
-func SaveComparisonResults(comparisonResult Result, outputDir string, fromDate time.Time) error {
-	resultsDir, err := createOutputDir(outputDir, fromDate)
+func SaveComparisonReport(comparisonResult Result, outputDir string, fromDate time.Time) (string, error) {
+	resultsDir, err := createOutputDir(outputDir)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	reportFile, err := createReportFile(resultsDir)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer reportFile.Close()
 
-	if comparisonResult.Equal {
-		reportFile.Write([]byte("Directories are equal"))
-	} else {
-		reportFile.Write([]byte("Directories are NOT equal"))
+	writeSummary(reportFile, comparisonResult, fromDate)
 
+	if !comparisonResult.Equal {
 		err := writeResultsToTheReportFile(reportFile, comparisonResult)
 		if err != nil {
-			return err
+			return "", err
 		}
 
 		err = writeResultsToDiffFiles(comparisonResult.Diff, resultsDir)
 		if err != nil {
-			return fmt.Errorf("failed to write files with detected differences: %v", err)
+			return "", fmt.Errorf("failed to write files with detected differences: %v", err)
 		}
 	}
 
-	return nil
+	return resultsDir, nil
 }
 
-func createOutputDir(outputDir string, fromDate time.Time) (string, error) {
-	resultsDir := path.Join(outputDir, fromDate.Format(time.RFC3339))
+func writeSummary(reportFile *os.File, comparisonResult Result, fromDate time.Time) {
+	reportFile.Write([]byte(fmt.Sprintf("Comparing files older than:%v \n", fromDate)))
 
-	err := os.Mkdir(resultsDir, os.ModeDir)
+	reportFile.Write([]byte("\n"))
+	numberOfFilesLeftMsg := fmt.Sprintf("Number of files in %s directory = %d \n", comparisonResult.LeftDir, comparisonResult.LeftDirFilesCount)
+	reportFile.Write([]byte(numberOfFilesLeftMsg))
+
+	numberOfFilesRightMsg := fmt.Sprintf("Number of files in %s directory = %d \n", comparisonResult.RightDir, comparisonResult.RightDirFilesCount)
+
+	reportFile.Write([]byte(numberOfFilesRightMsg))
+
+	reportFile.Write([]byte("\n"))
+
+	if comparisonResult.Equal {
+		reportFile.Write([]byte("Directories are equal \n"))
+	} else {
+		reportFile.Write([]byte("Directories are NOT equal \n"))
+	}
+}
+
+func createOutputDir(outputDir string) (string, error) {
+	resultsDir := path.Join(outputDir, time.Now().Format(time.RFC3339))
+
+	err := os.MkdirAll(resultsDir, os.ModePerm)
 	if err != nil {
 		return "", fmt.Errorf("failed to create results directory: %v", err)
 	}
@@ -83,17 +101,18 @@ func writeMissingFilesToReport(file *os.File, dir string, missingFiles []string)
 	if len(missingFiles) == 0 {
 		return nil
 	}
+	file.Write([]byte("\n"))
 
-	file.Write([]byte(fmt.Sprintf("---------------------------------------------")))
+	file.Write([]byte(fmt.Sprintf("---------------------------------------------\n")))
 	file.Write([]byte(fmt.Sprintf("Files existing in %s folder only: \n", dir)))
 
 	for _, missingFile := range missingFiles {
-		if _, err := file.Write([]byte(missingFile + "/n")); err != nil {
+		if _, err := file.Write([]byte(missingFile + "\n")); err != nil {
 			return err
 		}
 	}
 
-	file.Write([]byte(fmt.Sprintf("---------------------------------------------")))
+	file.Write([]byte(fmt.Sprintf("---------------------------------------------\n")))
 
 	return nil
 }
@@ -103,18 +122,20 @@ func writeDifferencesToReport(file *os.File, differences []Difference) error {
 		return nil
 	}
 
-	file.Write([]byte(fmt.Sprintf("---------------------------------------------")))
+	file.Write([]byte("\n"))
+
+	file.Write([]byte(fmt.Sprintf("---------------------------------------------\n")))
 	file.Write([]byte(fmt.Sprintf("Files that differ: \n")))
 
 	for _, difference := range differences {
 		msg := fmt.Sprintf("Files: %q and %q differ.", difference.LeftFile, difference.RightFile)
 
-		if _, err := file.Write([]byte(msg + "/n")); err != nil {
+		if _, err := file.Write([]byte(msg + "\n")); err != nil {
 			return err
 		}
 	}
 
-	file.Write([]byte(fmt.Sprintf("---------------------------------------------")))
+	file.Write([]byte(fmt.Sprintf("---------------------------------------------\n")))
 
 	return nil
 }

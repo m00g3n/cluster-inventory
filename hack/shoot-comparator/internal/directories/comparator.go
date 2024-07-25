@@ -45,11 +45,13 @@ func CompareDirectories(leftDir, rightDir string, olderThan time.Time) (Result, 
 	onlyRightFiles := filterOut(rightFileNames, fileNamesToCompare)
 
 	return Result{
-		LeftDir:   leftDir,
-		RightDir:  rightDir,
-		Diff:      differences,
-		RightOnly: onlyRightFiles,
-		LeftOnly:  onlyLeftFiles,
+		LeftDir:            leftDir,
+		RightDir:           rightDir,
+		Diff:               differences,
+		RightOnly:          onlyRightFiles,
+		LeftOnly:           onlyLeftFiles,
+		LeftDirFilesCount:  len(onlyRightFiles) + len(fileNamesToCompare),
+		RightDirFilesCount: len(onlyLeftFiles) + len(fileNamesToCompare),
 	}, nil
 }
 
