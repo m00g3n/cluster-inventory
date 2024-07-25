@@ -28,12 +28,12 @@ type Difference struct {
 
 func CompareDirectories(leftDir, rightDir string, olderThan time.Time) (Result, error) {
 
-	leftFileNames, err := getFiles(leftDir, olderThan)
+	leftFileNames, err := getFileNames(leftDir, olderThan)
 	if err != nil {
 		return Result{}, err
 	}
 
-	rightFileNames, err := getFiles(rightDir, olderThan)
+	rightFileNames, err := getFileNames(rightDir, olderThan)
 	if err != nil {
 		return Result{}, err
 	}
@@ -55,13 +55,13 @@ func CompareDirectories(leftDir, rightDir string, olderThan time.Time) (Result, 
 	}, nil
 }
 
-func getFiles(dir string, olderThan time.Time) ([]string, error) {
+func getFileNames(dir string, olderThan time.Time) ([]string, error) {
 	dirEntries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
 
-	var files []string
+	var fileNames []string
 
 	for _, dirEntry := range dirEntries {
 		if dirEntry.IsDir() {
@@ -74,13 +74,13 @@ func getFiles(dir string, olderThan time.Time) ([]string, error) {
 		}
 
 		if fileInfo.ModTime().After(olderThan) {
-			files = append(files, dirEntry.Name())
+			fileNames = append(fileNames, dirEntry.Name())
 		}
 	}
 
-	slices.Sort(files)
+	slices.Sort(fileNames)
 
-	return files, nil
+	return fileNames, nil
 }
 
 func getIntersection(leftFiles []string, rightFiles []string) []string {
