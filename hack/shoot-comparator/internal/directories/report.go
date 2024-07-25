@@ -2,6 +2,7 @@ package directories
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path"
 	"time"
@@ -13,16 +14,20 @@ func SaveComparisonReport(comparisonResult Result, outputDir string, fromDate ti
 		return "", err
 	}
 
-	reportFile, err := createReportFile(resultsDir)
+	report, err := NewReport(resultsDir)
 	if err != nil {
 		return "", err
 	}
-	defer reportFile.Close()
+	defer func() {
+		if err := report.Close(); err != nil {
+			slog.Error(fmt.Sprintf("Failed to close report file: %q", err))
+		}
+	}()
 
-	writeSummary(reportFile, comparisonResult, fromDate)
+	writeSummary(&report, comparisonResult, fromDate)
 
 	if !comparisonResult.Equal {
-		err := writeResultsToTheReportFile(reportFile, comparisonResult)
+		err := writeResultsToTheReportFile(&report, comparisonResult)
 		if err != nil {
 			return "", err
 		}
@@ -33,26 +38,25 @@ func SaveComparisonReport(comparisonResult Result, outputDir string, fromDate ti
 		}
 	}
 
-	return resultsDir, nil
+	return resultsDir, report.Save()
 }
 
-func writeSummary(reportFile *os.File, comparisonResult Result, fromDate time.Time) {
-	reportFile.Write([]byte(fmt.Sprintf("Comparing files older than:%v \n", fromDate)))
+func writeSummary(report *Report, comparisonResult Result, fromDate time.Time) {
+	report.AddLine(fmt.Sprintf("Comparing files older than:%v", fromDate))
+	report.AddLine("")
 
-	reportFile.Write([]byte("\n"))
-	numberOfFilesLeftMsg := fmt.Sprintf("Number of files in %s directory = %d \n", comparisonResult.LeftDir, comparisonResult.LeftDirFilesCount)
-	reportFile.Write([]byte(numberOfFilesLeftMsg))
+	numberOfFilesLeftMsg := fmt.Sprintf("Number of files in %s directory = %d", comparisonResult.LeftDir, comparisonResult.LeftDirFilesCount)
+	report.AddLine(numberOfFilesLeftMsg)
 
-	numberOfFilesRightMsg := fmt.Sprintf("Number of files in %s directory = %d \n", comparisonResult.RightDir, comparisonResult.RightDirFilesCount)
+	numberOfFilesRightMsg := fmt.Sprintf("Number of files in %s directory = %d", comparisonResult.RightDir, comparisonResult.RightDirFilesCount)
 
-	reportFile.Write([]byte(numberOfFilesRightMsg))
-
-	reportFile.Write([]byte("\n"))
+	report.AddLine(numberOfFilesRightMsg)
+	report.AddLine("")
 
 	if comparisonResult.Equal {
-		reportFile.Write([]byte("Directories are equal \n"))
+		report.AddLine("Directories are equal.")
 	} else {
-		reportFile.Write([]byte("Directories are NOT equal \n"))
+		report.AddLine("Directories are NOT equal.")
 	}
 }
 
@@ -67,29 +71,18 @@ func createOutputDir(outputDir string) (string, error) {
 	return resultsDir, nil
 }
 
-func createReportFile(resultsDir string) (*os.File, error) {
-	resultsFile := path.Join(resultsDir, "result.txt")
-
-	file, err := os.Create(resultsFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create results file: %v", err)
-	}
-
-	return file, nil
-}
-
-func writeResultsToTheReportFile(file *os.File, comparisonResult Result) error {
-	err := writeMissingFilesToReport(file, comparisonResult.LeftDir, comparisonResult.LeftOnly)
+func writeResultsToTheReportFile(report *Report, comparisonResult Result) error {
+	err := writeMissingFilesToReport(report, comparisonResult.LeftDir, comparisonResult.LeftOnly)
 	if err != nil {
 		return fmt.Errorf("failed to write results to file: %v", err)
 	}
 
-	err = writeMissingFilesToReport(file, comparisonResult.RightDir, comparisonResult.RightOnly)
+	err = writeMissingFilesToReport(report, comparisonResult.RightDir, comparisonResult.RightOnly)
 	if err != nil {
 		return fmt.Errorf("failed to write results to file: %v", err)
 	}
 
-	err = writeDifferencesToReport(file, comparisonResult.Diff)
+	err = writeDifferencesToReport(report, comparisonResult.Diff)
 	if err != nil {
 		return fmt.Errorf("failed to write results to file: %v", err)
 	}
@@ -97,45 +90,40 @@ func writeResultsToTheReportFile(file *os.File, comparisonResult Result) error {
 	return nil
 }
 
-func writeMissingFilesToReport(file *os.File, dir string, missingFiles []string) error {
+func writeMissingFilesToReport(report *Report, dir string, missingFiles []string) error {
 	if len(missingFiles) == 0 {
 		return nil
 	}
-	file.Write([]byte("\n"))
+	report.AddLine("")
 
-	file.Write([]byte(fmt.Sprintf("---------------------------------------------\n")))
-	file.Write([]byte(fmt.Sprintf("Files existing in %s folder only: \n", dir)))
+	report.AddLine(fmt.Sprintf("Files existing in %s folder only:", dir))
+	report.AddLine("------------------------------------------------------------------------------------------")
 
 	for _, missingFile := range missingFiles {
-		if _, err := file.Write([]byte(missingFile + "\n")); err != nil {
-			return err
-		}
+		report.AddLine(missingFile)
 	}
 
-	file.Write([]byte(fmt.Sprintf("---------------------------------------------\n")))
+	report.AddLine("------------------------------------------------------------------------------------------")
 
 	return nil
 }
 
-func writeDifferencesToReport(file *os.File, differences []Difference) error {
+func writeDifferencesToReport(report *Report, differences []Difference) error {
 	if len(differences) == 0 {
 		return nil
 	}
 
-	file.Write([]byte("\n"))
-
-	file.Write([]byte(fmt.Sprintf("---------------------------------------------\n")))
-	file.Write([]byte(fmt.Sprintf("Files that differ: \n")))
+	report.AddLine("")
+	report.AddLine("Files that differ: ")
+	report.AddLine("------------------------------------------------------------------------------------------")
 
 	for _, difference := range differences {
 		msg := fmt.Sprintf("Files: %q and %q differ.", difference.LeftFile, difference.RightFile)
 
-		if _, err := file.Write([]byte(msg + "\n")); err != nil {
-			return err
-		}
+		report.AddLine(msg)
 	}
 
-	file.Write([]byte(fmt.Sprintf("---------------------------------------------\n")))
+	report.AddLine("------------------------------------------------------------------------------------------")
 
 	return nil
 }
@@ -146,7 +134,10 @@ func writeResultsToDiffFiles(differences []Difference, resultsDir string) error 
 		if err != nil {
 			return err
 		}
-		defer file.Close()
+		defer func() {
+			err := file.Close()
+			slog.Error(fmt.Sprintf("Failed to close file: %v", err))
+		}()
 
 		_, err = file.Write([]byte(text))
 
@@ -156,7 +147,46 @@ func writeResultsToDiffFiles(differences []Difference, resultsDir string) error 
 	for _, difference := range differences {
 		diffFile := path.Join(resultsDir, fmt.Sprintf("%s.diff", difference.Filename))
 
-		writeAndCloseFunc(diffFile, difference.Message)
+		err := writeAndCloseFunc(diffFile, difference.Message)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+type Report struct {
+	reportFile *os.File
+	contents   string
+}
+
+func NewReport(resultsDir string) (Report, error) {
+	resultsFile := path.Join(resultsDir, "result.txt")
+
+	file, err := os.Create(resultsFile)
+	if err != nil {
+		return Report{}, fmt.Errorf("failed to create results file: %v", err)
+	}
+
+	return Report{
+		reportFile: file,
+	}, nil
+}
+
+func (rw *Report) AddLine(line string) {
+	rw.contents += line + "\n"
+}
+
+func (rw *Report) Save() error {
+	_, err := rw.reportFile.Write([]byte(rw.contents))
+
+	return err
+}
+
+func (rw *Report) Close() error {
+	if rw.reportFile != nil {
+		return rw.reportFile.Close()
 	}
 
 	return nil
