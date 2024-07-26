@@ -37,11 +37,17 @@ func persist(path string, s interface{}, saveFunc writerGetter) error {
 
 func sFnDumpShootSpec(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	paths := createFilesPath(m.PVCPath, s.shoot.Namespace, s.shoot.Name)
-	if err := persist(paths["shoot"], s.shoot, m.writerProvider); err != nil {
+
+	shootCp := s.shoot.DeepCopy()
+	runtimeCp := s.instance.DeepCopy()
+	shootCp.ManagedFields = nil
+	runtimeCp.ManagedFields = nil
+
+	if err := persist(paths["shoot"], shootCp, m.writerProvider); err != nil {
 		return updateStatusAndStopWithError(err)
 	}
 
-	if err := persist(paths["runtime"], s.instance, m.writerProvider); err != nil {
+	if err := persist(paths["runtime"], runtimeCp, m.writerProvider); err != nil {
 		return updateStatusAndStopWithError(err)
 	}
 	return updateStatusAndRequeueAfter(gardenerRequeueDuration)
