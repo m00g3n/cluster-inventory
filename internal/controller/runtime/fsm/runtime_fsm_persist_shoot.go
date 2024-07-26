@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 
-	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/yaml"
 )
@@ -19,16 +18,13 @@ func getWriterForFilesystem(filePath string) (io.Writer, error) {
 	return file, nil
 }
 
-func persist(path string, s *gardener.Shoot, saveFunc writerGetter) error {
+func persist(path string, s interface{}, saveFunc writerGetter) error {
 	writer, err := saveFunc(path)
 	if err != nil {
 		return fmt.Errorf("unable to create file: %w", err)
 	}
 
-	objToWrite := s.DeepCopy()
-	objToWrite.ManagedFields = nil
-
-	b, err := yaml.Marshal(objToWrite)
+	b, err := yaml.Marshal(s)
 	if err != nil {
 		return fmt.Errorf("unable to marshal shoot: %w", err)
 	}
@@ -40,9 +36,20 @@ func persist(path string, s *gardener.Shoot, saveFunc writerGetter) error {
 }
 
 func sFnDumpShootSpec(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
-	path := fmt.Sprintf("%s/%s-%s-shootCR.yaml", m.PVCPath, s.shoot.Namespace, s.shoot.Name)
-	if err := persist(path, s.shoot, m.writerProvider); err != nil {
+	paths := createFilesPath(m.PVCPath, s.shoot.Namespace, s.shoot.Name)
+	if err := persist(paths["shoot"], s.shoot, m.writerProvider); err != nil {
+		return updateStatusAndStopWithError(err)
+	}
+
+	if err := persist(paths["runtime"], s.instance, m.writerProvider); err != nil {
 		return updateStatusAndStopWithError(err)
 	}
 	return updateStatusAndRequeueAfter(gardenerRequeueDuration)
+}
+
+func createFilesPath(pvcPath, namespace, name string) map[string]string {
+	m := make(map[string]string)
+	m["shoot"] = fmt.Sprintf("%s/%s-%s-shootCR.yaml", pvcPath, namespace, name)
+	m["runtime"] = fmt.Sprintf("%s/%s-%s-runtimeCR.yaml", pvcPath, namespace, name)
+	return m
 }

@@ -172,7 +172,6 @@ func main() {
 	cfg := fsm.RCCfg{
 		Finalizer:       infrastructuremanagerv1.Finalizer,
 		ShootNamesapace: gardenerNamespace,
-		SaveToPV:        shootSpecDumpEnabled,
 		ConverterConfig: converterConfig,
 	}
 	if shootSpecDumpEnabled {
