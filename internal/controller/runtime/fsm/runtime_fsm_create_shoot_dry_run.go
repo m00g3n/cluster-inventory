@@ -23,7 +23,7 @@ func sFnCreateShootDryRun(_ context.Context, m *fsm, s *systemState) (stateFn, *
 
 	s.shoot = &newShoot
 	s.instance.UpdateStateReady(
-		imv1.ConditionTypeRuntimeProvisioned,
+		imv1.ConditionTypeRuntimeProvisionedDryRun,
 		imv1.ConditionReasonConfigurationCompleted,
 		"Runtime processing completed successfully [dry-run]")
 

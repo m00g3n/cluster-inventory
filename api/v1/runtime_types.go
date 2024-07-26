@@ -61,9 +61,10 @@ const (
 type RuntimeConditionType string
 
 const (
-	ConditionTypeRuntimeProvisioned     RuntimeConditionType = "Provisioned"
-	ConditionTypeRuntimeKubeconfigReady RuntimeConditionType = "KubeconfigReady"
-	ConditionTypeRuntimeConfigured      RuntimeConditionType = "Configured"
+	ConditionTypeRuntimeProvisioned       RuntimeConditionType = "Provisioned"
+	ConditionTypeRuntimeProvisionedDryRun RuntimeConditionType = "ProvisionedDryRun"
+	ConditionTypeRuntimeKubeconfigReady   RuntimeConditionType = "KubeconfigReady"
+	ConditionTypeRuntimeConfigured        RuntimeConditionType = "Configured"
 )
 
 type RuntimeConditionReason string
