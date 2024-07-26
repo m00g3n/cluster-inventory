@@ -24,7 +24,7 @@ See [manager_gardener_secret_patch.yaml](../config/default/manager_gardener_secr
 
 ## Troubleshooting
 
-1. Switching between the `provisioner` and the `kim`.
+1. Switching between the `provisioner` and `kim`.
 
 The `kyma-project.io/controlled-by-provisioner` label provides fine-grained control over `Runtime` CR. Only if the label value is set to `false`, resource is considered managed and will be controlled by the `kyma-application-manager`.
 
