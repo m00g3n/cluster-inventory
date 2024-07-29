@@ -41,7 +41,6 @@ func sFnDumpShootSpec(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 	shootCp := s.shoot.DeepCopy()
 	runtimeCp := s.instance.DeepCopy()
 	shootCp.ManagedFields = nil
-	runtimeCp.ManagedFields = nil
 
 	if err := persist(paths["shoot"], shootCp, m.writerProvider); err != nil {
 		return updateStatusAndStopWithError(err)
