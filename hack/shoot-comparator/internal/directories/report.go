@@ -162,7 +162,7 @@ type Report struct {
 }
 
 func NewReport(resultsDir string) (Report, error) {
-	resultsFile := path.Join(resultsDir, "result.txt")
+	resultsFile := path.Join(resultsDir, "results.txt")
 
 	file, err := os.Create(resultsFile)
 	if err != nil {
