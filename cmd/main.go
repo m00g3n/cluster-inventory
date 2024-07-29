@@ -59,7 +59,7 @@ func init() {
 
 const defaultMinimalRotationTimeRatio = 0.6
 const defaultExpirationTime = 24 * time.Hour
-const defaultRuntimeReconcilerEnabled = false
+const defaultRuntimeReconcilerEnabled = true
 const defaultGardenerRequestTimeout = 60 * time.Second
 
 func main() {

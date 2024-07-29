@@ -55,6 +55,9 @@ var _ = Describe("KIM sFnInitialise", func() {
 			Name:       "test-instance",
 			Namespace:  "default",
 			Finalizers: []string{"test-me-plz"},
+			Labels: map[string]string{
+				imv1.LabelControlledByProvisioner: "false",
+			},
 		},
 	}
 
