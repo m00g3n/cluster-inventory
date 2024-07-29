@@ -70,6 +70,39 @@ func TestCompareDirectories(t *testing.T) {
 			}
 		})
 	}
+
+	for _, testCase := range []struct {
+		description string
+		getDirsFunc func() (string, string)
+	}{
+		{
+			description: "should return error when failed to list files in left directory",
+			getDirsFunc: func() (string, string) {
+				_, rightDir := fixTestDataInTempDir(t)
+
+				return "non-existing-directory", rightDir
+			},
+		},
+		{
+			description: "should return error when failed to list files in right directory",
+			getDirsFunc: func() (string, string) {
+				leftDir, _ := fixTestDataInTempDir(t)
+
+				return leftDir, "non-existing-directory"
+			},
+		},
+	} {
+		t.Run("should return error when failed to list files", func(t *testing.T) {
+			// given
+			_, rightDir := testCase.getDirsFunc()
+
+			// when
+			_, err := CompareDirectories("non-existing-directory", rightDir, time.Time{})
+
+			// then
+			require.Error(t, err, "Expected to return error when failed to list files in directory")
+		})
+	}
 }
 
 func fixTestDataInTempDir(t *testing.T) (string, string) {
@@ -100,7 +133,7 @@ func saveTestShootFile(t *testing.T, shoot v1beta1.Shoot, dir, filename string) 
 
 	defer func() {
 		err := file.Close()
-		t.Errorf("Failed to close file: %v", err)
+		t.Logf("Failed to close file: %v", err)
 	}()
 
 	err = yaml.NewEncoder(file).Encode(shoot)
