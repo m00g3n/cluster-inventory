@@ -24,11 +24,13 @@ var _ = Describe("KIM sFnPersist", func() {
 	testCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	expectedData, err := yaml.Marshal(&testing.ShootNoDNS)
+	shootWrite, err := yaml.Marshal(&testing.ShootNoDNS)
+	runtimeWrite, err := yaml.Marshal(&testing.RuntimeOnlyName)
+	expectedData := append(shootWrite, runtimeWrite...)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	It("should persist shoot data", func() {
-		next, _, err := sFnDumpShootSpec(testCtx, must(newFakeFSM, withStorageWriter(testWriterGetter)), &systemState{shoot: &testing.ShootNoDNS})
+		next, _, err := sFnDumpShootSpec(testCtx, must(newFakeFSM, withStorageWriter(testWriterGetter)), &systemState{shoot: &testing.ShootNoDNS, instance: testing.RuntimeOnlyName})
 		Expect(err).To(BeNil())
 		Expect(next).To(haveName("sFnUpdateStatus"))
 		Expect(expectedData).To(Equal(b.Bytes()))
