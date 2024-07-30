@@ -56,10 +56,10 @@ var directoriesCmd = &cobra.Command{
 			return
 		}
 
-		logComparisonResults(result)
 		if outputDir != "" {
 			writeReport(outputDir, result, fromDate)
 		}
+		logComparisonResults(result)
 	},
 }
 
@@ -88,8 +88,8 @@ func parseFromDate(fromDateString string) (time.Time, error) {
 
 func logComparisonResults(comparisonResult directories.Result) {
 	if comparisonResult.Equal {
-		slog.Info("Directories are equal")
+		slog.Info("No differences found.")
 	} else {
-		slog.Warn("Directories are NOT equal")
+		slog.Warn("Differences found.")
 	}
 }

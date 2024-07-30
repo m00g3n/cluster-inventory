@@ -136,8 +136,10 @@ func saveTestShootFile(t *testing.T, shoot v1beta1.Shoot, dir, filename string) 
 	require.NoError(t, err, "Failed to create test file")
 
 	defer func() {
-		err := file.Close()
-		t.Logf("Failed to close file: %v", err)
+		if file != nil {
+			err := file.Close()
+			t.Logf("Failed to close file: %v", err)
+		}
 	}()
 
 	err = yaml.NewEncoder(file).Encode(shoot)

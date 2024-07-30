@@ -54,9 +54,9 @@ func writeSummary(report *Report, comparisonResult Result, fromDate time.Time) {
 	report.AddLine("")
 
 	if comparisonResult.Equal {
-		report.AddLine("Directories are equal.")
+		report.AddLine("No differences found.")
 	} else {
-		report.AddLine("Directories are NOT equal.")
+		report.AddLine("Differences found.")
 	}
 }
 
@@ -114,11 +114,11 @@ func writeDifferencesToReport(report *Report, differences []Difference) error {
 	}
 
 	report.AddLine("")
-	report.AddLine("Files that differ: ")
 	report.AddLine("------------------------------------------------------------------------------------------")
+	report.AddLine("Files that differ: ")
 
 	for _, difference := range differences {
-		msg := fmt.Sprintf("Files: %q and %q differ.", difference.LeftFile, difference.RightFile)
+		msg := fmt.Sprintf("-%s", difference.Filename)
 
 		report.AddLine(msg)
 	}
@@ -135,8 +135,12 @@ func writeResultsToDiffFiles(differences []Difference, resultsDir string) error 
 			return err
 		}
 		defer func() {
-			err := file.Close()
-			slog.Error(fmt.Sprintf("Failed to close file: %v", err))
+			if file != nil {
+				err := file.Close()
+				if err != nil {
+					slog.Error(fmt.Sprintf("Failed to close file: %v", err))
+				}
+			}
 		}()
 
 		_, err = file.Write([]byte(text))
