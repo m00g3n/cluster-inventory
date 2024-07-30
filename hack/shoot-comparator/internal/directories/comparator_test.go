@@ -26,6 +26,7 @@ func TestCompareDirectories(t *testing.T) {
 		expectedLeftOnly           []string
 		expectedRightOnly          []string
 		expectedDifferentFileNames []string
+		expectedEqual              bool
 	}{
 		{
 			description:                "should return comparison results for two directories",
@@ -33,6 +34,7 @@ func TestCompareDirectories(t *testing.T) {
 			expectedLeftOnly:           []string{onlyLeftFilename},
 			expectedRightOnly:          []string{onlyRightFileName},
 			expectedDifferentFileNames: []string{differentFileName},
+			expectedEqual:              false,
 		},
 		{
 			description:                "should return empty comparison results when files were created before specific date",
@@ -40,6 +42,7 @@ func TestCompareDirectories(t *testing.T) {
 			expectedLeftOnly:           nil,
 			expectedRightOnly:          nil,
 			expectedDifferentFileNames: nil,
+			expectedEqual:              true,
 		},
 	} {
 		t.Run(testCase.description, func(t *testing.T) {
@@ -53,6 +56,7 @@ func TestCompareDirectories(t *testing.T) {
 			// then
 			assert.Equal(t, leftDir, result.LeftDir, "Expected LeftDir to be %s, but got %s", leftDir, result.LeftDir)
 			assert.Equal(t, rightDir, result.RightDir, "Expected RightDir to be %s, but got %s", rightDir, result.RightDir)
+			assert.Equal(t, testCase.expectedEqual, result.Equal, "Expected Equal to be true, but got false")
 			assert.Equal(t, testCase.expectedLeftOnly, result.LeftOnly, "Expected LeftOnly to contain %s, but got %v", testCase.expectedLeftOnly, result.LeftOnly)
 			assert.Equal(t, testCase.expectedRightOnly, result.RightOnly, "Expected RightOnly to contain %s, but got %v", testCase.expectedRightOnly, result.RightOnly)
 			assert.Equal(t, len(testCase.expectedDifferentFileNames), len(result.Diff), "Expected Diff to contain %d elements, but got %d", len(testCase.expectedDifferentFileNames), len(result.Diff))

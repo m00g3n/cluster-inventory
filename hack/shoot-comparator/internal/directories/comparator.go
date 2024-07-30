@@ -41,17 +41,20 @@ func CompareDirectories(leftDir, rightDir string, olderThan time.Time) (Result, 
 	fileNamesToCompare := getIntersection(leftFileNames, rightFileNames)
 	differences, err := compare(fileNamesToCompare, leftDir, rightDir)
 
-	onlyLeftFiles := filterOut(leftFileNames, fileNamesToCompare)
-	onlyRightFiles := filterOut(rightFileNames, fileNamesToCompare)
+	filesExistInLeftDirOnly := filterOut(leftFileNames, fileNamesToCompare)
+	filesExistInRightDirOnly := filterOut(rightFileNames, fileNamesToCompare)
+
+	equal := len(differences) == 0 && len(filesExistInLeftDirOnly) == 0 && len(filesExistInRightDirOnly) == 0
 
 	return Result{
 		LeftDir:            leftDir,
 		RightDir:           rightDir,
+		Equal:              equal,
 		Diff:               differences,
-		RightOnly:          onlyRightFiles,
-		LeftOnly:           onlyLeftFiles,
-		LeftDirFilesCount:  len(onlyRightFiles) + len(fileNamesToCompare),
-		RightDirFilesCount: len(onlyLeftFiles) + len(fileNamesToCompare),
+		RightOnly:          filesExistInRightDirOnly,
+		LeftOnly:           filesExistInLeftDirOnly,
+		LeftDirFilesCount:  len(leftFileNames),
+		RightDirFilesCount: len(rightFileNames),
 	}, nil
 }
 
