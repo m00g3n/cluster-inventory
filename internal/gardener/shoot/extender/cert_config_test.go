@@ -11,7 +11,7 @@ import (
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 )
 
-func TestLCertConfigExtender(t *testing.T) {
+func TestCertConfigExtender(t *testing.T) {
 	t.Run("Extend with cert-config", func(t *testing.T) {
 		// given
 		shoot := fixEmptyGardenerShoot("shoot", "kcp-system")
