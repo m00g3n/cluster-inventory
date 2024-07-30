@@ -217,7 +217,6 @@ func (k *Runtime) UpdateStateDeletion(c RuntimeConditionType, r RuntimeCondition
 		k.Status.State = RuntimeStateFailed
 	}
 
-	k.Status.State = RuntimeStateTerminating
 	condition := metav1.Condition{
 		Type:               string(c),
 		Status:             metav1.ConditionStatus(status),

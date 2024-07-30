@@ -55,7 +55,7 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 	// instance is being deleted and shoot is not being deleted
 	if !instanceIsNotBeingDeleted && instanceHasFinalizer && s.shoot.DeletionTimestamp.IsZero() {
 		m.log.Info("Delete instance resources")
-		return switchState(sFnDeleteShoot)
+		return switchState(sFnDeleteKubeconfig)
 	}
 
 	// resource cleanup in progress;

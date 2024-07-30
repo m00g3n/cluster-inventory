@@ -124,7 +124,7 @@ var _ = Describe("KIM sFnInitialise", func() {
 			&systemState{instance: testRtWithDeletionTimestampAndFinalizer, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
-				MatchNextFnState: haveName("sFnDeleteShoot"),
+				MatchNextFnState: haveName("sFnDeleteKubeconfig"),
 			},
 		),
 		Entry(
