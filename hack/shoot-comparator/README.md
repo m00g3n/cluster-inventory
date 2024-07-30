@@ -76,11 +76,9 @@ Files that differ:
 ------------------------------------------------------------------------------------------
 ```
 
-The output directory will contain the following files:
-- 'result.txt' - a summary of the comparison
-- '<file>.yaml.diff' - a detailed comparison of the files ; '<file>' is the name of the shoot file that was different
+The output directory will also contain the `shoot1.yaml.diff` file with detailed file comparison results. 
 
-The following isan example of the result.txt file when some files exist only in one of the directories:
+The following is an example of the result.txt file when some files exist only in one of the directories:
 ```
 Comparing files older than:0001-01-01 00:00:00 +0000 UTC
 
