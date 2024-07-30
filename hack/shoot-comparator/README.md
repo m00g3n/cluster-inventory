@@ -43,7 +43,7 @@ The following is an example of the output when no differences are found:
 2024/07/30 09:00:18 INFO Results stored in "/tmp/kim-test/shoot-comparator/test1/results/2024-07-30T09:00:18+02:00"
 2024/07/30 09:00:18 INFO No differences found.
 ```
-The output directory will contain the 'result.txt' file with the following content:
+The output directory will contain the `result.txt` file with the following content:
 ```
 Comparing files older than:0001-01-01 00:00:00 +0000 UTC
 
