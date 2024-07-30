@@ -72,6 +72,7 @@ func NewConverter(config ConverterConfig) Converter {
 		extender.ExtendWithOIDC,
 		extender.ExtendWithCloudProfile,
 		extender.ExtendWithNetworkFilter,
+		extender.ExtendWithCertConfig,
 		extender.ExtendWithExposureClassName,
 	}
 
