@@ -2,13 +2,13 @@ package extender
 
 import (
 	"encoding/json"
+
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 )
 
 func ExtendWithCertConfig(runtime imv1.Runtime, shoot *gardener.Shoot) error {
-
 	certConfig := NewCertConfig()
 	jsonCertConfig, encodingErr := json.Marshal(certConfig)
 	if encodingErr != nil {
