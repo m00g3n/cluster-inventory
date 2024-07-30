@@ -9,6 +9,7 @@ import (
 
 func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	m.log.Info("Create shoot state")
+
 	newShoot, err := convertShoot(&s.instance, m.ConverterConfig)
 	if err != nil {
 		m.log.Error(err, "Failed to convert Runtime instance to shoot object")
@@ -38,10 +39,10 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 	)
 
 	// it will be executed only once because created shoot is executed only once
-	shouldPersistShoot := m.PVCPath != ""
-	if shouldPersistShoot {
+	shouldDumpShootSpec := m.PVCPath != ""
+	if shouldDumpShootSpec {
 		s.shoot = newShoot.DeepCopy()
-		return switchState(sFnPersistShoot)
+		return switchState(sFnDumpShootSpec)
 	}
 
 	return updateStatusAndRequeueAfter(gardenerRequeueDuration)

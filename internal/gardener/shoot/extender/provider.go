@@ -28,6 +28,7 @@ func NewProviderExtender(enableIMDSv2 bool, defaultMachineImageVersion string) f
 
 		setDefaultMachineImageVersion(provider, defaultMachineImageVersion)
 		err = setWorkerConfig(provider, provider.Type, enableIMDSv2)
+		setWorkerSettings(provider)
 
 		return err
 	}
@@ -111,6 +112,14 @@ func setWorkerConfig(provider *gardener.Provider, providerType string, enableIMD
 	}
 
 	return nil
+}
+
+func setWorkerSettings(provider *gardener.Provider) {
+	provider.WorkersSettings = &gardener.WorkersSettings{
+		SSHAccess: &gardener.SSHAccess{
+			Enabled: false,
+		},
+	}
 }
 
 func setDefaultMachineImageVersion(provider *gardener.Provider, defaultMachineImageVersion string) {

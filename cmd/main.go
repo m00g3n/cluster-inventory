@@ -59,7 +59,7 @@ func init() {
 
 const defaultMinimalRotationTimeRatio = 0.6
 const defaultExpirationTime = 24 * time.Hour
-const defaultRuntimeReconcilerEnabled = false
+const defaultRuntimeReconcilerEnabled = true
 const defaultGardenerRequestTimeout = 60 * time.Second
 
 func main() {
@@ -72,8 +72,8 @@ func main() {
 	var expirationTime time.Duration
 	var gardenerRequestTimeout time.Duration
 	var enableRuntimeReconciler bool
-	var persistShoot bool
 	var converterConfigFilepath string
+	var shootSpecDumpEnabled bool
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -86,8 +86,8 @@ func main() {
 	flag.DurationVar(&expirationTime, "kubeconfig-expiration-time", defaultExpirationTime, "Dynamic kubeconfig expiration time")
 	flag.DurationVar(&gardenerRequestTimeout, "gardener-request-timeout", defaultGardenerRequestTimeout, "Timeout duration for requests to Gardener")
 	flag.BoolVar(&enableRuntimeReconciler, "runtime-reconciler-enabled", defaultRuntimeReconcilerEnabled, "Feature flag for all runtime reconciler functionalities")
-	flag.BoolVar(&persistShoot, "persist-shoot", false, "Feature flag to allow persisting created shoots")
-	flag.StringVar(&converterConfigFilepath, "converter-config-filepath", "hack/converter_config.json", "A file path to the gardener shoot converter configuration.")
+	flag.StringVar(&converterConfigFilepath, "converter-config-filepath", "converter_config.json", "A file path to the gardener shoot converter configuration.")
+	flag.BoolVar(&shootSpecDumpEnabled, "shoot-spec-dump-enabled", false, "Feature flag to allow persisting specs of created shoots")
 
 	opts := zap.Options{
 		Development: true,
@@ -174,8 +174,7 @@ func main() {
 		ShootNamesapace: gardenerNamespace,
 		ConverterConfig: converterConfig,
 	}
-
-	if persistShoot {
+	if shootSpecDumpEnabled {
 		cfg.PVCPath = "/testdata/kim"
 	}
 
