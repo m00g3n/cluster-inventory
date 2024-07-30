@@ -61,7 +61,7 @@ The following is an example of the output when differences are found:
 2024/07/30 08:56:01 WARN Differences found.
 ```
 
-The output directory will contain the 'result.txt' file with the following content:
+The output directory will contain the `result.txt` file with the following content:
 ```
 Comparing files older than:0001-01-01 00:00:00 +0000 UTC
 
