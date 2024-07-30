@@ -8,7 +8,7 @@ import (
 	apimachineryRuntime "k8s.io/apimachinery/pkg/runtime"
 )
 
-func ExtendWithCertConfig(runtime imv1.Runtime, shoot *gardener.Shoot) error {
+func ExtendWithCertConfig(_ imv1.Runtime, shoot *gardener.Shoot) error {
 	certConfig := NewCertConfig()
 	jsonCertConfig, encodingErr := json.Marshal(certConfig)
 	if encodingErr != nil {
@@ -26,8 +26,8 @@ func ExtendWithCertConfig(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 }
 
 type ExtensionProviderConfig struct {
-	// ApiVersion is gardener extension api version
-	ApiVersion string `json:"apiVersion"`
+	// APIVersion is gardener extension api version
+	APIVersion string `json:"apiVersion"`
 	// DnsProviderReplication indicates whether dnsProvider replication is on
 	DNSProviderReplication *DNSProviderReplication `json:"dnsProviderReplication,omitempty"`
 	// ShootIssuers indicates whether shoot Issuers are on
@@ -43,7 +43,7 @@ type ShootIssuers struct {
 
 func NewCertConfig() *ExtensionProviderConfig {
 	return &ExtensionProviderConfig{
-		ApiVersion:   "service.cert.extensions.gardener.cloud/v1alpha1",
+		APIVersion:   "service.cert.extensions.gardener.cloud/v1alpha1",
 		ShootIssuers: &ShootIssuers{Enabled: true},
 		Kind:         "CertConfig",
 	}
