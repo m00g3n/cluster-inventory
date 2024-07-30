@@ -178,6 +178,7 @@ func fixAWSProviderWithMultipleWorkers() imv1.Provider {
 func assertProvider(t *testing.T, runtimeShoot imv1.RuntimeShoot, shoot gardener.Shoot, expectWorkerConfig bool, expectedMachineImageVersion string) {
 	assert.Equal(t, runtimeShoot.Provider.Type, shoot.Spec.Provider.Type)
 	assert.Equal(t, runtimeShoot.Provider.Workers, shoot.Spec.Provider.Workers)
+	assert.Equal(t, false, shoot.Spec.Provider.WorkersSettings.SSHAccess.Enabled)
 	assert.NotEmpty(t, shoot.Spec.Provider.InfrastructureConfig)
 	assert.NotEmpty(t, shoot.Spec.Provider.InfrastructureConfig.Raw)
 	assert.NotEmpty(t, shoot.Spec.Provider.ControlPlaneConfig)
