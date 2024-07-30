@@ -1,13 +1,13 @@
 package extender
 
 import (
-	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 
+	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestTolerationsExtender(t *testing.T) {
