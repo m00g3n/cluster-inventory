@@ -73,6 +73,7 @@ func NewConverter(config ConverterConfig) Converter {
 		extender.ExtendWithCloudProfile,
 		extender.ExtendWithNetworkFilter,
 		extender.ExtendWithExposureClassName,
+		extender.ExtendWithTolerations,
 	}
 
 	return Converter{
