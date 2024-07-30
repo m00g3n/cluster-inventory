@@ -89,15 +89,15 @@ Number of files in /Users/i326211/dev/temp/kim-test/shoot-comparator/test3/provi
 
 Differences found.
 
-Files existing in /Users/i326211/dev/temp/kim-test/shoot-comparator/test3/kim folder only:
 ------------------------------------------------------------------------------------------
-garden-kyma-dev-kim-pvc-test3.yaml
-garden-kyma-dev-kims-aws-pvc-shootCR.yaml
+Files existing in /Users/i326211/dev/temp/kim-test/shoot-comparator/test3/kim folder only:
+- garden-kyma-dev-kim-pvc-test3.yaml
+- garden-kyma-dev-kims-aws-pvc-shootCR.yaml
 ------------------------------------------------------------------------------------------
 
-Files existing in /Users/i326211/dev/temp/kim-test/shoot-comparator/test3/provisioner folder only:
 ------------------------------------------------------------------------------------------
-garden-kyma-dev-a2f8da9.yaml
-garden-kyma-dev-a3008c5.yaml
+Files existing in /Users/i326211/dev/temp/kim-test/shoot-comparator/test3/provisioner folder only:
+- garden-kyma-dev-a2f8da9.yaml
+- garden-kyma-dev-a3008c5.yaml
 ------------------------------------------------------------------------------------------
 ```

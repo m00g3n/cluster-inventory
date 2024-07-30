@@ -96,8 +96,8 @@ func writeMissingFilesToReport(report *Report, dir string, missingFiles []string
 	}
 	report.AddLine("")
 
-	report.AddLine(fmt.Sprintf("Files existing in %s folder only:", dir))
 	report.AddLine("------------------------------------------------------------------------------------------")
+	report.AddLine(fmt.Sprintf("Files existing in %s folder only:", dir))
 
 	for _, missingFile := range missingFiles {
 		report.AddLine(missingFile)
