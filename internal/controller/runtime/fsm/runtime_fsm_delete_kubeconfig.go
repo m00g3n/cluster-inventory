@@ -12,17 +12,11 @@ import (
 func sFnDeleteKubeconfig(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	m.log.Info("delete Kubeconfig/GardenerCluster CR state")
 
-	if !s.instance.IsStateWithConditionSet(imv1.RuntimeStateTerminating, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonDeletion) {
-		m.log.Info("setting state to in deletion")
-		s.instance.UpdateStateDeletion(
-			imv1.ConditionTypeRuntimeProvisioned,
-			imv1.ConditionReasonDeletion,
-			"Unknown",
-			"Runtime deletion initialised",
-		)
-		return updateStatusAndRequeue()
+	if s.instance.IsStateWithConditionSet(imv1.RuntimeStateTerminating, imv1.ConditionTypeRuntimeDeprovisioned, imv1.ConditionReasonGardenerShootDeleted) {
+		return switchState(sFnDeleteShoot) // switch to next state immediately
 	}
 
+	// get section
 	runtimeID := s.instance.Labels[imv1.LabelKymaRuntimeID]
 
 	var cluster imv1.GardenerCluster
@@ -31,39 +25,41 @@ func sFnDeleteKubeconfig(ctx context.Context, m *fsm, s *systemState) (stateFn, 
 		Name:      runtimeID,
 	}, &cluster)
 
-	if err == nil {
-		m.log.Info("deleting GardenerCluster CR for %s", s.shoot.Name)
-		err := m.Delete(ctx, &cluster)
-		if err != nil {
-			m.log.Error(err, "Failed to delete gardener Cluster CR")
+	if err != nil {
+		if !k8serrors.IsNotFound(err) {
+			m.log.Error(err, "GardenerCluster CR read error", "name", runtimeID)
+			s.instance.UpdateStateDeletion(imv1.RuntimeStateTerminating, imv1.ConditionReasonKubernetesAPIErr, "False", err.Error())
+			return updateStatusAndStop()
 		}
 
-		return requeueAfter(controlPlaneRequeueDuration) // requeue to wait until GardenerCluster CR is deleted
+		// out section
+		return ensureTerminatingStatusConditionAndContinue(&s.instance,
+			imv1.ConditionTypeRuntimeDeprovisioned,
+			imv1.ConditionReasonGardenerCRDeleted,
+			"Gardener Cluster CR successfully deleted",
+			sFnDeleteShoot)
 	}
 
-	if !k8serrors.IsNotFound(err) {
-		m.log.Error(err, "GardenerCluster CR read error", "name", runtimeID)
-		s.instance.UpdateStateDeletion(imv1.RuntimeStateTerminating, imv1.ConditionReasonKubernetesAPIErr, "False", err.Error())
-		return updateStatusAndStop()
+	// wait section
+	if !cluster.DeletionTimestamp.IsZero() {
+		m.log.Info("Waiting for GardenerCluster CR to be deleted", "Runtime", runtimeID, "Shoot", s.shoot.Name)
+		return requeueAfter(controlPlaneRequeueDuration)
 	}
 
-	if !s.shoot.GetDeletionTimestamp().IsZero() {
-		m.log.Info("Waiting for shoot to be deleted", "Name", s.shoot.Name, "Namespace", s.shoot.Namespace)
-		return requeueAfter(gardenerRequeueDuration)
-	}
-
-	m.log.Info("deleting shoot", "Name", s.shoot.Name, "Namespace", s.shoot.Namespace)
-	err = m.ShootClient.Delete(ctx, s.shoot)
+	// action section
+	m.log.Info("deleting GardenerCluster CR", "Runtime", runtimeID, "Shoot", s.shoot.Name)
+	err = m.Delete(ctx, &cluster)
 	if err != nil {
-		m.log.Error(err, "Failed to delete gardener Shoot")
-
+		// action error handler section
+		m.log.Error(err, "Failed to delete gardener Cluster CR")
 		s.instance.UpdateStateDeletion(
-			imv1.ConditionTypeRuntimeProvisioned,
+			imv1.ConditionTypeRuntimeDeprovisioned,
 			imv1.ConditionReasonGardenerError,
 			"False",
 			"Gardener API shoot delete error",
 		)
 		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 	}
-	return requeueAfter(gardenerRequeueDuration)
+	// out succeeded section
+	return requeueAfter(controlPlaneRequeueDuration)
 }
