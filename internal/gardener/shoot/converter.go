@@ -74,6 +74,7 @@ func NewConverter(config ConverterConfig) Converter {
 		extender.ExtendWithNetworkFilter,
 		extender.ExtendWithCertConfig,
 		extender.ExtendWithExposureClassName,
+		extender.ExtendWithTolerations,
 	}
 
 	return Converter{
