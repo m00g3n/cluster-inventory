@@ -33,9 +33,9 @@ type DNSConfig struct {
 }
 
 type KubernetesConfig struct {
-	DefaultVersion      string `json:"defaultVersion" validate:"required"`
-	KubernetesVersion   bool   `json:"kubernetesVersion"`
-	MachineImageVersion bool   `json:"machineImageVersion"`
+	DefaultVersion                      string `json:"defaultVersion" validate:"required"`
+	EnableKubernetesVersionAutoUpdate   bool   `json:"enableKubernetesVersionAutoUpdate"`
+	EnableMachineImageVersionAutoUpdate bool   `json:"enableMachineImageVersionVersionAutoUpdate"`
 }
 
 type ReaderGetter = func() (io.Reader, error)
@@ -77,7 +77,7 @@ func NewConverter(config ConverterConfig) Converter {
 		extender.ExtendWithCertConfig,
 		extender.ExtendWithExposureClassName,
 		extender.ExtendWithTolerations,
-		extender.NewMaintenanceExtender(config.Kubernetes.KubernetesVersion, config.Kubernetes.MachineImageVersion),
+		extender.NewMaintenanceExtender(config.Kubernetes.EnableKubernetesVersionAutoUpdate, config.Kubernetes.EnableMachineImageVersionAutoUpdate),
 	}
 
 	return Converter{

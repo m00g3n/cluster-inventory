@@ -40,9 +40,9 @@ func TestConverter(t *testing.T) {
 func fixConverterConfig() ConverterConfig {
 	return ConverterConfig{
 		Kubernetes: KubernetesConfig{
-			DefaultVersion:      "1.29",
-			KubernetesVersion:   true,
-			MachineImageVersion: false,
+			DefaultVersion:                      "1.29",
+			EnableKubernetesVersionAutoUpdate:   true,
+			EnableMachineImageVersionAutoUpdate: false,
 		},
 		DNS: DNSConfig{
 			SecretName:   "dns-secret",
@@ -137,8 +137,8 @@ func Test_ConverterConfig_Load_Err(t *testing.T) {
 var testReader io.Reader = strings.NewReader(`{
   "kubernetes": {
     "defaultVersion": "0.1.2.3",
-    "kubernetesVersion": true,
-    "machineImageVersion": false
+    "enableKubernetesVersionAutoUpdate": true,
+    "enableMachineImageVersionAutoUpdate": false
   },
   "dns": {
     "secretName": "test-secret-name",
@@ -169,9 +169,9 @@ func Test_ConverterConfig_Load_OK(t *testing.T) {
 
 	expected := ConverterConfig{
 		Kubernetes: KubernetesConfig{
-			DefaultVersion:      "0.1.2.3",
-			KubernetesVersion:   true,
-			MachineImageVersion: false,
+			DefaultVersion:                      "0.1.2.3",
+			EnableKubernetesVersionAutoUpdate:   true,
+			EnableMachineImageVersionAutoUpdate: false,
 		},
 		DNS: DNSConfig{
 			SecretName:   "test-secret-name",

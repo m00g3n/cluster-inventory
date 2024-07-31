@@ -6,12 +6,12 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-func NewMaintenanceExtender(kubernetesVersion, machineImageVersion bool) func(runtime imv1.Runtime, shoot *gardener.Shoot) error { //nolint:revive
+func NewMaintenanceExtender(enableKubernetesVersionAutoUpdate, enableMachineImageVersionAutoUpdate bool) func(runtime imv1.Runtime, shoot *gardener.Shoot) error { //nolint:revive
 	return func(runtime imv1.Runtime, shoot *gardener.Shoot) error { //nolint:revive
 		shoot.Spec.Maintenance = &gardener.Maintenance{
 			AutoUpdate: &gardener.MaintenanceAutoUpdate{
-				KubernetesVersion:   kubernetesVersion,
-				MachineImageVersion: ptr.To(machineImageVersion),
+				KubernetesVersion:   enableKubernetesVersionAutoUpdate,
+				MachineImageVersion: ptr.To(enableMachineImageVersionAutoUpdate),
 			},
 		}
 

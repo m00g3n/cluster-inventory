@@ -7,8 +7,8 @@ data:
     {
       "kubernetes": {
         "defaultVersion": "1.29",
-        "kubernetesVersion": true,
-        "machineImageVersion": false
+        "enableKubernetesVersionAutoUpdate": true,
+        "enableMachineImageVersionAutoUpdate": false
       },
       "dns": {
         "secretName": "aws-route53-secret-dev",

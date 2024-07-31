@@ -10,19 +10,19 @@ import (
 
 func TestMaintenanceExtender(t *testing.T) {
 	for _, testCase := range []struct {
-		name                string
-		kubernetesVersion   bool
-		machineImageVersion bool
+		name                                string
+		enableKubernetesVersionAutoUpdate   bool
+		enableMachineImageVersionAutoUpdate bool
 	}{
 		{
-			name:                "Enable auto-update for only kubernetesVersion",
-			kubernetesVersion:   true,
-			machineImageVersion: false,
+			name:                                "Enable auto-update for only KubernetesVersion",
+			enableKubernetesVersionAutoUpdate:   true,
+			enableMachineImageVersionAutoUpdate: false,
 		},
 		{
-			name:                "Enable auto-update for only machineImageVersion",
-			kubernetesVersion:   false,
-			machineImageVersion: true,
+			name:                                "Enable auto-update for only MachineImageVersion",
+			enableKubernetesVersionAutoUpdate:   false,
+			enableMachineImageVersionAutoUpdate: true,
 		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -40,13 +40,13 @@ func TestMaintenanceExtender(t *testing.T) {
 			}
 
 			// when
-			extender := NewMaintenanceExtender(testCase.kubernetesVersion, testCase.machineImageVersion)
+			extender := NewMaintenanceExtender(testCase.enableKubernetesVersionAutoUpdate, testCase.enableMachineImageVersionAutoUpdate)
 			err := extender(runtimeShoot, &shoot)
 
 			// then
 			assert.NoError(t, err)
-			assert.Equal(t, testCase.kubernetesVersion, shoot.Spec.Maintenance.AutoUpdate.KubernetesVersion)
-			assert.Equal(t, testCase.machineImageVersion, *shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion)
+			assert.Equal(t, testCase.enableKubernetesVersionAutoUpdate, shoot.Spec.Maintenance.AutoUpdate.KubernetesVersion)
+			assert.Equal(t, testCase.enableMachineImageVersionAutoUpdate, *shoot.Spec.Maintenance.AutoUpdate.MachineImageVersion)
 		})
 	}
 }
