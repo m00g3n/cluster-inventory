@@ -2,6 +2,7 @@ package testing
 
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -10,6 +11,16 @@ var (
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-instance",
 			Namespace: "default",
+		},
+	}
+
+	RuntimeOnlyName = v1.Runtime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-instance",
+			Namespace: "default",
+		},
+		Spec: v1.RuntimeSpec{
+			Shoot: v1.RuntimeShoot{Name: "test-shoot"},
 		},
 	}
 
