@@ -7,6 +7,7 @@ import (
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -24,7 +25,7 @@ func sFnPatchExistingShoot(ctx context.Context, m *fsm, s *systemState) (stateFn
 
 	err = m.ShootClient.Patch(ctx, &updatedShoot, client.Apply, &client.PatchOptions{
 		FieldManager: "kim",
-		Force:        ptrTo(true),
+		Force:        ptr.To(true),
 	})
 
 	if err != nil {
@@ -83,8 +84,4 @@ func updateStatePendingWithErrorAndStop(instance *imv1.Runtime,
 	c imv1.RuntimeConditionType, r imv1.RuntimeConditionReason, msg string) (stateFn, *ctrl.Result, error) {
 	instance.UpdateStatePending(c, r, "False", msg)
 	return updateStatusAndStop()
-}
-
-func ptrTo[T any](v T) *T {
-	return &v
 }
