@@ -7,7 +7,7 @@ import (
 )
 
 func NewMaintenanceExtender(kubernetesVersion, machineImageVersion bool) func(runtime imv1.Runtime, shoot *gardener.Shoot) error { //nolint:revive
-	return func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
+	return func(runtime imv1.Runtime, shoot *gardener.Shoot) error { //nolint:revive
 		shoot.Spec.Maintenance = &gardener.Maintenance{
 			AutoUpdate: &gardener.MaintenanceAutoUpdate{
 				KubernetesVersion:   kubernetesVersion,

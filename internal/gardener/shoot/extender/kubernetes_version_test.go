@@ -1,12 +1,12 @@
 package extender
 
 import (
-	"k8s.io/utils/ptr"
 	"testing"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/utils/ptr"
 )
 
 func TestKubernetesVersionExtender(t *testing.T) {

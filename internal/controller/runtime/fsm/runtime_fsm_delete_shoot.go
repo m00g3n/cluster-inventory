@@ -2,9 +2,9 @@ package fsm
 
 import (
 	"context"
-	"k8s.io/utils/ptr"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
