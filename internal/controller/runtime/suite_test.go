@@ -18,6 +18,7 @@ package runtime
 
 import (
 	"context"
+	"k8s.io/utils/ptr"
 	"path/filepath"
 	"testing"
 
@@ -179,7 +180,7 @@ func fixShootsSequenceForProvisioning(shoot *gardener_api.Shoot) []*gardener_api
 	dnsShoot := initialisedShoot.DeepCopy()
 
 	dnsShoot.Spec.DNS = &gardener_api.DNS{
-		Domain: ptrTo("test.domain"),
+		Domain: ptr.To("test.domain"),
 	}
 
 	pendingShoot := dnsShoot.DeepCopy()
@@ -208,7 +209,7 @@ func fixShootsSequenceForUpdate(shoot *gardener_api.Shoot) []*gardener_api.Shoot
 	pendingShoot := shoot.DeepCopy()
 
 	pendingShoot.Spec.DNS = &gardener_api.DNS{
-		Domain: ptrTo("test.domain"),
+		Domain: ptr.To("test.domain"),
 	}
 
 	pendingShoot.Status = gardener_api.ShootStatus{
@@ -251,8 +252,4 @@ func fixConverterConfigForTests() gardener_shoot.ConverterConfig {
 			ProjectName: "kyma-dev", //nolint:godox TODO: should be parametrised
 		},
 	}
-}
-
-func ptrTo[T any](v T) *T {
-	return &v
 }
