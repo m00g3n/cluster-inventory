@@ -93,6 +93,10 @@ kubectl get po fetch-test-comparison-results -n kcp-system
 kubectl describe po fetch-test-comparison-results -n kcp-system
 ```
 
+## Comparing files starting from a specific date
+
+If you want to compare filed older than a specific date, you can specify the date in the `./manifests/job.yaml` script. 
+
 ## Analysing comparison results
 
 If any differences were detected you can analyse the results by examining the content of the `result.txt` file stored in the output directory. The file will contain the details of the comparison, such as the names of the files that differ.
