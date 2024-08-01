@@ -3,6 +3,7 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"k8s.io/utils/ptr"
 	"time"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -57,7 +58,7 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 		},
 		Spec: gardener.ShootSpec{
 			DNS: &gardener.DNS{
-				Domain: ptrTo("test-domain"),
+				Domain: ptr.To("test-domain"),
 			},
 		},
 	}
