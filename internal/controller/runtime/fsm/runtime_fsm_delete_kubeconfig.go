@@ -12,13 +12,8 @@ import (
 func sFnDeleteKubeconfig(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	m.log.Info("delete Kubeconfig/GardenerCluster CR state")
 
-	if s.instance.IsStateWithConditionSet(imv1.RuntimeStateTerminating, imv1.ConditionTypeRuntimeDeprovisioned, imv1.ConditionReasonGardenerShootDeleted) {
-		return switchState(sFnDeleteShoot) // switch to next state immediately
-	}
-
 	// get section
 	runtimeID := s.instance.Labels[imv1.LabelKymaRuntimeID]
-
 	var cluster imv1.GardenerCluster
 	err := m.Get(ctx, types.NamespacedName{
 		Namespace: s.instance.Namespace,
@@ -58,8 +53,15 @@ func sFnDeleteKubeconfig(ctx context.Context, m *fsm, s *systemState) (stateFn, 
 			"False",
 			"Gardener API shoot delete error",
 		)
-		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
+	} else {
+		s.instance.UpdateStateDeletion(
+			imv1.ConditionTypeRuntimeDeprovisioned,
+			imv1.ConditionReasonGardenerCRDeleted,
+			"Unknown",
+			"Runtime shoot deletion started",
+		)
 	}
+
 	// out succeeded section
-	return requeueAfter(controlPlaneRequeueDuration)
+	return updateStatusAndRequeueAfter(controlPlaneRequeueDuration)
 }

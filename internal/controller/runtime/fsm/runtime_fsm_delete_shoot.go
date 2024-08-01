@@ -11,18 +11,6 @@ import (
 func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	m.log.Info("delete shoot state")
 
-	// init section
-	//if !s.instance.IsStateWithConditionSet(imv1.RuntimeStateTerminating, imv1.ConditionTypeRuntimeDeprovisioned, imv1.ConditionReasonGardenerShootDeleted) {
-	//	m.log.Info("setting state to in deletion")
-	//	s.instance.UpdateStateDeletion(
-	//		imv1.ConditionTypeRuntimeDeprovisioned,
-	//		imv1.ConditionReasonGardenerShootDeleted,
-	//		"Unknown",
-	//		"Runtime shoot deletion started",
-	//	)
-	//	return updateStatusAndRequeue()
-	//}
-
 	// wait section
 	if !s.shoot.GetDeletionTimestamp().IsZero() {
 		m.log.Info("Waiting for shoot to be deleted", "Name", s.shoot.Name, "Namespace", s.shoot.Namespace)
@@ -58,10 +46,17 @@ func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 			"False",
 			"Gardener API shoot delete error",
 		)
-		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
+	} else {
+		s.instance.UpdateStateDeletion(
+			imv1.ConditionTypeRuntimeDeprovisioned,
+			imv1.ConditionReasonGardenerShootDeleted,
+			"Unknown",
+			"Runtime shoot deletion started",
+		)
 	}
-	// out succeeded section
-	return requeueAfter(gardenerRequeueDuration)
+
+	// out section
+	return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 }
 
 func isGardenerCloudDelConfirmationSet(a map[string]string) bool {
