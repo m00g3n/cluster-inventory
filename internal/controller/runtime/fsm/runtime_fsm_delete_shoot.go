@@ -4,6 +4,7 @@ import (
 	"context"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -18,7 +19,7 @@ func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 
 		err := m.ShootClient.Patch(ctx, s.shoot, client.Apply, &client.PatchOptions{
 			FieldManager: "kim",
-			Force:        ptrTo(true),
+			Force:        ptr.To(true),
 		})
 
 		if err != nil {
