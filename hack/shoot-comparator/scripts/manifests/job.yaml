@@ -44,7 +44,7 @@ spec:
         - /testdata/kim
         - --outputDir
         - /results
-        image: europe-docker.pkg.dev/kyma-project/dev/shoot-comparator:PR-310
+        image: europe-docker.pkg.dev/kyma-project/dev/shoot-comparator:PR-321
         name: compare-shoots
         resources: {}
         securityContext:
