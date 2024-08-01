@@ -1,3 +1,5 @@
+#!/bin/bash
+
 echo "Cleaning up the resources created for shoot comparison"
 printf "\n"
 

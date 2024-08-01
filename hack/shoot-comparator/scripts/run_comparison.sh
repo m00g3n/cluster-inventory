@@ -50,7 +50,7 @@ if (( $result == 0 ))
 then
   echo "fetch-test-comparison-results pod is ready"
 else
-  echo "fetch-test-comparison-results pod is not ready. Exiting..."
+  echo "fetch-test-comparison-results pod is not ready. Please check it manually. Exiting..."
   exit 3
 fi
 
