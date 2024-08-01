@@ -3,9 +3,9 @@ package fsm
 import (
 	"context"
 	"fmt"
-	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"time"
 
+	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
@@ -34,46 +34,33 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 	}
 
 	inputRtWithLables := makeInputRuntimeWithLabels()
-	testGardenerCR := makeGardenerClusterForUnitTest()
+	inputRtWithLabelsAndCondition := makeInputRuntimeWithLabels()
+
+	readyCondition := metav1.Condition{
+		Type:               string(imv1.ConditionTypeRuntimeKubeconfigReady),
+		Status:             metav1.ConditionTrue,
+		LastTransitionTime: now,
+		Reason:             string(imv1.ConditionReasonGardenerCRReady),
+		Message:            "Test message",
+	}
+
+	meta.SetStatusCondition(&inputRtWithLabelsAndCondition.Status.Conditions, readyCondition)
+
+	// input
+	testGardenerCRStatePending := makeGardenerClusterCRStatePending()
+	testGardenerCRStateReady := makeGardenerClusterCRStateReady()
 
 	testShoot := gardener.Shoot{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-instance",
 			Namespace: "default",
 		},
-	}
-
-	//testRtWithFinalizerNoProvisioningCondition := imv1.Runtime{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:       "test-instance",
-	//		Namespace:  "default",
-	//		Finalizers: []string{"test-me-plz"},
-	//	},
-	//}
-
-	testRtWithFinalizerAndProvisioningCondition := imv1.Runtime{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:       "test-instance",
-			Namespace:  "default",
-			Finalizers: []string{"test-me-plz"},
+		Spec: gardener.ShootSpec{
+			DNS: &gardener.DNS{
+				Domain: ptrTo("test-domain"),
+			},
 		},
 	}
-
-	provisioningCondition := metav1.Condition{
-		Type:               string(imv1.ConditionTypeRuntimeProvisioned),
-		Status:             metav1.ConditionUnknown,
-		LastTransitionTime: now,
-		Reason:             "Test reason",
-		Message:            "Test message",
-	}
-	meta.SetStatusCondition(&testRtWithFinalizerAndProvisioningCondition.Status.Conditions, provisioningCondition)
-
-	//testShoot := gardener.Shoot{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "test-instance",
-	//		Namespace: "default",
-	//	},
-	//}
 
 	testFunction := buildTestFunction(sFnCreateKubeconfig)
 
@@ -83,97 +70,58 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 		"transition graph validation",
 		testFunction,
 		Entry(
-			"should create GardenCluster CR and return sFnUpdateStatus when it does not existed before and set Runtime state to Pending with condition type ConditionTypeRuntimeKubeconfigReady and reason ConditionReasonGardenerCRCreated",
+			// and set Runtime state to Pending with condition type ConditionTypeRuntimeKubeconfigReady and reason ConditionReasonGardenerCRCreated
+			"should create GardenCluster CR when it does not existed before",
 			testCtx,
-			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(testGardenerCR)),
+			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects()),
 			&systemState{instance: *inputRtWithLables, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: haveName("sFnUpdateStatus"),
+				//StateMatch:       []types.GomegaMatcher{}, put here matcher for created GardenerCR object
 			},
 		),
-		/*Entry(
-			"should create GardenCluster CR and return sFnUpdateStatus when it does not existed before",
+		Entry(
+			"should remain in waiting state when GardenCluster CR exists and is not ready yet",
 			testCtx,
-			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(inputRtWithLables)),
+			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(testGardenerCRStatePending)),
 			&systemState{instance: *inputRtWithLables, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
-				MatchNextFnState: haveName("sFnUpdateStatus"),
+				MatchNextFnState: BeNil(), // corresponds to requeueAfter(controlPlaneRequeueDuration)
 			},
-		),*/
-		/*Entry(
-			"should return sFnUpdateStatus when CR is being deleted with finalizer and shoot is missing - Remove finalizer",
+		),
+		Entry(
+			"should return sFnProcessShoot when GardenCluster CR exists and is in ready state",
 			testCtx,
-			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(&testRtWithLables)),
-			&systemState{instance: testRtWithDeletionTimestampAndFinalizer},
+			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(testGardenerCRStateReady)),
+			&systemState{instance: *inputRtWithLabelsAndCondition, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: haveName("sFnProcessShoot"),
 			},
 		),
 		Entry(
-			"should return sFnDeleteShoot and no error when CR is being deleted with finalizer and shoot exists",
+			"should return sFnUpdateStatus when GardenCluster CR exists and is in ready state and condition is not set",
 			testCtx,
-			must(newFakeFSM, withTestFinalizer),
-			&systemState{instance: testRtWithDeletionTimestampAndFinalizer, shoot: &testShoot},
-			testOpts{
-				MatchExpectedErr: BeNil(),
-				MatchNextFnState: haveName("sFnDeleteShoot"),
-			},
-		),
-		Entry(
-			"should return sFnUpdateStatus and no error when CR has been created without finalizer - Add finalizer",
-			testCtx,
-			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(&testRt)),
-			&systemState{instance: testRt},
-			testOpts{
-				MatchExpectedErr: BeNil(),
-				MatchNextFnState: BeNil(),
-				StateMatch:       []types.GomegaMatcher{haveFinalizer("test-me-plz")},
-			},
-		),
-		Entry(
-			"should return sFnUpdateStatus and no error when there is no Provisioning Condition - Add condition",
-			testCtx,
-			must(newFakeFSM, withTestFinalizer),
-			&systemState{instance: testRtWithFinalizerNoProvisioningCondition},
+			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(testGardenerCRStateReady)),
+			&systemState{instance: *inputRtWithLables, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: haveName("sFnUpdateStatus"),
 			},
-		),*/
-		/*Entry(
-			"should return sFnProcessShoot and no error when exists ConditionReasonGardenerCRReady Condition and GardenerClusterCR exists",
-			testCtx,
-			must(newFakeFSM, withTestFinalizer),
-			&systemState{instance: testRtWithFinalizerAndProvisioningCondition},
-			testOpts{
-				MatchExpectedErr: BeNil(),
-				MatchNextFnState: haveName("sFnProcessShoot"),
-			},
-		),*/
-		/*Entry(
-			"should return sFnSelectShootProcessing and no error when exists Provisioning Condition and shoot exists",
-			testCtx,
-			must(newFakeFSM, withTestFinalizer),
-			&systemState{instance: testRtWithFinalizerAndProvisioningCondition, shoot: &testShoot},
-			testOpts{
-				MatchExpectedErr: BeNil(),
-				MatchNextFnState: haveName("sFnSelectShootProcessing"),
-			},
-		),*/
+		),
 	)
 })
 
-func makeGardenerClusterForUnitTest() *imv1.GardenerCluster {
-	gardenCluster := &imv1.GardenerCluster{
+func makeGardenerClusterCR() *imv1.GardenerCluster {
+	return &imv1.GardenerCluster{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "GardenerCluster",
 			APIVersion: imv1.GroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-instance",
+			Name:      "059dbc39-fd2b-4186-b0e5-8a1bc8ede5b8",
 			Namespace: "default",
 			Annotations: map[string]string{
 				"skr-domain": "test-domain",
@@ -210,6 +158,23 @@ func makeGardenerClusterForUnitTest() *imv1.GardenerCluster {
 			},
 		},
 	}
+}
+
+func makeGardenerClusterCRStatePending() *imv1.GardenerCluster {
+	gardenCluster := makeGardenerClusterCR()
+
+	gardenCluster.Status = imv1.GardenerClusterStatus{
+		State: imv1.State("Pending"),
+	}
+	return gardenCluster
+}
+
+func makeGardenerClusterCRStateReady() *imv1.GardenerCluster {
+	gardenCluster := makeGardenerClusterCR()
+
+	gardenCluster.Status = imv1.GardenerClusterStatus{
+		State: imv1.State("Ready"),
+	}
 	return gardenCluster
 }
 
@@ -228,6 +193,9 @@ func makeInputRuntimeWithLabels() *imv1.Runtime {
 				imv1.LabelKymaBrokerPlanName:  "aws",
 				imv1.LabelKymaName:            "caadafae-1234-1234-1234-123456789abc",
 			},
+		},
+		Status: imv1.RuntimeStatus{
+			State: imv1.RuntimeStatePending,
 		},
 	}
 }
