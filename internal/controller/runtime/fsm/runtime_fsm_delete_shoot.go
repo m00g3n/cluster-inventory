@@ -42,7 +42,7 @@ func sFnDeleteShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 		// action error handler section
 		m.log.Error(err, "Failed to delete gardener Shoot")
 		s.instance.UpdateStateDeletion(
-			imv1.ConditionTypeRuntimeProvisioned,
+			imv1.ConditionTypeRuntimeDeprovisioned,
 			imv1.ConditionReasonGardenerShootDeleted,
 			"False",
 			"Gardener API shoot delete error",
