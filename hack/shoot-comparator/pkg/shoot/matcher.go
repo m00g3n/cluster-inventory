@@ -64,6 +64,8 @@ func (m *Matcher) Match(actual interface{}) (success bool, err error) {
 		return false, err
 	}
 
+	// Note: we define separate matchers for each field to make input more readable
+	// Annotations are not matched as they are not relevant for the comparison ; both KIM, and Provisioner have different set of annotations
 	for _, matcher := range []matcher{
 		{
 			GomegaMatcher: gomega.Equal(eShoot.TypeMeta),
@@ -83,11 +85,6 @@ func (m *Matcher) Match(actual interface{}) (success bool, err error) {
 			GomegaMatcher: gomega.Equal(eShoot.Labels),
 			expected:      aShoot.Labels,
 			path:          "metadata/labels",
-		},
-		{
-			GomegaMatcher: gomega.Equal(eShoot.Annotations),
-			expected:      aShoot.Annotations,
-			path:          "metadata/annotations",
 		},
 		{
 			GomegaMatcher: gomega.Equal(eShoot.Spec.Addons),
