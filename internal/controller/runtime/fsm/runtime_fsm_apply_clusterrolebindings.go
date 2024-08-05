@@ -10,7 +10,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-
 	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,9 +22,9 @@ var (
 	}
 )
 
-func getShootClientWithAdmin(ctx context.Context,
-	adminKubeconfigClient client.SubResourceClient,
-	shoot *gardener_api.Shoot) (client.Client, error) {
+//nolint:gochecknoglobals
+var GetShootClient = func(ctx context.Context,
+	adminKubeconfigClient client.SubResourceClient, shoot *gardener_api.Shoot) (client.Client, error) {
 	// request for admin kubeconfig with low expiration timeout
 	var req authenticationv1alpha1.AdminKubeconfigRequest
 	if err := adminKubeconfigClient.Create(ctx, shoot, &req); err != nil {
@@ -155,7 +154,7 @@ func updateCRBApplyFailed(rt *imv1.Runtime) {
 func sFnApplyClusterRoleBindings(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	// prepare subresource client to request admin kubeconfig
 	srscClient := m.ShootClient.SubResource("adminkubeconfig")
-	shootAdminClient, err := getShootClientWithAdmin(ctx, srscClient, s.shoot)
+	shootAdminClient, err := GetShootClient(ctx, srscClient, s.shoot)
 	if err != nil {
 		updateCRBApplyFailed(&s.instance)
 		return updateStatusAndStopWithError(err)
