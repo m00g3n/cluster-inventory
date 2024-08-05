@@ -31,6 +31,7 @@ import (
 )
 
 var _ = Describe("Runtime Controller", func() {
+
 	Context("When reconciling a resource", func() {
 		const ResourceName = "test-resource"
 
@@ -257,7 +258,10 @@ func CreateRuntimeStub(resourceName string) *imv1.Runtime {
 				},
 			},
 			Security: imv1.Security{
-				Administrators: []string{},
+				Administrators: []string{
+					"test-admin1@sap.com",
+					"test-admin2@sap.com",
+				},
 			},
 		},
 	}
