@@ -168,7 +168,7 @@ func sFnApplyClusterRoleBindings(ctx context.Context, m *fsm, s *systemState) (s
 	}
 
 	removed := getRemoved(crbList.Items, s.instance.Spec.Security.Administrators)
-	var missing []rbacv1.ClusterRoleBinding
+	missing := getMissing(crbList.Items, s.instance.Spec.Security.Administrators)
 
 	// FIXME add status check
 	if len(removed) == 0 && len(missing) == 0 {
