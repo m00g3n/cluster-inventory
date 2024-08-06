@@ -30,7 +30,7 @@ func sFnPatchExistingShoot(ctx context.Context, m *fsm, s *systemState) (stateFn
 
 	if err != nil {
 		m.log.Error(err, "Failed to patch shoot object, exiting with no retry")
-		return updateStatePendingWithErrorAndStop(&s.instance, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonGardenerError, "Shoot patch error")
+		return updateStatePendingWithErrorAndStop(&s.instance, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonProcessingErr, "Shoot patch error")
 	}
 
 	if updatedShoot.Generation == s.shoot.Generation {
@@ -46,7 +46,7 @@ func sFnPatchExistingShoot(ctx context.Context, m *fsm, s *systemState) (stateFn
 		imv1.ConditionTypeRuntimeProvisioned,
 		imv1.ConditionReasonProcessing,
 		"Unknown",
-		"Shoot is pending",
+		"Shoot is pending for update",
 	)
 
 	return updateStatusAndRequeueAfter(gardenerRequeueDuration)
