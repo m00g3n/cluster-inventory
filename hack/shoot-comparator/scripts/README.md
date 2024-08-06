@@ -74,6 +74,10 @@ Waiting for the job to complete. It may take couple of minutes. Please, be patie
 error: timed out waiting for the condition on jobs/compare-shoots
 Job is still not completed. Please check it manually. Exiting...
 ```
+> Note: mind the script creates additional resources in the `kcp-system` namespace. Once you are done with the comparison, you can clean up the resources by executing the following command:
+> ```bash
+> ./cleanup-comparison-resources.sh
+> ```
 
 In such case you can check the job status manually by executing the following command:
 ```bash
