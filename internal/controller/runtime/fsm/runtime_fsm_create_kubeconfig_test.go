@@ -34,7 +34,7 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 		}
 	}
 
-	inputRtWithLables := makeInputRuntimeWithLabels()
+	inputRtWithLabels := makeInputRuntimeWithLabels()
 	inputRtWithLabelsAndCondition := makeInputRuntimeWithLabels()
 
 	readyCondition := metav1.Condition{
@@ -75,7 +75,7 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 			"should create GardenCluster CR when it does not existed before",
 			testCtx,
 			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects()),
-			&systemState{instance: *inputRtWithLables, shoot: &testShoot},
+			&systemState{instance: *inputRtWithLabels, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: haveName("sFnUpdateStatus"),
@@ -86,7 +86,7 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 			"should remain in waiting state when GardenCluster CR exists and is not ready yet",
 			testCtx,
 			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(testGardenerCRStatePending)),
-			&systemState{instance: *inputRtWithLables, shoot: &testShoot},
+			&systemState{instance: *inputRtWithLabels, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: BeNil(), // corresponds to requeueAfter(controlPlaneRequeueDuration)
@@ -106,7 +106,7 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 			"should return sFnUpdateStatus when GardenCluster CR exists and is in ready state and condition is not set",
 			testCtx,
 			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(testGardenerCRStateReady)),
-			&systemState{instance: *inputRtWithLables, shoot: &testShoot},
+			&systemState{instance: *inputRtWithLabels, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
 				MatchNextFnState: haveName("sFnUpdateStatus"),
