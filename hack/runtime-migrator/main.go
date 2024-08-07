@@ -214,9 +214,7 @@ func createRuntime(ctx context.Context, shoot v1beta1.Shoot, cfg migrator.Config
 					Nodes:    *shoot.Spec.Networking.Nodes,
 					Services: *shoot.Spec.Networking.Services,
 				},
-				ControlPlane: v1beta1.ControlPlane{
-					HighAvailability: getHighAvailability(shoot),
-				},
+				ControlPlane: getControlPlane(shoot),
 			},
 			Security: v1.Security{
 				Administrators: subjects,
@@ -276,18 +274,19 @@ func getShootList(ctx context.Context, cfg migrator.Config, gardenerNamespace st
 	return list
 }
 
-func getHighAvailability(shoot v1beta1.Shoot) *v1beta1.HighAvailability {
+func getControlPlane(shoot v1beta1.Shoot) v1beta1.ControlPlane {
 	if shoot.Spec.ControlPlane != nil {
 		if shoot.Spec.ControlPlane.HighAvailability != nil {
-			return &v1beta1.HighAvailability{
+			return v1beta1.ControlPlane{HighAvailability: &v1beta1.HighAvailability{
 				FailureTolerance: v1beta1.FailureTolerance{
 					Type: shoot.Spec.ControlPlane.HighAvailability.FailureTolerance.Type,
 				},
+			},
 			}
 		}
 	}
 
-	return nil
+	return v1beta1.ControlPlane{}
 }
 
 func getAdministratorsList(ctx context.Context, provider kubeconfig.Provider, shootName string) []string {
