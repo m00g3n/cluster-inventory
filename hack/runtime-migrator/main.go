@@ -290,13 +290,13 @@ func getControlPlane(shoot v1beta1.Shoot) *v1beta1.ControlPlane {
 }
 
 func getAdministratorsList(ctx context.Context, provider kubeconfig.Provider, shootName string) []string {
-	var kubeconfig, err = provider.Fetch(ctx, shootName)
-	if kubeconfig == "" {
+	var clusterKubeconfig, err = provider.Fetch(ctx, shootName)
+	if clusterKubeconfig == "" {
 		log.Printf("Failed to get dynamic kubeconfig for shoot %s, %s\n", shootName, err.Error())
 		return []string{}
 	}
 
-	restClientConfig, err := clientcmd.RESTConfigFromKubeConfig([]byte(kubeconfig))
+	restClientConfig, err := clientcmd.RESTConfigFromKubeConfig([]byte(clusterKubeconfig))
 	if err != nil {
 		log.Printf("Failed to create REST client from kubeconfig - %s\n", err)
 		return []string{}
@@ -311,7 +311,8 @@ func getAdministratorsList(ctx context.Context, provider kubeconfig.Provider, sh
 		LabelSelector: "reconciler.kyma-project.io/managed-by=reconciler,app=kyma",
 	})
 
-	var subjects = []string{}
+	subjects := make([]string, 0)
+
 	for _, clusterRoleBinding := range clusterRoleBindings.Items {
 		for _, subject := range clusterRoleBinding.Subjects {
 			subjects = append(subjects, subject.Name)
@@ -416,7 +417,7 @@ func getAllRuntimeLabels(ctx context.Context, shoot v1beta1.Shoot, getClient mig
 	enrichedRuntimeLabels["kyma-project.io/region"] = gardenerCluster.Labels["kyma-project.io/region"]
 	enrichedRuntimeLabels["kyma-project.io/shoot-name"] = gardenerCluster.Labels["kyma-project.io/shoot-name"]
 	enrichedRuntimeLabels["operator.kyma-project.io/kyma-name"] = gardenerCluster.Labels["operator.kyma-project.io/kyma-name"]
-	// The runtime CR should not be controlled by the KIM
+	// The runtime CR should be controlled by the KIM
 	enrichedRuntimeLabels["kyma-project.io/controlled-by-provisioner"] = "false"
 	// add custom label for the migrator
 	enrichedRuntimeLabels[migratorLabel] = "true"
