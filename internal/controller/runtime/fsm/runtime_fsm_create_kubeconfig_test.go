@@ -3,8 +3,9 @@ package fsm
 import (
 	"context"
 	"fmt"
-	"k8s.io/utils/ptr"
 	"time"
+
+	"k8s.io/utils/ptr"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -99,7 +100,7 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 			&systemState{instance: *inputRtWithLabelsAndCondition, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
-				MatchNextFnState: haveName("sFnProcessShoot"),
+				MatchNextFnState: haveName("sFnApplyClusterRoleBindings"),
 			},
 		),
 		Entry(

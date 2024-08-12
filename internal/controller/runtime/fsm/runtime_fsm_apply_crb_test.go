@@ -133,6 +133,7 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 			// initialize test data if required
 			Expect(tc.init()).ShouldNot(HaveOccurred())
 
+			//TODO change timeout
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10000)
 			defer cancel()
 
@@ -175,6 +176,7 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 		}),
 
 		Entry("error getting client", tcApplySfn{
+			instance: testRuntime,
 			expected: tcSfnExpected{
 				err: testErr,
 			},
@@ -184,7 +186,16 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 				withFn(sFnApplyClusterRoleBindings),
 				withFakeEventRecorder(1),
 			),
-			setup: defaultSetup,
+			setup: func(f *fsm) error {
+				GetShootClient = func(
+					_ context.Context,
+					_ client.SubResourceClient,
+					_ *gardener_api.Shoot) (client.Client, error) {
+					return nil, testErr
+				}
+				return nil
+
+			},
 		}),
 	)
 })
