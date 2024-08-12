@@ -47,13 +47,13 @@ var _ = Describe(":: extension matcher :: ", func() {
 			false,
 		),
 		Entry(
-			"should detect missing extension",
+			"should detect redundant extension",
 			[]v1beta1.Extension{dnsExtEnabled, networkingExtDisabled, certificateExtEnabled},
 			[]v1beta1.Extension{networkingExtDisabled, certificateExtEnabled},
 			false,
 		),
 		Entry(
-			"should detect redundant extension",
+			"should detect missing extension",
 			[]v1beta1.Extension{networkingExtDisabled, certificateExtEnabled},
 			[]v1beta1.Extension{dnsExtEnabled, networkingExtDisabled, certificateExtEnabled},
 			false,
