@@ -6,6 +6,7 @@ import (
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"reflect"
+	"sort"
 	"strings"
 )
 
@@ -21,7 +22,6 @@ func NewExtensionMatcher(i interface{}) types.GomegaMatcher {
 }
 
 func (m *ExtensionMatcher) Match(actual interface{}) (success bool, err error) {
-
 	aExtensions, err := getExtension(actual)
 	if err != nil {
 		return false, err
@@ -32,56 +32,10 @@ func (m *ExtensionMatcher) Match(actual interface{}) (success bool, err error) {
 		return false, err
 	}
 
-	if len(aExtensions) != len(eExtensions) {
-		m.fails = append(m.fails, "Extensions count mismatch")
-		return false, nil
-	}
+	sort.Sort(Extensions(aExtensions))
+	sort.Sort(Extensions(eExtensions))
 
-	if len(aExtensions) == 0 && len(eExtensions) == 0 {
-		return true, nil
-	}
-
-	findExtension := func(name string, extensions []v1beta1.Extension) v1beta1.Extension {
-		for _, e := range extensions {
-			if e.Type == name {
-				return e
-			}
-		}
-
-		return v1beta1.Extension{}
-	}
-
-	differenceFound := false
-
-	for _, e := range eExtensions {
-		a := findExtension(e.Type, aExtensions)
-		if a.Type == "" {
-			m.fails = append(m.fails, fmt.Sprintf("Extension %s not found in both expected and actual", e.Type))
-			return false, nil
-		}
-
-		matcher := gomega.BeComparableTo(e)
-
-		ok, err := matcher.Match(a)
-		if err != nil {
-			return false, err
-		}
-
-		if !ok {
-			differenceFound = true
-			m.fails = append(m.fails, matcher.FailureMessage(a))
-		}
-	}
-
-	return !differenceFound, nil
-}
-
-func (m *ExtensionMatcher) NegatedFailureMessage(_ interface{}) string {
-	return "expected should not equal actual"
-}
-
-func (m *ExtensionMatcher) FailureMessage(_ interface{}) string {
-	return strings.Join(m.fails, "\n")
+	return gomega.BeComparableTo(eExtensions).Match(aExtensions)
 }
 
 func getExtension(i interface{}) ([]v1beta1.Extension, error) {
@@ -92,4 +46,26 @@ func getExtension(i interface{}) ([]v1beta1.Extension, error) {
 	default:
 		return []v1beta1.Extension{}, fmt.Errorf(`%w: %s`, errInvalidType, reflect.TypeOf(v))
 	}
+}
+
+type Extensions []v1beta1.Extension
+
+func (e Extensions) Len() int {
+	return len(e)
+}
+
+func (e Extensions) Less(i, j int) bool {
+	return e[i].Type < e[j].Type
+}
+
+func (e Extensions) Swap(i, j int) {
+	e[i], e[j] = e[j], e[i]
+}
+
+func (m *ExtensionMatcher) NegatedFailureMessage(_ interface{}) string {
+	return "expected should not equal actual"
+}
+
+func (m *ExtensionMatcher) FailureMessage(_ interface{}) string {
+	return strings.Join(m.fails, "\n")
 }
