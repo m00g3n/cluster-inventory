@@ -16,6 +16,7 @@ import (
 )
 
 var (
+	//nolint:gochecknoglobals
 	labelsClusterRoleBindings = map[string]string{
 		"app":                                   "kyma",
 		"reconciler.kyma-project.io/managed-by": "kim",
@@ -110,6 +111,7 @@ func getRemoved(crbs []rbacv1.ClusterRoleBinding, admins []string) (removed []rb
 	return removed
 }
 
+//nolint:gochecknoglobals
 var newContainsAdmin = func(admin string) func(rbacv1.ClusterRoleBinding) bool {
 	return func(r rbacv1.ClusterRoleBinding) bool {
 		for _, subject := range r.Subjects {
@@ -156,6 +158,7 @@ func toAdminClusterRoleBinding(name string) rbacv1.ClusterRoleBinding {
 	}
 }
 
+//nolint:gochecknoglobals
 var newDelCRBs = func(ctx context.Context, shootClient client.Client, crbs []rbacv1.ClusterRoleBinding) func() error {
 	return func() error {
 		for _, crb := range crbs {
@@ -167,6 +170,7 @@ var newDelCRBs = func(ctx context.Context, shootClient client.Client, crbs []rba
 	}
 }
 
+//nolint:gochecknoglobals
 var newAddCRBs = func(ctx context.Context, shootClient client.Client, crbs []rbacv1.ClusterRoleBinding) func() error {
 	return func() error {
 		for _, crb := range crbs {

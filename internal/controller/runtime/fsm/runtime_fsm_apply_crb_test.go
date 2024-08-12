@@ -133,8 +133,7 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 			// initialize test data if required
 			Expect(tc.init()).ShouldNot(HaveOccurred())
 
-			//TODO change timeout
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10000)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
 			actualResult, actualErr := tc.fsm.Run(ctx, tc.instance)
