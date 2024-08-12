@@ -111,7 +111,7 @@ func fixRuntime() imv1.Runtime {
 					Nodes:    "10.250.0.0/16",
 					Services: "100.104.0.0/13",
 				},
-				ControlPlane: gardener.ControlPlane{
+				ControlPlane: &gardener.ControlPlane{
 					HighAvailability: &gardener.HighAvailability{
 						FailureTolerance: gardener.FailureTolerance{
 							Type: gardener.FailureToleranceTypeZone,

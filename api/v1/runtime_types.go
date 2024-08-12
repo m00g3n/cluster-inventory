@@ -149,7 +149,7 @@ type RuntimeShoot struct {
 	Kubernetes          Kubernetes             `json:"kubernetes,omitempty"`
 	Provider            Provider               `json:"provider"`
 	Networking          Networking             `json:"networking"`
-	ControlPlane        *gardener.ControlPlane `json:"controlPlane"`
+	ControlPlane        *gardener.ControlPlane `json:"controlPlane,omitempty"`
 }
 
 type Kubernetes struct {
