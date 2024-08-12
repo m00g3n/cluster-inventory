@@ -5,7 +5,6 @@ import (
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
-	"github.com/pkg/errors"
 	"reflect"
 	"strings"
 )
@@ -23,30 +22,9 @@ func NewExtensionMatcher(i interface{}) types.GomegaMatcher {
 
 func (m *ExtensionMatcher) Match(actual interface{}) (success bool, err error) {
 
+	aExtensions, err := getExtension(actual)
 	if err != nil {
 		return false, err
-	}
-
-	if actual == nil && m.toMatch != nil {
-		return false, errors.New("actual is nil")
-	}
-
-	if actual != nil && m.toMatch == nil {
-		return false, errors.New("expected is nil")
-	}
-
-	if actual == nil && m.toMatch == nil {
-		return true, nil
-	}
-
-	aExtensions, err := getExtension(actual)
-	findExtension := func(extensions []v1beta1.Extension, extensionToFind string) v1beta1.Extension {
-		for _, extension := range extensions {
-			if extension.Type == extensionToFind {
-				return extension
-			}
-		}
-		return v1beta1.Extension{}
 	}
 
 	eExtensions, err := getExtension(m.toMatch)
@@ -54,22 +32,48 @@ func (m *ExtensionMatcher) Match(actual interface{}) (success bool, err error) {
 		return false, err
 	}
 
-	for i, eExtension := range eExtensions {
-		aExtension := findExtension(aExtensions, eExtension.Type)
-		matcher := gomega.BeComparableTo(eExtension.Type)
-		ok, err := matcher.Match(aExtension.Type)
+	if len(aExtensions) != len(eExtensions) {
+		m.fails = append(m.fails, "Extensions count mismatch")
+		return false, nil
+	}
+
+	if len(aExtensions) == 0 && len(eExtensions) == 0 {
+		return true, nil
+	}
+
+	findExtension := func(name string, extensions []v1beta1.Extension) v1beta1.Extension {
+		for _, e := range extensions {
+			if e.Type == name {
+				return e
+			}
+		}
+
+		return v1beta1.Extension{}
+	}
+
+	differenceFound := false
+
+	for _, e := range eExtensions {
+		a := findExtension(e.Type, aExtensions)
+		if a.Type == "" {
+			m.fails = append(m.fails, fmt.Sprintf("Extension %s not found in both expected and actual", e.Type))
+			return false, nil
+		}
+
+		matcher := gomega.BeComparableTo(e)
+
+		ok, err := matcher.Match(a)
 		if err != nil {
 			return false, err
 		}
 
 		if !ok {
-			msg := fmt.Sprintf("spec/Extensions[%d]: %s", i, matcher.FailureMessage(aExtension))
-			m.fails = append(m.fails, msg)
+			differenceFound = true
+			m.fails = append(m.fails, matcher.FailureMessage(a))
 		}
-
 	}
 
-	return false, nil
+	return !differenceFound, nil
 }
 
 func (m *ExtensionMatcher) NegatedFailureMessage(_ interface{}) string {
@@ -80,11 +84,7 @@ func (m *ExtensionMatcher) FailureMessage(_ interface{}) string {
 	return strings.Join(m.fails, "\n")
 }
 
-func getExtension(i interface{}) (shoot []v1beta1.Extension, err error) {
-	if i == nil {
-		return []v1beta1.Extension{}, fmt.Errorf("invalid value nil")
-	}
-
+func getExtension(i interface{}) ([]v1beta1.Extension, error) {
 	switch v := i.(type) {
 	case []v1beta1.Extension:
 		return v, nil

@@ -274,10 +274,10 @@ func getShootList(ctx context.Context, cfg migrator.Config, gardenerNamespace st
 	return list
 }
 
-func getControlPlane(shoot v1beta1.Shoot) v1beta1.ControlPlane {
+func getControlPlane(shoot v1beta1.Shoot) *v1beta1.ControlPlane {
 	if shoot.Spec.ControlPlane != nil {
 		if shoot.Spec.ControlPlane.HighAvailability != nil {
-			return v1beta1.ControlPlane{HighAvailability: &v1beta1.HighAvailability{
+			return &v1beta1.ControlPlane{HighAvailability: &v1beta1.HighAvailability{
 				FailureTolerance: v1beta1.FailureTolerance{
 					Type: shoot.Spec.ControlPlane.HighAvailability.FailureTolerance.Type,
 				},
@@ -286,7 +286,7 @@ func getControlPlane(shoot v1beta1.Shoot) v1beta1.ControlPlane {
 		}
 	}
 
-	return v1beta1.ControlPlane{}
+	return nil
 }
 
 func getAdministratorsList(ctx context.Context, provider kubeconfig.Provider, shootName string) []string {

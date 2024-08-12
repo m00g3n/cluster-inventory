@@ -104,7 +104,7 @@ func (m *Matcher) Match(actual interface{}) (success bool, err error) {
 			path:          "spec/DNS",
 		},
 		{
-			GomegaMatcher: gomega.BeComparableTo(eShoot.Spec.Extensions),
+			GomegaMatcher: NewExtensionMatcher(eShoot.Spec.Extensions),
 			expected:      aShoot.Spec.Extensions,
 			path:          "spec/Extensions",
 		},

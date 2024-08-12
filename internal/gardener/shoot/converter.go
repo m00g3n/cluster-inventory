@@ -108,7 +108,7 @@ func (c Converter) ToShoot(runtime imv1.Runtime) (gardener.Shoot, error) {
 				Pods:     &runtime.Spec.Shoot.Networking.Pods,
 				Services: &runtime.Spec.Shoot.Networking.Services,
 			},
-			ControlPlane: &runtime.Spec.Shoot.ControlPlane,
+			ControlPlane: runtime.Spec.Shoot.ControlPlane,
 		},
 	}
 
