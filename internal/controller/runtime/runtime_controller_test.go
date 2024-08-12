@@ -106,7 +106,7 @@ var _ = Describe("Runtime Controller", func() {
 					return false
 				}
 
-				if !runtime.IsConditionSet(imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonConfigurationCompleted) {
+				if !runtime.IsConditionSet(imv1.ConditionTypeRuntimeConfigured, imv1.ConditionReasonConfigurationCompleted) {
 					return false
 				}
 

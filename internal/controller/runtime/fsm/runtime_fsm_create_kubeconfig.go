@@ -27,7 +27,12 @@ func sFnCreateKubeconfig(ctx context.Context, m *fsm, s *systemState) (stateFn, 
 	if err != nil {
 		if !k8serrors.IsNotFound(err) {
 			m.log.Error(err, "GardenerCluster CR read error", "name", runtimeID)
-			s.instance.UpdateStatePending(imv1.ConditionTypeRuntimeKubeconfigReady, imv1.ConditionReasonKubernetesAPIErr, "False", err.Error())
+			s.instance.UpdateStatePending(
+				imv1.ConditionTypeRuntimeKubeconfigReady,
+				imv1.ConditionReasonKubernetesAPIErr,
+				"False",
+				err.Error(),
+			)
 			return updateStatusAndStop()
 		}
 
@@ -35,7 +40,12 @@ func sFnCreateKubeconfig(ctx context.Context, m *fsm, s *systemState) (stateFn, 
 		err = m.Create(ctx, makeGardenerClusterForRuntime(s.instance, s.shoot))
 		if err != nil {
 			m.log.Error(err, "GardenerCluster CR create error", "name", runtimeID)
-			s.instance.UpdateStatePending(imv1.ConditionTypeRuntimeKubeconfigReady, imv1.ConditionReasonKubernetesAPIErr, "False", err.Error())
+			s.instance.UpdateStatePending(
+				imv1.ConditionTypeRuntimeKubeconfigReady,
+				imv1.ConditionReasonKubernetesAPIErr,
+				"False",
+				err.Error(),
+			)
 			return updateStatusAndStop()
 		}
 

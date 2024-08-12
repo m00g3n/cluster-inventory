@@ -65,7 +65,12 @@ func sFnWaitForShootCreation(_ context.Context, m *fsm, s *systemState) (stateFn
 
 	case gardener.LastOperationStateSucceeded:
 		m.log.Info(fmt.Sprintf("Shoot %s successfully created", s.shoot.Name))
-		return ensureStatusConditionIsSetAndContinue(&s.instance, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonShootCreationCompleted, "Shoot creation completed", sFnCreateKubeconfig)
+		return ensureStatusConditionIsSetAndContinue(
+			&s.instance,
+			imv1.ConditionTypeRuntimeProvisioned,
+			imv1.ConditionReasonShootCreationCompleted,
+			"Shoot creation completed",
+			sFnCreateKubeconfig)
 
 	default:
 		m.log.Info("Unknown shoot operation state, exiting with no retry")

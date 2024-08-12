@@ -22,6 +22,42 @@ var (
 	}
 )
 
+func sFnApplyClusterRoleBindings(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
+	// prepare subresource client to request admin kubeconfig
+	srscClient := m.ShootClient.SubResource("adminkubeconfig")
+	shootAdminClient, err := GetShootClient(ctx, srscClient, s.shoot)
+	if err != nil {
+		updateCRBApplyFailed(&s.instance)
+		return updateStatusAndStopWithError(err)
+	}
+	// list existing cluster role bindings
+	var crbList rbacv1.ClusterRoleBindingList
+	if err := shootAdminClient.List(ctx, &crbList); err != nil {
+		updateCRBApplyFailed(&s.instance)
+		return updateStatusAndStopWithError(err)
+	}
+
+	removed := getRemoved(crbList.Items, s.instance.Spec.Security.Administrators)
+	missing := getMissing(crbList.Items, s.instance.Spec.Security.Administrators)
+
+	for _, fn := range []func() error{
+		newDelCRBs(ctx, shootAdminClient, removed),
+		newAddCRBs(ctx, shootAdminClient, missing),
+	} {
+		if err := fn(); err != nil {
+			updateCRBApplyFailed(&s.instance)
+			return updateStatusAndStopWithError(err)
+		}
+	}
+
+	s.instance.UpdateStateReady(
+		imv1.ConditionTypeRuntimeConfigured,
+		imv1.ConditionReasonConfigurationCompleted,
+		"kubeconfig admin access updated",
+	)
+	return updateStatusAndStop()
+}
+
 //nolint:gochecknoglobals
 var GetShootClient = func(ctx context.Context,
 	adminKubeconfigClient client.SubResourceClient, shoot *gardener_api.Shoot) (client.Client, error) {
@@ -149,40 +185,4 @@ func updateCRBApplyFailed(rt *imv1.Runtime) {
 		string(metav1.ConditionFalse),
 		"failed to update kubeconfig admin access",
 	)
-}
-
-func sFnApplyClusterRoleBindings(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
-	// prepare subresource client to request admin kubeconfig
-	srscClient := m.ShootClient.SubResource("adminkubeconfig")
-	shootAdminClient, err := GetShootClient(ctx, srscClient, s.shoot)
-	if err != nil {
-		updateCRBApplyFailed(&s.instance)
-		return updateStatusAndStopWithError(err)
-	}
-	// list existing cluster role bindings
-	var crbList rbacv1.ClusterRoleBindingList
-	if err := shootAdminClient.List(ctx, &crbList); err != nil {
-		updateCRBApplyFailed(&s.instance)
-		return updateStatusAndStopWithError(err)
-	}
-
-	removed := getRemoved(crbList.Items, s.instance.Spec.Security.Administrators)
-	missing := getMissing(crbList.Items, s.instance.Spec.Security.Administrators)
-
-	// FIXME add status check
-	if len(removed) == 0 && len(missing) == 0 {
-		stop()
-	}
-
-	for _, fn := range []func() error{
-		newDelCRBs(ctx, shootAdminClient, removed),
-		newAddCRBs(ctx, shootAdminClient, missing),
-	} {
-		if err := fn(); err != nil {
-			updateCRBApplyFailed(&s.instance)
-			return updateStatusAndStopWithError(err)
-		}
-	}
-
-	return updateStatusAndRequeue()
 }
