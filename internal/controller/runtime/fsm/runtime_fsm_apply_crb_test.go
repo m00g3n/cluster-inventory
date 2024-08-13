@@ -21,23 +21,6 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 
 	var testErr = fmt.Errorf("test error")
 
-	DescribeTable("isRBACUserKind",
-		func(s rbacv1.Subject, expected bool) {
-			actual := isRBACUserKind(s)
-			Expect(actual).To(Equal(expected))
-		},
-		Entry("shoud detect if subject is not user kind", rbacv1.Subject{}, false),
-		Entry("shoud detect if subject is from invalid group",
-			rbacv1.Subject{
-				Kind: rbacv1.UserKind,
-			}, false),
-		Entry("shoud detect if subject user from valid group",
-			rbacv1.Subject{
-				APIGroup: rbacv1.GroupName,
-				Kind:     rbacv1.UserKind,
-			}, true),
-	)
-
 	DescribeTable("getMissing",
 		func(tc tcGetCRB) {
 			actual := getMissing(tc.crbs, tc.admins)

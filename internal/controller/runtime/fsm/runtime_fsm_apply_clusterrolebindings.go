@@ -81,9 +81,11 @@ var GetShootClient = func(ctx context.Context,
 	return shootClientWithAdmin, nil
 }
 
-func isRBACUserKind(s rbacv1.Subject) bool {
-	return s.Kind == rbacv1.UserKind &&
-		s.APIGroup == rbacv1.GroupName
+func isRBACUserKindOneOf(names []string) func(rbacv1.Subject) bool {
+	return func(s rbacv1.Subject) bool {
+		return s.Kind == rbacv1.UserKind &&
+			slices.Contains(names, s.Name)
+	}
 }
 
 func getRemoved(crbs []rbacv1.ClusterRoleBinding, admins []string) (removed []rbacv1.ClusterRoleBinding) {
@@ -94,16 +96,16 @@ func getRemoved(crbs []rbacv1.ClusterRoleBinding, admins []string) (removed []rb
 			continue
 		}
 
-		index := slices.IndexFunc(crb.Subjects, isRBACUserKind)
-		if index < 0 {
+		if crb.RoleRef.Kind != "ClusterRole" && crb.RoleRef.Name != "cluster-admin" {
+			continue
+		}
+
+		index := slices.IndexFunc(crb.Subjects, isRBACUserKindOneOf(admins))
+		if index >= 0 {
 			// cluster role binding does not contain user subject
 			continue
 		}
 
-		subjectUserName := crb.Subjects[index].Name
-		if slices.Contains(admins, subjectUserName) {
-			continue
-		}
 		// administrator was removed
 		removed = append(removed, crb)
 	}
@@ -114,15 +116,8 @@ func getRemoved(crbs []rbacv1.ClusterRoleBinding, admins []string) (removed []rb
 //nolint:gochecknoglobals
 var newContainsAdmin = func(admin string) func(rbacv1.ClusterRoleBinding) bool {
 	return func(r rbacv1.ClusterRoleBinding) bool {
-		for _, subject := range r.Subjects {
-			if !isRBACUserKind(subject) || subject.Name != admin {
-				continue
-			}
-			// admin found
-			return true
-		}
-		// admin not found in the slice
-		return false
+		isAdmin := isRBACUserKindOneOf([]string{admin})
+		return slices.ContainsFunc(r.Subjects, isAdmin)
 	}
 }
 
