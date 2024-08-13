@@ -19,7 +19,7 @@ var (
 	//nolint:gochecknoglobals
 	labelsClusterRoleBindings = map[string]string{
 		"app":                                   "kyma",
-		"reconciler.kyma-project.io/managed-by": "kim",
+		"reconciler.kyma-project.io/managed-by": "infrastructure-manager",
 	}
 )
 
