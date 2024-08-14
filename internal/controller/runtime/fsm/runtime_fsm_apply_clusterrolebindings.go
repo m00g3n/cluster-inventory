@@ -51,12 +51,11 @@ func sFnApplyClusterRoleBindings(ctx context.Context, m *fsm, s *systemState) (s
 		}
 	}
 
-	s.instance.UpdateStateReady(
-		imv1.ConditionTypeRuntimeConfigured,
-		imv1.ConditionReasonConfigurationCompleted,
-		"kubeconfig admin access updated",
-	)
-	return updateStatusAndStop()
+	if !s.instance.IsStateWithConditionAndStatusSet(imv1.RuntimeStatePending, imv1.ConditionTypeRuntimeConfigured, imv1.ConditionAdministratorsConfigured, "Unknown") {
+		s.instance.UpdateStatePending(imv1.ConditionTypeRuntimeConfigured, imv1.ConditionAdministratorsConfigured, "True", "Cluster Administrators configured")
+		return updateStatusAndRequeue()
+	}
+	return switchState(sFnConfigureAuditLog)
 }
 
 //nolint:gochecknoglobals

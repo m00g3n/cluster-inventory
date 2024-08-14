@@ -3,6 +3,7 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
 	"io"
 	"reflect"
 	"runtime"
@@ -62,6 +63,7 @@ type fsm struct {
 	log            logr.Logger
 	K8s
 	RCCfg
+	auditlogging.AuditLogging
 }
 
 func (m *fsm) Run(ctx context.Context, v imv1.Runtime) (ctrl.Result, error) {
@@ -105,5 +107,6 @@ func NewFsm(log logr.Logger, cfg RCCfg, k8s K8s) Fsm {
 		RCCfg:          cfg,
 		log:            log,
 		K8s:            k8s,
+		AuditLogging:   auditlogging.NewAuditLogging(cfg.AuditLog.TenantConfigPath, cfg.AuditLog.PolicyConfigMapName, k8s.Client),
 	}
 }

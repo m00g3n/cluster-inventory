@@ -94,6 +94,8 @@ const (
 	ConditionReasonKubernetesAPIErr     = RuntimeConditionReason("KubernetesErr")
 	ConditionReasonSerializationError   = RuntimeConditionReason("SerializationErr")
 	ConditionReasonDeleted              = RuntimeConditionReason("Deleted")
+
+	ConditionAdministratorsConfigured = RuntimeConditionReason("AdministratorsConfigured")
 )
 
 //+kubebuilder:object:root=true

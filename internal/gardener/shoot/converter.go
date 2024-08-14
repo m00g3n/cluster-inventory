@@ -38,6 +38,11 @@ type KubernetesConfig struct {
 	EnableMachineImageVersionAutoUpdate bool   `json:"enableMachineImageVersionVersionAutoUpdate"`
 }
 
+type AuditLogConfig struct {
+	PolicyConfigMapName string `json:"policyConfigMapName"`
+	TenantConfigPath    string `json:"tenantConfigPath"`
+}
+
 type ReaderGetter = func() (io.Reader, error)
 
 type ConverterConfig struct {
@@ -46,6 +51,7 @@ type ConverterConfig struct {
 	Provider     ProviderConfig     `json:"provider"`
 	MachineImage MachineImageConfig `json:"machineImage" validate:"required"`
 	Gardener     GardenerConfig     `json:"gardener" validate:"required"`
+	AuditLog     AuditLogConfig     `json:"auditLogging"`
 }
 
 func (c *ConverterConfig) Load(f ReaderGetter) error {
