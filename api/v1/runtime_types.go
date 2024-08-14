@@ -279,13 +279,6 @@ func (k *Runtime) IsConditionSetWithStatus(c RuntimeConditionType, r RuntimeCond
 	return false
 }
 
-func (k *Runtime) IsConditionConfiguredSuccess() bool {
-	return k.IsConditionSetWithStatus(
-		ConditionTypeRuntimeConfigured,
-		ConditionReasonShootCreationCompleted,
-		metav1.ConditionTrue)
-}
-
 func (k *Runtime) ValidateRequiredLabels() error {
 	var requiredLabelKeys = []string{
 		LabelKymaInstanceID,

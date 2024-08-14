@@ -115,9 +115,12 @@ func getRemoved(crbs []rbacv1.ClusterRoleBinding, admins []string) (removed []rb
 
 //nolint:gochecknoglobals
 var newContainsAdmin = func(admin string) func(rbacv1.ClusterRoleBinding) bool {
-	return func(r rbacv1.ClusterRoleBinding) bool {
+	return func(crb rbacv1.ClusterRoleBinding) bool {
+		if !labels.Set(crb.Labels).AsSelector().Matches(labels.Set(labelsClusterRoleBindings)) {
+			return false
+		}
 		isAdmin := isRBACUserKindOneOf([]string{admin})
-		return slices.ContainsFunc(r.Subjects, isAdmin)
+		return slices.ContainsFunc(crb.Subjects, isAdmin)
 	}
 }
 
