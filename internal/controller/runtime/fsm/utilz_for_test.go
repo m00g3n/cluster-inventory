@@ -6,6 +6,7 @@ import (
 
 	. "github.com/onsi/gomega" //nolint:revive
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -50,22 +51,29 @@ var (
 		k8sClient := fake.NewClientBuilder().
 			WithScheme(scheme).
 			WithObjects(objs...).
+			WithStatusSubresource(objs...).
 			Build()
 
 		return func(fsm *fsm) error {
 			fsm.Client = k8sClient
+			fsm.ShootClient = k8sClient
 			return nil
 		}
 	}
 
-	/* linter fix for unused code
-	withMockedShootClient = func(c *gardener_mocks.ShootClient) fakeFSMOpt {
+	withFn = func(fn stateFn) fakeFSMOpt {
 		return func(fsm *fsm) error {
-			fsm.ShootClient = c
+			fsm.fn = fn
 			return nil
 		}
 	}
-	*/
+
+	withFakeEventRecorder = func(buffer int) fakeFSMOpt {
+		return func(fsm *fsm) error {
+			fsm.EventRecorder = record.NewFakeRecorder(buffer)
+			return nil
+		}
+	}
 )
 
 func newFakeFSM(opts ...fakeFSMOpt) (*fsm, error) {
