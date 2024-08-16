@@ -63,6 +63,8 @@ spec:
           # spec.shoot.workers.maxUnavailable is required in the first release.
           # It can be optional in the future, as it is always set to 0
           maxUnavailable: 0
+          # spec.shoot.workers.volume is required for the first release
+          # Probably can be moved into KIM, as it is hardcoded in KEB, and not dependent on plan
           volume:
             type: gp2
             size: 50Gi
@@ -80,7 +82,7 @@ spec:
   security:
     networking:
       filter:
-        # spec.security.networking is required
+        # spec.security.networking.filter.egress.enabled is required
         egress:
           enabled: false
     # spec.security.administrators is required
