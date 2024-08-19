@@ -56,6 +56,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(infrastructuremanagerv1.AddToScheme(scheme))
 	utilruntime.Must(rbacv1.AddToScheme(scheme))
+	utilruntime.Must(v1beta1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -236,6 +237,5 @@ func initGardenerClients(kubeconfigPath string, namespace string) (client.Client
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to register Gardener schema")
 	}
-
 	return gardenerClient, shootClient, dynamicKubeconfigAPI, nil
 }
