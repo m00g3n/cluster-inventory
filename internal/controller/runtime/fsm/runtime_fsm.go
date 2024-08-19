@@ -3,11 +3,12 @@ package fsm
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
 	"io"
 	"reflect"
 	"runtime"
 	"time"
+
+	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
 
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
