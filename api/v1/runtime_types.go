@@ -95,7 +95,8 @@ const (
 	ConditionReasonSerializationError   = RuntimeConditionReason("SerializationErr")
 	ConditionReasonDeleted              = RuntimeConditionReason("Deleted")
 
-	ConditionAdministratorsConfigured = RuntimeConditionReason("AdministratorsConfigured")
+	ConditionReasonAdministratorsConfigured = RuntimeConditionReason("AdministratorsConfigured")
+	ConditionReasonAuditLogConfigured       = RuntimeConditionReason("AuditLogConfigured")
 )
 
 //+kubebuilder:object:root=true

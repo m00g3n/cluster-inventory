@@ -51,8 +51,8 @@ func sFnApplyClusterRoleBindings(ctx context.Context, m *fsm, s *systemState) (s
 		}
 	}
 
-	if !s.instance.IsStateWithConditionAndStatusSet(imv1.RuntimeStatePending, imv1.ConditionTypeRuntimeConfigured, imv1.ConditionAdministratorsConfigured, "Unknown") {
-		s.instance.UpdateStatePending(imv1.ConditionTypeRuntimeConfigured, imv1.ConditionAdministratorsConfigured, "True", "Cluster Administrators configured")
+	if !s.instance.IsStateWithConditionAndStatusSet(imv1.RuntimeStatePending, imv1.ConditionTypeRuntimeConfigured, imv1.ConditionReasonAdministratorsConfigured, "Unknown") {
+		s.instance.UpdateStatePending(imv1.ConditionTypeRuntimeConfigured, imv1.ConditionReasonAdministratorsConfigured, "True", "Cluster Administrators configured")
 		return updateStatusAndRequeue()
 	}
 	return switchState(sFnConfigureAuditLog)

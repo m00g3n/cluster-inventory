@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/pkg/errors"
 	v12 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -27,7 +28,7 @@ type auditLogConfigurator interface {
 	canEnableAuditLogsForShoot(seedName string) bool
 	getTenantConfigPath() string
 	getPolicyConfigMapName() string
-	getSeedObj(seedKey types.NamespacedName, ctx context.Context) (gardener.Seed, error)
+	getSeedObj(ctx context.Context, seedKey types.NamespacedName) (gardener.Seed, error)
 	getConfigFromFile() (data map[string]map[string]AuditLogData, err error)
 }
 
@@ -86,7 +87,7 @@ func (a *auditLogConfig) getPolicyConfigMapName() string {
 	return a.policyConfigMapName
 }
 
-func (a *auditLogConfig) getSeedObj(seedKey types.NamespacedName, ctx context.Context) (gardener.Seed, error) {
+func (a *auditLogConfig) getSeedObj(ctx context.Context, seedKey types.NamespacedName) (gardener.Seed, error) {
 	var seed gardener.Seed
 	if err := a.client.Get(ctx, seedKey, &seed); err != nil {
 		return gardener.Seed{}, err
@@ -103,7 +104,7 @@ func (al *AuditLog) Enable(ctx context.Context, shoot *gardener.Shoot) (bool, er
 	}
 
 	seedKey := types.NamespacedName{Name: seedName, Namespace: ""}
-	seed, err := al.getSeedObj(seedKey, ctx)
+	seed, err := al.getSeedObj(ctx, seedKey)
 	if err != nil {
 		return false, errors.Wrap(err, "Cannot get Gardener Seed object")
 	}
@@ -123,7 +124,6 @@ func (al *AuditLog) Enable(ctx context.Context, shoot *gardener.Shoot) (bool, er
 }
 
 func enableAuditLogs(shoot *gardener.Shoot, auditConfigFromFile map[string]map[string]AuditLogData, providerType string) (bool, error) {
-
 	providerConfig := auditConfigFromFile[providerType]
 	if providerConfig == nil {
 		return false, fmt.Errorf("cannot find config for provider %s", providerType)
@@ -223,7 +223,7 @@ func configureSecret(shoot *gardener.Shoot, config AuditLogData) (changed bool) 
 			sec.ResourceRef.APIVersion == "v1" &&
 			sec.ResourceRef.Kind == "Secret" &&
 			sec.ResourceRef.Name == config.SecretName {
-			return false
+			return
 		}
 	} else {
 		shoot.Spec.Resources = append(shoot.Spec.Resources, gardener.NamedResourceReference{})
