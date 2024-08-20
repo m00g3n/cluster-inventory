@@ -18,10 +18,11 @@ package runtime
 
 import (
 	"context"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"path/filepath"
 	"testing"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -29,6 +30,8 @@ import (
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
+	rbacv1 "k8s.io/api/rbac/v1"
+
 	//nolint:revive
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -49,14 +52,15 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	cfg                *rest.Config         //nolint:gochecknoglobals
-	k8sClient          client.Client        //nolint:gochecknoglobals
-	gardenerTestClient client.Client        //nolint:gochecknoglobals
-	testEnv            *envtest.Environment //nolint:gochecknoglobals
-	suiteCtx           context.Context      //nolint:gochecknoglobals
-	cancelSuiteCtx     context.CancelFunc   //nolint:gochecknoglobals
-	runtimeReconciler  *RuntimeReconciler   //nolint:gochecknoglobals
-	customTracker      *CustomTracker       //nolint:gochecknoglobals
+	cfg                       *rest.Config         //nolint:gochecknoglobals
+	k8sClient                 client.Client        //nolint:gochecknoglobals
+	k8sFakeClientRoleBindings client.Client        //nolint:gochecknoglobals
+	gardenerTestClient        client.Client        //nolint:gochecknoglobals
+	testEnv                   *envtest.Environment //nolint:gochecknoglobals
+	suiteCtx                  context.Context      //nolint:gochecknoglobals
+	cancelSuiteCtx            context.CancelFunc   //nolint:gochecknoglobals
+	runtimeReconciler         *RuntimeReconciler   //nolint:gochecknoglobals
+	customTracker             *CustomTracker       //nolint:gochecknoglobals
 )
 
 func TestControllers(t *testing.T) {
@@ -111,6 +115,14 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+	shootClientScheme := runtime.NewScheme()
+	_ = rbacv1.AddToScheme(shootClientScheme)
+	k8sFakeClientRoleBindings = fake.NewClientBuilder().WithScheme(shootClientScheme).Build()
+
+	fsm.GetShootClient = func(_ context.Context, _ client.SubResourceClient, _ *gardener_api.Shoot) (client.Client, error) {
+		return k8sFakeClientRoleBindings, nil
+	}
+
 	go func() {
 		defer GinkgoRecover()
 		suiteCtx, cancelSuiteCtx = context.WithCancel(context.Background())
@@ -152,7 +164,6 @@ func setupShootClientWithSequence(shoots []*gardener_api.Shoot) {
 	tracker := clienttesting.NewObjectTracker(clientScheme, serializer.NewCodecFactory(clientScheme).UniversalDecoder())
 	customTracker = NewCustomTracker(tracker, shoots)
 	gardenerTestClient = fake.NewClientBuilder().WithScheme(clientScheme).WithObjectTracker(customTracker).Build()
-
 	runtimeReconciler.UpdateShootClient(gardenerTestClient)
 }
 

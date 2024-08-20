@@ -13,7 +13,11 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 	newShoot, err := convertShoot(&s.instance, m.ConverterConfig)
 	if err != nil {
 		m.log.Error(err, "Failed to convert Runtime instance to shoot object")
-		return updateStatePendingWithErrorAndStop(&s.instance, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonConversionError, "Runtime conversion error")
+		return updateStatePendingWithErrorAndStop(
+			&s.instance,
+			imv1.ConditionTypeRuntimeProvisioned,
+			imv1.ConditionReasonConversionError,
+			"Runtime conversion error")
 	}
 
 	err = m.ShootClient.Create(ctx, &newShoot)
@@ -29,7 +33,12 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 		)
 		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 	}
-	m.log.Info("Gardener shoot for runtime initialised successfully", "Name", newShoot.Name, "Namespace", newShoot.Namespace)
+
+	m.log.Info(
+		"Gardener shoot for runtime initialised successfully",
+		"Name", newShoot.Name,
+		"Namespace", newShoot.Namespace,
+	)
 
 	s.instance.UpdateStatePending(
 		imv1.ConditionTypeRuntimeProvisioned,
