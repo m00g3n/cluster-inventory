@@ -37,7 +37,7 @@ spec:
           issuerURL: https://my.cool.tokens.com
           signingAlgs:
           - RS256
-        usernameClaim: sub
+          usernameClaim: sub
     # spec.shoot.provider is required
     provider:
       # spec.shoot.provider.type is required
