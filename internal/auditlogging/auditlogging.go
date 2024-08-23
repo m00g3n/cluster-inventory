@@ -23,7 +23,7 @@ const (
 
 //go:generate mockery --name=AuditLogging
 type AuditLogging interface {
-	Enable(ctx context.Context, shoot *gardener.Shoot) error
+	Enable(ctx context.Context, shoot *gardener.Shoot) (bool, error)
 }
 
 //go:generate mockery --name=auditLogConfigurator
@@ -102,18 +102,18 @@ func (a *auditLogConfig) getSeedObj(ctx context.Context, seedKey types.Namespace
 	return seed, nil
 }
 
-func (al *AuditLog) Enable(ctx context.Context, shoot *gardener.Shoot) error {
+func (al *AuditLog) Enable(ctx context.Context, shoot *gardener.Shoot) (bool, error) {
 	log := al.getLogInstance()
 	seedName := getSeedName(*shoot)
 
 	if !al.canEnableAuditLogsForShoot(seedName) {
 		log.Info("Seed name or Tenant config path is empty while configuring Audit Logs on shoot: " + shoot.Name)
-		return nil
+		return false, nil
 	}
 
 	auditConfigFromFile, err := al.getConfigFromFile()
 	if err != nil {
-		return errors.Wrap(err, "Cannot get Audit Log config from file")
+		return false, errors.Wrap(err, "Cannot get Audit Log config from file")
 	}
 
 	configureAuditPolicy(shoot, al.getPolicyConfigMapName())
@@ -121,22 +121,22 @@ func (al *AuditLog) Enable(ctx context.Context, shoot *gardener.Shoot) error {
 	seedKey := types.NamespacedName{Name: seedName, Namespace: ""}
 	seed, err := al.getSeedObj(ctx, seedKey)
 	if err != nil {
-		return errors.Wrap(err, "Cannot get Gardener Seed object")
+		return false, errors.Wrap(err, "Cannot get Gardener Seed object")
 	}
 
 	annotated, err := enableAuditLogs(shoot, auditConfigFromFile, seed.Spec.Provider.Type)
 
 	if err != nil {
-		return errors.Wrap(err, "Error during enabling Audit Logs on shoot: "+shoot.Name)
+		return false, errors.Wrap(err, "Error during enabling Audit Logs on shoot: "+shoot.Name)
 	}
 
 	if annotated {
 		if err = al.updateShoot(ctx, shoot); err != nil {
-			return errors.Wrap(err, "Cannot update shoot")
+			return false, errors.Wrap(err, "Cannot update shoot")
 		}
 	}
 
-	return nil
+	return true, nil
 }
 
 func enableAuditLogs(shoot *gardener.Shoot, auditConfigFromFile map[string]map[string]AuditLogData, providerType string) (bool, error) {

@@ -16,23 +16,22 @@ import (
 type CustomTracker struct {
 	clienttesting.ObjectTracker
 	shootSequence []*gardener_api.Shoot
-	callCnt       int
+	seedSequence  []*gardener_api.Seed
+	shootCallCnt  int
+	seedCallCnt   int
 	mu            sync.Mutex
 }
 
-func NewCustomTracker(tracker clienttesting.ObjectTracker, shoots []*gardener_api.Shoot) *CustomTracker {
+func NewCustomTracker(tracker clienttesting.ObjectTracker, shoots []*gardener_api.Shoot, seeds []*gardener_api.Seed) *CustomTracker {
 	return &CustomTracker{
 		ObjectTracker: tracker,
 		shootSequence: shoots,
+		seedSequence:  seeds,
 	}
 }
 
-func (t *CustomTracker) GetCallCnt() int {
-	return t.callCnt
-}
-
 func (t *CustomTracker) IsSequenceFullyUsed() bool {
-	return t.callCnt == len(t.shootSequence) && len(t.shootSequence) > 0
+	return (t.shootCallCnt == len(t.shootSequence) && len(t.shootSequence) > 0) && (t.seedCallCnt == len(t.seedSequence) && len(t.seedSequence) > 0)
 }
 
 func (t *CustomTracker) Get(gvr schema.GroupVersionResource, ns, name string) (runtime.Object, error) {
@@ -40,19 +39,52 @@ func (t *CustomTracker) Get(gvr schema.GroupVersionResource, ns, name string) (r
 	defer t.mu.Unlock()
 
 	if gvr.Resource == "shoots" {
-		if t.callCnt < len(t.shootSequence) {
-			shoot := t.shootSequence[t.callCnt]
-			t.callCnt++
-
-			if shoot == nil {
-				return nil, k8serrors.NewNotFound(schema.GroupResource{}, "")
-			}
-			return shoot, nil
-		}
-		return nil, fmt.Errorf("no more Shoot objects in sequence")
+		return getNextShoot(t.shootSequence, t)
+	} else if gvr.Resource == "seeds" {
+		return getNextSeed(t.seedSequence, t)
 	}
+
 	return t.ObjectTracker.Get(gvr, ns, name)
 }
+
+func getNextSeed(seed []*gardener_api.Seed, t *CustomTracker) (runtime.Object, error) {
+	if t.seedCallCnt < len(seed) {
+		obj := seed[t.seedCallCnt]
+		t.seedCallCnt++
+
+		if obj == nil {
+			return nil, k8serrors.NewNotFound(schema.GroupResource{}, "")
+		}
+		return obj, nil
+	}
+	return nil, fmt.Errorf("no more seeds in sequence")
+}
+
+func getNextShoot(shoot []*gardener_api.Shoot, t *CustomTracker) (runtime.Object, error) {
+	if t.shootCallCnt < len(shoot) {
+		obj := shoot[t.shootCallCnt]
+		t.shootCallCnt++
+
+		if obj == nil {
+			return nil, k8serrors.NewNotFound(schema.GroupResource{}, "")
+		}
+		return obj, nil
+	}
+	return nil, fmt.Errorf("no more shoots in sequence")
+}
+
+//func getNextObject[T any](sequence []*T, t *CustomTracker) (*T, error) {
+//	if t.callCnt < len(sequence) {
+//		obj := sequence[t.callCnt]
+//		t.callCnt++
+//
+//		if obj == nil {
+//			return nil, k8serrors.NewNotFound(schema.GroupResource{}, "")
+//		}
+//		return obj, nil
+//	}
+//	return nil, fmt.Errorf("no more objects in sequence")
+//}
 
 func (t *CustomTracker) Delete(gvr schema.GroupVersionResource, ns, name string) error {
 	t.mu.Lock()

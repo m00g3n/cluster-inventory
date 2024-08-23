@@ -18,13 +18,13 @@ package runtime
 
 import (
 	"context"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"time"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -34,7 +34,6 @@ var _ = Describe("Runtime Controller", func() {
 
 	Context("When reconciling a resource", func() {
 		const ResourceName = "test-resource"
-
 		ctx := context.Background()
 
 		typeNamespacedName := types.NamespacedName{
@@ -44,6 +43,7 @@ var _ = Describe("Runtime Controller", func() {
 
 		It("Should successfully create new Shoot from provided Runtime and set Ready status on CR", func() {
 			setupGardenerTestClientForProvisioning()
+			Expect(setupSeedObjectOnCluster(gardenerTestClient)).To(Succeed())
 
 			By("Create Runtime CR")
 			runtimeStub := CreateRuntimeStub(ResourceName)
@@ -256,6 +256,7 @@ func CreateRuntimeStub(resourceName string) *imv1.Runtime {
 						},
 					},
 				},
+				Region: "eu-central-1",
 			},
 			Security: imv1.Security{
 				Administrators: []string{
