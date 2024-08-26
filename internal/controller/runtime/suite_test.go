@@ -18,7 +18,6 @@ package runtime
 
 import (
 	"context"
-	v12 "k8s.io/api/core/v1"
 	"path/filepath"
 	"testing"
 	"time"
@@ -183,6 +182,7 @@ func getBaseShootForTestingSequence() gardener_api.Shoot {
 func fixShootsSequenceForProvisioning(shoot *gardener_api.Shoot) []*gardener_api.Shoot {
 	var missingShoot *gardener_api.Shoot
 	initialisedShoot := shoot.DeepCopy()
+	initialisedShoot.Spec.SeedName = ptr.To("test-seed")
 
 	dnsShoot := initialisedShoot.DeepCopy()
 
@@ -199,16 +199,7 @@ func fixShootsSequenceForProvisioning(shoot *gardener_api.Shoot) []*gardener_api
 		},
 	}
 
-	pendingShoot.Spec.SeedName = ptr.To("test-seed")
-
-	auditLogShoot := pendingShoot.DeepCopy()
-	auditLogShoot.Spec.Kubernetes.KubeAPIServer.AuditConfig = &gardener_api.AuditConfig{
-		AuditPolicy: &gardener_api.AuditPolicy{
-			ConfigMapRef: &v12.ObjectReference{Name: "policy-config-map"},
-		},
-	}
-
-	processingShoot := auditLogShoot.DeepCopy()
+	processingShoot := pendingShoot.DeepCopy()
 	processingShoot.Status.LastOperation.State = gardener_api.LastOperationStateProcessing
 
 	readyShoot := processingShoot.DeepCopy()
@@ -217,7 +208,7 @@ func fixShootsSequenceForProvisioning(shoot *gardener_api.Shoot) []*gardener_api
 
 	// processedShoot := processingShoot.DeepCopy() // will add specific data later
 
-	return []*gardener_api.Shoot{missingShoot, missingShoot, missingShoot, initialisedShoot, dnsShoot, auditLogShoot, auditLogShoot, processingShoot, readyShoot, readyShoot, readyShoot, readyShoot}
+	return []*gardener_api.Shoot{missingShoot, missingShoot, missingShoot, initialisedShoot, dnsShoot, pendingShoot, processingShoot, readyShoot, readyShoot, readyShoot, readyShoot, readyShoot}
 }
 
 func fixShootsSequenceForUpdate(shoot *gardener_api.Shoot) []*gardener_api.Shoot {
@@ -227,8 +218,6 @@ func fixShootsSequenceForUpdate(shoot *gardener_api.Shoot) []*gardener_api.Shoot
 		Domain: ptr.To("test.domain"),
 	}
 
-	pendingShoot.Spec.SeedName = ptr.To("test-seed")
-
 	pendingShoot.Status = gardener_api.ShootStatus{
 		LastOperation: &gardener_api.LastOperation{
 			Type:  gardener_api.LastOperationTypeReconcile,
@@ -236,14 +225,9 @@ func fixShootsSequenceForUpdate(shoot *gardener_api.Shoot) []*gardener_api.Shoot
 		},
 	}
 
-	auditLogShoot := pendingShoot.DeepCopy()
-	auditLogShoot.Spec.Kubernetes.KubeAPIServer.AuditConfig = &gardener_api.AuditConfig{
-		AuditPolicy: &gardener_api.AuditPolicy{
-			ConfigMapRef: &v12.ObjectReference{Name: "policy-config-map"},
-		},
-	}
+	pendingShoot.Spec.SeedName = ptr.To("test-seed")
 
-	processingShoot := auditLogShoot.DeepCopy()
+	processingShoot := pendingShoot.DeepCopy()
 
 	processingShoot.Status.LastOperation.State = gardener_api.LastOperationStateProcessing
 
@@ -253,7 +237,7 @@ func fixShootsSequenceForUpdate(shoot *gardener_api.Shoot) []*gardener_api.Shoot
 
 	// processedShoot := processingShoot.DeepCopy() // will add specific data later
 
-	return []*gardener_api.Shoot{pendingShoot, pendingShoot, auditLogShoot, processingShoot, readyShoot, readyShoot}
+	return []*gardener_api.Shoot{pendingShoot, processingShoot, readyShoot, readyShoot, readyShoot}
 }
 
 func fixShootsSequenceForDelete(shoot *gardener_api.Shoot) []*gardener_api.Shoot {

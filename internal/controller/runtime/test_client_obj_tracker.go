@@ -73,10 +73,10 @@ func getNextShoot(shoot []*gardener_api.Shoot, t *CustomTracker) (runtime.Object
 	return nil, fmt.Errorf("no more shoots in sequence")
 }
 
-//func getNextObject[T any](sequence []*T, t *CustomTracker) (*T, error) {
-//	if t.callCnt < len(sequence) {
-//		obj := sequence[t.callCnt]
-//		t.callCnt++
+//func getNextObject[T any](sequence []*T, counter *int) (*T, error) {
+//	if *counter < len(sequence) {
+//		obj := sequence[*counter]
+//		*counter++
 //
 //		if obj == nil {
 //			return nil, k8serrors.NewNotFound(schema.GroupResource{}, "")
