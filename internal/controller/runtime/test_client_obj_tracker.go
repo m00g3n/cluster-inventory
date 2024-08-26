@@ -39,52 +39,52 @@ func (t *CustomTracker) Get(gvr schema.GroupVersionResource, ns, name string) (r
 	defer t.mu.Unlock()
 
 	if gvr.Resource == "shoots" {
-		return getNextShoot(t.shootSequence, t)
+		return getNextObject(t.shootSequence, &t.shootCallCnt)
 	} else if gvr.Resource == "seeds" {
-		return getNextSeed(t.seedSequence, t)
+		return getNextObject(t.seedSequence, &t.seedCallCnt)
 	}
 
 	return t.ObjectTracker.Get(gvr, ns, name)
 }
 
-func getNextSeed(seed []*gardener_api.Seed, t *CustomTracker) (runtime.Object, error) {
-	if t.seedCallCnt < len(seed) {
-		obj := seed[t.seedCallCnt]
-		t.seedCallCnt++
-
-		if obj == nil {
-			return nil, k8serrors.NewNotFound(schema.GroupResource{}, "")
-		}
-		return obj, nil
-	}
-	return nil, fmt.Errorf("no more seeds in sequence")
-}
-
-func getNextShoot(shoot []*gardener_api.Shoot, t *CustomTracker) (runtime.Object, error) {
-	if t.shootCallCnt < len(shoot) {
-		obj := shoot[t.shootCallCnt]
-		t.shootCallCnt++
-
-		if obj == nil {
-			return nil, k8serrors.NewNotFound(schema.GroupResource{}, "")
-		}
-		return obj, nil
-	}
-	return nil, fmt.Errorf("no more shoots in sequence")
-}
-
-//func getNextObject[T any](sequence []*T, counter *int) (*T, error) {
-//	if *counter < len(sequence) {
-//		obj := sequence[*counter]
-//		*counter++
+//func getNextSeed(seed []*gardener_api.Seed, t *CustomTracker) (runtime.Object, error) {
+//	if t.seedCallCnt < len(seed) {
+//		obj := seed[t.seedCallCnt]
+//		t.seedCallCnt++
 //
 //		if obj == nil {
 //			return nil, k8serrors.NewNotFound(schema.GroupResource{}, "")
 //		}
 //		return obj, nil
 //	}
-//	return nil, fmt.Errorf("no more objects in sequence")
+//	return nil, fmt.Errorf("no more seeds in sequence")
 //}
+//
+//func getNextShoot(shoot []*gardener_api.Shoot, t *CustomTracker) (runtime.Object, error) {
+//	if t.shootCallCnt < len(shoot) {
+//		obj := shoot[t.shootCallCnt]
+//		t.shootCallCnt++
+//
+//		if obj == nil {
+//			return nil, k8serrors.NewNotFound(schema.GroupResource{}, "")
+//		}
+//		return obj, nil
+//	}
+//	return nil, fmt.Errorf("no more shoots in sequence")
+//}
+
+func getNextObject[T any](sequence []*T, counter *int) (*T, error) {
+	if *counter < len(sequence) {
+		obj := sequence[*counter]
+		*counter++
+
+		if obj == nil {
+			return nil, k8serrors.NewNotFound(schema.GroupResource{}, "")
+		}
+		return obj, nil
+	}
+	return nil, fmt.Errorf("no more objects in sequence")
+}
 
 func (t *CustomTracker) Delete(gvr schema.GroupVersionResource, ns, name string) error {
 	t.mu.Lock()
