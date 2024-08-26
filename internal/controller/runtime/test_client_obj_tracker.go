@@ -31,7 +31,7 @@ func NewCustomTracker(tracker clienttesting.ObjectTracker, shoots []*gardener_ap
 }
 
 func (t *CustomTracker) IsSequenceFullyUsed() bool {
-	return (t.shootCallCnt == len(t.shootSequence) && len(t.shootSequence) > 0) && (t.seedCallCnt == len(t.seedSequence) && len(t.seedSequence) > 0)
+	return (t.shootCallCnt == len(t.shootSequence) && len(t.shootSequence) > 0) && t.seedCallCnt == len(t.seedSequence)
 }
 
 func (t *CustomTracker) Get(gvr schema.GroupVersionResource, ns, name string) (runtime.Object, error) {
@@ -47,32 +47,6 @@ func (t *CustomTracker) Get(gvr schema.GroupVersionResource, ns, name string) (r
 	return t.ObjectTracker.Get(gvr, ns, name)
 }
 
-//func getNextSeed(seed []*gardener_api.Seed, t *CustomTracker) (runtime.Object, error) {
-//	if t.seedCallCnt < len(seed) {
-//		obj := seed[t.seedCallCnt]
-//		t.seedCallCnt++
-//
-//		if obj == nil {
-//			return nil, k8serrors.NewNotFound(schema.GroupResource{}, "")
-//		}
-//		return obj, nil
-//	}
-//	return nil, fmt.Errorf("no more seeds in sequence")
-//}
-//
-//func getNextShoot(shoot []*gardener_api.Shoot, t *CustomTracker) (runtime.Object, error) {
-//	if t.shootCallCnt < len(shoot) {
-//		obj := shoot[t.shootCallCnt]
-//		t.shootCallCnt++
-//
-//		if obj == nil {
-//			return nil, k8serrors.NewNotFound(schema.GroupResource{}, "")
-//		}
-//		return obj, nil
-//	}
-//	return nil, fmt.Errorf("no more shoots in sequence")
-//}
-
 func getNextObject[T any](sequence []*T, counter *int) (*T, error) {
 	if *counter < len(sequence) {
 		obj := sequence[*counter]
@@ -84,6 +58,26 @@ func getNextObject[T any](sequence []*T, counter *int) (*T, error) {
 		return obj, nil
 	}
 	return nil, fmt.Errorf("no more objects in sequence")
+}
+
+func (t *CustomTracker) Update(gvr schema.GroupVersionResource, obj runtime.Object, ns string) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if gvr.Resource == "shoots" {
+		shoot, ok := obj.(*gardener_api.Shoot)
+		if !ok {
+			return fmt.Errorf("object is not of type Gardener Shoot")
+		}
+		for index, existingShoot := range t.shootSequence {
+			if existingShoot != nil && existingShoot.Name == shoot.Name {
+				t.shootSequence[index] = shoot
+				return nil
+			}
+		}
+		return k8serrors.NewNotFound(schema.GroupResource{}, shoot.Name)
+	}
+	return t.ObjectTracker.Update(gvr, obj, ns)
 }
 
 func (t *CustomTracker) Delete(gvr schema.GroupVersionResource, ns, name string) error {

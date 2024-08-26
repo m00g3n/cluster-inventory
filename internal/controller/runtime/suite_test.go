@@ -154,8 +154,7 @@ func setupGardenerTestClientForUpdate() {
 func setupGardenerTestClientForDelete() {
 	baseShoot := getBaseShootForTestingSequence()
 	shoots := fixShootsSequenceForDelete(&baseShoot)
-	seeds := fixSeedsSequence()
-	setupGardenerClientWithSequence(shoots, seeds)
+	setupGardenerClientWithSequence(shoots, nil)
 }
 
 func setupGardenerClientWithSequence(shoots []*gardener_api.Shoot, seeds []*gardener_api.Seed) {
@@ -268,7 +267,7 @@ func fixShootsSequenceForDelete(shoot *gardener_api.Shoot) []*gardener_api.Shoot
 	pendingDeleteShoot.Status.LastOperation.Type = gardener_api.LastOperationTypeDelete
 	pendingDeleteShoot.Status.LastOperation.State = gardener_api.LastOperationStatePending
 
-	return []*gardener_api.Shoot{currentShoot, currentShoot, currentShoot, pendingDeleteShoot, nil}
+	return []*gardener_api.Shoot{currentShoot, currentShoot, currentShoot, currentShoot, pendingDeleteShoot, nil}
 }
 
 func fixSeedsSequence() []*gardener_api.Seed {
