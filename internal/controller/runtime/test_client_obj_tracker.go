@@ -38,7 +38,7 @@ func (t *CustomTracker) Get(gvr schema.GroupVersionResource, ns, name string) (r
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if gvr.Resource == "shoots" {
+	if gvr.Resource == "shoots" { //nolint:goconst
 		return getNextObject(t.shootSequence, &t.shootCallCnt)
 	} else if gvr.Resource == "seeds" {
 		return getNextObject(t.seedSequence, &t.seedCallCnt)
@@ -64,7 +64,7 @@ func (t *CustomTracker) Update(gvr schema.GroupVersionResource, obj runtime.Obje
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if gvr.Resource == "shoots" {
+	if gvr.Resource == "shoots" { //nolint:goconst
 		shoot, ok := obj.(*gardener_api.Shoot)
 		if !ok {
 			return fmt.Errorf("object is not of type Gardener Shoot")
