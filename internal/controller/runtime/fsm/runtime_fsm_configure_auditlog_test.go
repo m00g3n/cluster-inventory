@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestEnableAuditLog(t *testing.T) {
+func TestAuditLogState(t *testing.T) {
 	t.Run("Should set status on Runtime CR when Audit Log was successfully configured", func(t *testing.T) {
 		// given
 		ctx := context.Background()

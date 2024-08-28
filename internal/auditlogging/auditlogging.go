@@ -26,19 +26,18 @@ type AuditLogging interface {
 	Enable(ctx context.Context, shoot *gardener.Shoot) (bool, error)
 }
 
-//go:generate mockery --name=auditLogConfigurator
-type auditLogConfigurator interface {
-	canEnableAuditLogsForShoot(seedName string) bool
-	getTenantConfigPath() string
-	getPolicyConfigMapName() string
-	getSeedObj(ctx context.Context, seedKey types.NamespacedName) (gardener.Seed, error)
-	getLogInstance() logr.Logger
-	updateShoot(ctx context.Context, shoot *gardener.Shoot) error
-	getConfigFromFile() (data map[string]map[string]AuditLogData, err error)
+//go:generate mockery --name=AuditLogConfigurator
+type AuditLogConfigurator interface {
+	CanEnableAuditLogsForShoot(seedName string) bool
+	GetPolicyConfigMapName() string
+	GetSeedObj(ctx context.Context, seedKey types.NamespacedName) (gardener.Seed, error)
+	GetLogInstance() logr.Logger
+	UpdateShoot(ctx context.Context, shoot *gardener.Shoot) error
+	GetConfigFromFile() (data map[string]map[string]AuditLogData, err error)
 }
 
 type AuditLog struct {
-	auditLogConfigurator
+	AuditLogConfigurator
 }
 
 type auditLogConfig struct {
@@ -69,11 +68,11 @@ type AuditlogExtensionConfig struct {
 
 func NewAuditLogging(auditLogTenantConfigPath, auditLogPolicyConfigMapName string, k8s client.Client, log logr.Logger) AuditLogging {
 	return &AuditLog{
-		auditLogConfigurator: newAuditLogConfigurator(auditLogTenantConfigPath, auditLogPolicyConfigMapName, k8s, log),
+		AuditLogConfigurator: newAuditLogConfigurator(auditLogTenantConfigPath, auditLogPolicyConfigMapName, k8s, log),
 	}
 }
 
-func newAuditLogConfigurator(auditLogTenantConfigPath, auditLogPolicyConfigMapName string, k8s client.Client, log logr.Logger) auditLogConfigurator {
+func newAuditLogConfigurator(auditLogTenantConfigPath, auditLogPolicyConfigMapName string, k8s client.Client, log logr.Logger) AuditLogConfigurator {
 	return &auditLogConfig{
 		tenantConfigPath:    auditLogTenantConfigPath,
 		policyConfigMapName: auditLogPolicyConfigMapName,
@@ -82,19 +81,15 @@ func newAuditLogConfigurator(auditLogTenantConfigPath, auditLogPolicyConfigMapNa
 	}
 }
 
-func (a *auditLogConfig) canEnableAuditLogsForShoot(seedName string) bool {
+func (a *auditLogConfig) CanEnableAuditLogsForShoot(seedName string) bool {
 	return seedName != "" && a.tenantConfigPath != ""
 }
 
-func (a *auditLogConfig) getTenantConfigPath() string {
-	return a.tenantConfigPath
-}
-
-func (a *auditLogConfig) getPolicyConfigMapName() string {
+func (a *auditLogConfig) GetPolicyConfigMapName() string {
 	return a.policyConfigMapName
 }
 
-func (a *auditLogConfig) getSeedObj(ctx context.Context, seedKey types.NamespacedName) (gardener.Seed, error) {
+func (a *auditLogConfig) GetSeedObj(ctx context.Context, seedKey types.NamespacedName) (gardener.Seed, error) {
 	var seed gardener.Seed
 	if err := a.client.Get(ctx, seedKey, &seed); err != nil {
 		return gardener.Seed{}, err
@@ -103,35 +98,35 @@ func (a *auditLogConfig) getSeedObj(ctx context.Context, seedKey types.Namespace
 }
 
 func (al *AuditLog) Enable(ctx context.Context, shoot *gardener.Shoot) (bool, error) {
-	log := al.getLogInstance()
+	log := al.GetLogInstance()
 	seedName := getSeedName(*shoot)
 
-	if !al.canEnableAuditLogsForShoot(seedName) {
+	if !al.CanEnableAuditLogsForShoot(seedName) {
 		log.Info("Seed name or Tenant config path is empty while configuring Audit Logs on shoot: " + shoot.Name)
 		return false, nil
 	}
 
-	auditConfigFromFile, err := al.getConfigFromFile()
+	auditConfigFromFile, err := al.GetConfigFromFile()
 	if err != nil {
 		return false, errors.Wrap(err, "Cannot get Audit Log config from file")
 	}
 
-	configureAuditPolicy(shoot, al.getPolicyConfigMapName())
+	configureAuditPolicy(shoot, al.GetPolicyConfigMapName())
 
 	seedKey := types.NamespacedName{Name: seedName, Namespace: ""}
-	seed, err := al.getSeedObj(ctx, seedKey)
+	seed, err := al.GetSeedObj(ctx, seedKey)
 	if err != nil {
 		return false, errors.Wrap(err, "Cannot get Gardener Seed object")
 	}
 
-	annotated, err := enableAuditLogs(shoot, auditConfigFromFile, seed.Spec.Provider.Type)
+	annotated, err := applyAuditLogConfig(shoot, auditConfigFromFile, seed.Spec.Provider.Type)
 
 	if err != nil {
 		return false, errors.Wrap(err, "Error during enabling Audit Logs on shoot: "+shoot.Name)
 	}
 
 	if annotated {
-		if err = al.updateShoot(ctx, shoot); err != nil {
+		if err = al.UpdateShoot(ctx, shoot); err != nil {
 			return false, errors.Wrap(err, "Cannot update shoot")
 		}
 	}
@@ -139,7 +134,7 @@ func (al *AuditLog) Enable(ctx context.Context, shoot *gardener.Shoot) (bool, er
 	return true, nil
 }
 
-func enableAuditLogs(shoot *gardener.Shoot, auditConfigFromFile map[string]map[string]AuditLogData, providerType string) (bool, error) {
+func applyAuditLogConfig(shoot *gardener.Shoot, auditConfigFromFile map[string]map[string]AuditLogData, providerType string) (bool, error) {
 	providerConfig := auditConfigFromFile[providerType]
 	if providerConfig == nil {
 		return false, fmt.Errorf("cannot find config for provider %s", providerType)
@@ -256,7 +251,7 @@ func configureSecret(shoot *gardener.Shoot, config AuditLogData) (changed bool) 
 	return
 }
 
-func (a *auditLogConfig) getConfigFromFile() (data map[string]map[string]AuditLogData, err error) {
+func (a *auditLogConfig) GetConfigFromFile() (data map[string]map[string]AuditLogData, err error) {
 	file, err := os.Open(a.tenantConfigPath)
 
 	if err != nil {
@@ -296,10 +291,10 @@ func newAuditPolicyConfig(policyConfigMapName string) *gardener.AuditConfig {
 	}
 }
 
-func (a *auditLogConfig) updateShoot(ctx context.Context, shoot *gardener.Shoot) error {
+func (a *auditLogConfig) UpdateShoot(ctx context.Context, shoot *gardener.Shoot) error {
 	return a.client.Update(ctx, shoot)
 }
 
-func (a *auditLogConfig) getLogInstance() logr.Logger {
+func (a *auditLogConfig) GetLogInstance() logr.Logger {
 	return a.log
 }
