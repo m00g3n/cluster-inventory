@@ -84,8 +84,7 @@ func (t *CustomTracker) Delete(gvr schema.GroupVersionResource, ns, name string)
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	//nolint:goconst
-	if gvr.Resource == "shoots" {
+	if gvr.Resource == "shoots" { //nolint:goconst
 		for index, shoot := range t.shootSequence {
 			if shoot != nil && shoot.Name == name {
 				t.shootSequence[index] = nil
