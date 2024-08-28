@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/go-logr/logr"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
@@ -66,6 +67,62 @@ func TestEnable(t *testing.T) {
 		configurator.AssertExpectations(t)
 		require.False(t, enable)
 		require.Error(t, err)
+	})
+}
+
+func TestApplyAuditLogConfig(t *testing.T) {
+	t.Run("Should apply Audit Log config to Shoot", func(t *testing.T) {
+		// given
+		shoot := shootForTest()
+		configFromFile := fileConfigData()
+
+		// when
+		annotated, err := auditlogging.ApplyAuditLogConfig(shoot, configFromFile, "aws")
+
+		// then
+		require.True(t, annotated)
+		require.NoError(t, err)
+	})
+
+	t.Run("Should return false and error if can not find config for provider", func(t *testing.T) {
+		// given
+		shoot := shootForTest()
+
+		// when
+		annotated, err := auditlogging.ApplyAuditLogConfig(shoot, map[string]map[string]auditlogging.AuditLogData{}, "aws")
+
+		// then
+		require.False(t, annotated)
+		require.Equal(t, err, fmt.Errorf("cannot find config for provider aws"))
+	})
+
+	t.Run("Should return false and error if Shoot region is empty", func(t *testing.T) {
+		// given
+		shoot := shootForTest()
+		configFromFile := fileConfigData()
+		shoot.Spec.Region = ""
+
+		// when
+		annotated, err := auditlogging.ApplyAuditLogConfig(shoot, configFromFile, "aws")
+
+		// then
+		require.False(t, annotated)
+		require.Equal(t, err, fmt.Errorf("shoot has no region set"))
+	})
+
+	t.Run("Should return false and error if provider for region is empty", func(t *testing.T) {
+		// given
+		shoot := shootForTest()
+		configFromFile := map[string]map[string]auditlogging.AuditLogData{
+			"aws": {},
+		}
+
+		// when
+		annotated, err := auditlogging.ApplyAuditLogConfig(shoot, configFromFile, "aws")
+
+		// then
+		require.False(t, annotated)
+		require.Equal(t, err, fmt.Errorf("auditlog config for region region, provider aws is empty"))
 	})
 }
 

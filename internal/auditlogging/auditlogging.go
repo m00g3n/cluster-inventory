@@ -119,7 +119,7 @@ func (al *AuditLog) Enable(ctx context.Context, shoot *gardener.Shoot) (bool, er
 		return false, errors.Wrap(err, "Cannot get Gardener Seed object")
 	}
 
-	annotated, err := applyAuditLogConfig(shoot, auditConfigFromFile, seed.Spec.Provider.Type)
+	annotated, err := ApplyAuditLogConfig(shoot, auditConfigFromFile, seed.Spec.Provider.Type)
 
 	if err != nil {
 		return false, errors.Wrap(err, "Error during enabling Audit Logs on shoot: "+shoot.Name)
@@ -134,7 +134,7 @@ func (al *AuditLog) Enable(ctx context.Context, shoot *gardener.Shoot) (bool, er
 	return true, nil
 }
 
-func applyAuditLogConfig(shoot *gardener.Shoot, auditConfigFromFile map[string]map[string]AuditLogData, providerType string) (bool, error) {
+func ApplyAuditLogConfig(shoot *gardener.Shoot, auditConfigFromFile map[string]map[string]AuditLogData, providerType string) (bool, error) {
 	providerConfig := auditConfigFromFile[providerType]
 	if providerConfig == nil {
 		return false, fmt.Errorf("cannot find config for provider %s", providerType)
@@ -142,7 +142,7 @@ func applyAuditLogConfig(shoot *gardener.Shoot, auditConfigFromFile map[string]m
 
 	auditID := shoot.Spec.Region
 	if auditID == "" {
-		return false, errors.New("shoot has no region set")
+		return false, fmt.Errorf("shoot has no region set")
 	}
 
 	tenant, ok := providerConfig[auditID]
