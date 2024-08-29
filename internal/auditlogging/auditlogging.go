@@ -7,7 +7,6 @@ import (
 	"os"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v12 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +30,6 @@ type AuditLogConfigurator interface {
 	CanEnableAuditLogsForShoot(seedName string) bool
 	GetPolicyConfigMapName() string
 	GetSeedObj(ctx context.Context, seedKey types.NamespacedName) (gardener.Seed, error)
-	GetLogInstance() logr.Logger
 	UpdateShoot(ctx context.Context, shoot *gardener.Shoot) error
 	GetConfigFromFile() (data map[string]map[string]AuditLogData, err error)
 }
@@ -44,7 +42,6 @@ type auditLogConfig struct {
 	tenantConfigPath    string
 	policyConfigMapName string
 	client              client.Client
-	log                 logr.Logger
 }
 
 type AuditLogData struct {
@@ -66,18 +63,17 @@ type AuditlogExtensionConfig struct {
 	SecretReferenceName string `json:"secretReferenceName"`
 }
 
-func NewAuditLogging(auditLogTenantConfigPath, auditLogPolicyConfigMapName string, k8s client.Client, log logr.Logger) AuditLogging {
+func NewAuditLogging(auditLogTenantConfigPath, auditLogPolicyConfigMapName string, k8s client.Client) AuditLogging {
 	return &AuditLog{
-		AuditLogConfigurator: newAuditLogConfigurator(auditLogTenantConfigPath, auditLogPolicyConfigMapName, k8s, log),
+		AuditLogConfigurator: newAuditLogConfigurator(auditLogTenantConfigPath, auditLogPolicyConfigMapName, k8s),
 	}
 }
 
-func newAuditLogConfigurator(auditLogTenantConfigPath, auditLogPolicyConfigMapName string, k8s client.Client, log logr.Logger) AuditLogConfigurator {
+func newAuditLogConfigurator(auditLogTenantConfigPath, auditLogPolicyConfigMapName string, k8s client.Client) AuditLogConfigurator {
 	return &auditLogConfig{
 		tenantConfigPath:    auditLogTenantConfigPath,
 		policyConfigMapName: auditLogPolicyConfigMapName,
 		client:              k8s,
-		log:                 log,
 	}
 }
 
@@ -98,11 +94,10 @@ func (a *auditLogConfig) GetSeedObj(ctx context.Context, seedKey types.Namespace
 }
 
 func (al *AuditLog) Enable(ctx context.Context, shoot *gardener.Shoot) (bool, error) {
-	log := al.GetLogInstance()
 	seedName := getSeedName(*shoot)
 
 	if !al.CanEnableAuditLogsForShoot(seedName) {
-		log.Info("Seed name or Tenant config path is empty while configuring Audit Logs on shoot: " + shoot.Name)
+		//log.Info("Seed name or Tenant config path is empty while configuring Audit Logs on shoot: " + shoot.Name)
 		return false, nil
 	}
 
@@ -293,8 +288,4 @@ func newAuditPolicyConfig(policyConfigMapName string) *gardener.AuditConfig {
 
 func (a *auditLogConfig) UpdateShoot(ctx context.Context, shoot *gardener.Shoot) error {
 	return a.client.Update(ctx, shoot)
-}
-
-func (a *auditLogConfig) GetLogInstance() logr.Logger {
-	return a.log
 }

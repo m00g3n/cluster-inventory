@@ -7,8 +7,6 @@ import (
 
 	auditlogging "github.com/kyma-project/infrastructure-manager/internal/auditlogging"
 
-	logr "github.com/go-logr/logr"
-
 	mock "github.com/stretchr/testify/mock"
 
 	types "k8s.io/apimachinery/pkg/types"
@@ -67,24 +65,6 @@ func (_m *AuditLogConfigurator) GetConfigFromFile() (map[string]map[string]audit
 	}
 
 	return r0, r1
-}
-
-// GetLogInstance provides a mock function with given fields:
-func (_m *AuditLogConfigurator) GetLogInstance() logr.Logger {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetLogInstance")
-	}
-
-	var r0 logr.Logger
-	if rf, ok := ret.Get(0).(func() logr.Logger); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(logr.Logger)
-	}
-
-	return r0
 }
 
 // GetPolicyConfigMapName provides a mock function with given fields:

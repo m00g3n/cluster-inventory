@@ -107,6 +107,6 @@ func NewFsm(log logr.Logger, cfg RCCfg, k8s K8s) Fsm {
 		RCCfg:          cfg,
 		log:            log,
 		K8s:            k8s,
-		AuditLogging:   auditlogging.NewAuditLogging(cfg.AuditLog.TenantConfigPath, cfg.AuditLog.PolicyConfigMapName, k8s.ShootClient, log),
+		AuditLogging:   auditlogging.NewAuditLogging(cfg.AuditLog.TenantConfigPath, cfg.AuditLog.PolicyConfigMapName, k8s.ShootClient),
 	}
 }

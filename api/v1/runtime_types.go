@@ -98,6 +98,7 @@ const (
 
 	ConditionReasonAdministratorsConfigured = RuntimeConditionReason("AdministratorsConfigured")
 	ConditionReasonAuditLogConfigured       = RuntimeConditionReason("AuditLogConfigured")
+	ConditionReasonAuditLogError            = RuntimeConditionReason("AuditLogErr")
 )
 
 //+kubebuilder:object:root=true

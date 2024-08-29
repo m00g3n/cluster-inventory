@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/go-logr/logr"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging/mocks"
 	"github.com/stretchr/testify/require"
@@ -24,7 +23,6 @@ func TestEnable(t *testing.T) {
 		configFromFile := fileConfigData()
 		seedKey := types.NamespacedName{Name: "seed-name", Namespace: ""}
 
-		configurator.On("GetLogInstance").Return(logr.Logger{}).Once()
 		configurator.On("CanEnableAuditLogsForShoot", "seed-name").Return(true).Once()
 		configurator.On("GetConfigFromFile").Return(configFromFile, nil).Once()
 		configurator.On("GetPolicyConfigMapName").Return("policyConfigMapName").Once()
@@ -53,7 +51,6 @@ func TestEnable(t *testing.T) {
 		// delete shoot region to simulate error
 		shoot.Spec.Region = ""
 
-		configurator.On("GetLogInstance").Return(logr.Logger{}).Once()
 		configurator.On("CanEnableAuditLogsForShoot", "seed-name").Return(true).Once()
 		configurator.On("GetConfigFromFile").Return(configFromFile, nil).Once()
 		configurator.On("GetPolicyConfigMapName").Return("policyConfigMapName").Once()

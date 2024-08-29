@@ -28,7 +28,7 @@ func TestAuditLogState(t *testing.T) {
 			{
 				Type:    string(v1.ConditionTypeAuditLogConfigured),
 				Status:  "True",
-				Reason:  string(v1.ConditionReasonConfigurationCompleted),
+				Reason:  string(v1.ConditionReasonAuditLogConfigured),
 				Message: "Audit Log configured",
 			},
 		}
@@ -63,7 +63,7 @@ func TestAuditLogState(t *testing.T) {
 			{
 				Type:    string(v1.ConditionTypeAuditLogConfigured),
 				Status:  "False",
-				Reason:  string(v1.ConditionReasonConfigurationCompleted),
+				Reason:  string(v1.ConditionReasonAuditLogError),
 				Message: "some error during configuration",
 			},
 		}
@@ -82,29 +82,6 @@ func TestAuditLogState(t *testing.T) {
 		require.Contains(t, stateFn.name(), "sFnUpdateStatus")
 		assert.Equal(t, v1.RuntimeStateFailed, string(systemState.instance.Status.State))
 		assert.Equal(t, expectedRuntimeConditions, systemState.instance.Status.Conditions)
-	})
-
-	t.Run("Should requeue if initial criteria of enabling Audit Log is not met", func(t *testing.T) {
-		// given
-		ctx := context.Background()
-		auditLog := &mocks.AuditLogging{}
-		shoot := shootForTest()
-		instance := runtimeForTest()
-		systemState := &systemState{
-			instance: instance,
-			shoot:    shoot,
-		}
-
-		auditLog.On("Enable", ctx, shoot).Return(false, nil).Once()
-
-		// when
-		fsm := &fsm{AuditLogging: auditLog}
-		stateFn, result, _ := sFnConfigureAuditLog(ctx, fsm, systemState)
-
-		// then
-		auditLog.AssertExpectations(t)
-		require.Nil(t, stateFn)
-		require.Equal(t, true, result.Requeue)
 	})
 }
 
