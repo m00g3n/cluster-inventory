@@ -26,7 +26,7 @@ func TestAuditLogState(t *testing.T) {
 		}
 		expectedRuntimeConditions := []metav1.Condition{
 			{
-				Type:    string(v1.ConditionTypeRuntimeConfigured),
+				Type:    string(v1.ConditionTypeAuditLogConfigured),
 				Status:  "True",
 				Reason:  string(v1.ConditionReasonConfigurationCompleted),
 				Message: "Audit Log configured",
@@ -61,9 +61,9 @@ func TestAuditLogState(t *testing.T) {
 		}
 		expectedRuntimeConditions := []metav1.Condition{
 			{
-				Type:    string(v1.ConditionTypeRuntimeConfigured),
+				Type:    string(v1.ConditionTypeAuditLogConfigured),
 				Status:  "False",
-				Reason:  string(v1.ConditionReasonAuditLogConfigured),
+				Reason:  string(v1.ConditionReasonConfigurationCompleted),
 				Message: "some error during configuration",
 			},
 		}

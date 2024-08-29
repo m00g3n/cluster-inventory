@@ -65,6 +65,7 @@ const (
 	ConditionTypeRuntimeProvisionedDryRun RuntimeConditionType = "ProvisionedDryRun"
 	ConditionTypeRuntimeKubeconfigReady   RuntimeConditionType = "KubeconfigReady"
 	ConditionTypeRuntimeConfigured        RuntimeConditionType = "Configured"
+	ConditionTypeAuditLogConfigured       RuntimeConditionType = "AuditlogConfigured"
 	ConditionTypeRuntimeDeprovisioned     RuntimeConditionType = "Deprovisioned"
 )
 

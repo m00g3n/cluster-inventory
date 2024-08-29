@@ -14,8 +14,8 @@ func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn,
 	if err != nil {
 		m.log.Error(err, "Failed to configure Audit Log")
 		s.instance.UpdateStatePending(
-			imv1.ConditionTypeRuntimeConfigured,
-			imv1.ConditionReasonAuditLogConfigured,
+			imv1.ConditionTypeAuditLogConfigured,
+			imv1.ConditionReasonConfigurationCompleted,
 			"False",
 			err.Error(),
 		)
@@ -25,7 +25,7 @@ func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn,
 	if wasAuditLogEnabled {
 		m.log.Info("Audit Log configured for shoot: " + s.shoot.Name)
 		s.instance.UpdateStateReady(
-			imv1.ConditionTypeRuntimeConfigured,
+			imv1.ConditionTypeAuditLogConfigured,
 			imv1.ConditionReasonConfigurationCompleted,
 			"Audit Log configured",
 		)
