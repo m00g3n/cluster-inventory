@@ -97,8 +97,7 @@ func (al *AuditLog) Enable(ctx context.Context, shoot *gardener.Shoot) (bool, er
 	seedName := getSeedName(*shoot)
 
 	if !al.CanEnableAuditLogsForShoot(seedName) {
-		//log.Info("Seed name or Tenant config path is empty while configuring Audit Logs on shoot: " + shoot.Name)
-		return false, nil
+		return false, errors.New("Seed name on shoot or tenantConfigPath is empty")
 	}
 
 	auditConfigFromFile, err := al.GetConfigFromFile()

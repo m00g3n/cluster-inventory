@@ -65,6 +65,26 @@ func TestEnable(t *testing.T) {
 		require.False(t, enable)
 		require.Error(t, err)
 	})
+
+	t.Run("Should return false and error if seed is empty", func(t *testing.T) {
+		// given
+		ctx := context.Background()
+		configurator := &mocks.AuditLogConfigurator{}
+		shoot := shootForTest()
+		shoot.Spec.SeedName = nil
+
+		configurator.On("CanEnableAuditLogsForShoot", "").Return(false).Once()
+
+		// when
+
+		auditLog := &auditlogging.AuditLog{AuditLogConfigurator: configurator}
+		enable, err := auditLog.Enable(ctx, shoot)
+
+		// then
+		configurator.AssertExpectations(t)
+		require.False(t, enable)
+		require.Error(t, err)
+	})
 }
 
 func TestApplyAuditLogConfig(t *testing.T) {
