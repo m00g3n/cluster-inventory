@@ -11,6 +11,8 @@ import (
 	clienttesting "k8s.io/client-go/testing"
 )
 
+const shootType = "shoots"
+
 // CustomTracker implements ObjectTracker with a sequence of Shoot objects
 // it will be updated with a different shoot sequence for each test case
 type CustomTracker struct {
@@ -38,7 +40,7 @@ func (t *CustomTracker) Get(gvr schema.GroupVersionResource, ns, name string) (r
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if gvr.Resource == "shoots" { //nolint:goconst
+	if gvr.Resource == shootType {
 		return getNextObject(t.shootSequence, &t.shootCallCnt)
 	} else if gvr.Resource == "seeds" {
 		return getNextObject(t.seedSequence, &t.seedCallCnt)
@@ -64,7 +66,7 @@ func (t *CustomTracker) Update(gvr schema.GroupVersionResource, obj runtime.Obje
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if gvr.Resource == "shoots" { //nolint:goconst
+	if gvr.Resource == shootType {
 		shoot, ok := obj.(*gardener_api.Shoot)
 		if !ok {
 			return fmt.Errorf("object is not of type Gardener Shoot")
@@ -84,7 +86,7 @@ func (t *CustomTracker) Delete(gvr schema.GroupVersionResource, ns, name string)
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if gvr.Resource == "shoots" { //nolint:goconst
+	if gvr.Resource == shootType {
 		for index, shoot := range t.shootSequence {
 			if shoot != nil && shoot.Name == name {
 				t.shootSequence[index] = nil
