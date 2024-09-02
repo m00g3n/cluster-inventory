@@ -136,7 +136,7 @@ func TestCustomTracker_Update(t *testing.T) {
 }
 
 func TestCustomTracker_Delete(t *testing.T) {
-	t.Run("should delete shoot object", func(t *testing.T) {
+	t.Run("should delete shoot object.", func(t *testing.T) {
 		// given
 		shootSequence := []*gardener_api.Shoot{{
 			ObjectMeta: metav1.ObjectMeta{
