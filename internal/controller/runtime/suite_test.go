@@ -22,8 +22,6 @@ import (
 	"testing"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
@@ -31,7 +29,7 @@ import (
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
 	rbacv1 "k8s.io/api/rbac/v1"
-
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	//nolint:revive
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -102,10 +100,10 @@ var _ = BeforeSuite(func() {
 
 	// tracker will be updated with different shoot sequence for each test case
 	tracker := clienttesting.NewObjectTracker(clientScheme, serializer.NewCodecFactory(clientScheme).UniversalDecoder())
-	customTracker = NewCustomTracker(tracker, []*gardener_api.Shoot{})
+	customTracker = NewCustomTracker(tracker, []*gardener_api.Shoot{}, []*gardener_api.Seed{})
 	gardenerTestClient = fake.NewClientBuilder().WithScheme(clientScheme).WithObjectTracker(customTracker).Build()
 
-	runtimeReconciler = NewRuntimeReconciler(mgr, gardenerTestClient, logger, fsm.RCCfg{Finalizer: infrastructuremanagerv1.Finalizer})
+	runtimeReconciler = NewRuntimeReconciler(mgr, gardenerTestClient, logger, fsm.RCCfg{Finalizer: infrastructuremanagerv1.Finalizer, ConverterConfig: fixConverterConfigForTests()})
 	Expect(runtimeReconciler).NotTo(BeNil())
 	err = runtimeReconciler.SetupWithManager(mgr)
 	Expect(err).To(BeNil())
@@ -142,27 +140,29 @@ var _ = AfterSuite(func() {
 func setupGardenerTestClientForProvisioning() {
 	baseShoot := getBaseShootForTestingSequence()
 	shoots := fixShootsSequenceForProvisioning(&baseShoot)
-	setupShootClientWithSequence(shoots)
+	seeds := fixSeedsSequence()
+	setupGardenerClientWithSequence(shoots, seeds)
 }
 
 func setupGardenerTestClientForUpdate() {
 	baseShoot := getBaseShootForTestingSequence()
 	shoots := fixShootsSequenceForUpdate(&baseShoot)
-	setupShootClientWithSequence(shoots)
+	seeds := fixSeedsSequence()
+	setupGardenerClientWithSequence(shoots, seeds)
 }
 
 func setupGardenerTestClientForDelete() {
 	baseShoot := getBaseShootForTestingSequence()
 	shoots := fixShootsSequenceForDelete(&baseShoot)
-	setupShootClientWithSequence(shoots)
+	setupGardenerClientWithSequence(shoots, nil)
 }
 
-func setupShootClientWithSequence(shoots []*gardener_api.Shoot) {
+func setupGardenerClientWithSequence(shoots []*gardener_api.Shoot, seeds []*gardener_api.Seed) {
 	clientScheme := runtime.NewScheme()
 	_ = gardener_api.AddToScheme(clientScheme)
 
 	tracker := clienttesting.NewObjectTracker(clientScheme, serializer.NewCodecFactory(clientScheme).UniversalDecoder())
-	customTracker = NewCustomTracker(tracker, shoots)
+	customTracker = NewCustomTracker(tracker, shoots, seeds)
 	gardenerTestClient = fake.NewClientBuilder().WithScheme(clientScheme).WithObjectTracker(customTracker).Build()
 	runtimeReconciler.UpdateShootClient(gardenerTestClient)
 }
@@ -181,6 +181,7 @@ func getBaseShootForTestingSequence() gardener_api.Shoot {
 func fixShootsSequenceForProvisioning(shoot *gardener_api.Shoot) []*gardener_api.Shoot {
 	var missingShoot *gardener_api.Shoot
 	initialisedShoot := shoot.DeepCopy()
+	initialisedShoot.Spec.SeedName = ptr.To("test-seed")
 
 	dnsShoot := initialisedShoot.DeepCopy()
 
@@ -198,7 +199,6 @@ func fixShootsSequenceForProvisioning(shoot *gardener_api.Shoot) []*gardener_api
 	}
 
 	processingShoot := pendingShoot.DeepCopy()
-
 	processingShoot.Status.LastOperation.State = gardener_api.LastOperationStateProcessing
 
 	readyShoot := processingShoot.DeepCopy()
@@ -207,7 +207,7 @@ func fixShootsSequenceForProvisioning(shoot *gardener_api.Shoot) []*gardener_api
 
 	// processedShoot := processingShoot.DeepCopy() // will add specific data later
 
-	return []*gardener_api.Shoot{missingShoot, missingShoot, missingShoot, initialisedShoot, dnsShoot, pendingShoot, processingShoot, readyShoot, readyShoot, readyShoot, readyShoot}
+	return []*gardener_api.Shoot{missingShoot, missingShoot, missingShoot, initialisedShoot, dnsShoot, pendingShoot, processingShoot, readyShoot, readyShoot, readyShoot, readyShoot, readyShoot}
 }
 
 func fixShootsSequenceForUpdate(shoot *gardener_api.Shoot) []*gardener_api.Shoot {
@@ -224,6 +224,8 @@ func fixShootsSequenceForUpdate(shoot *gardener_api.Shoot) []*gardener_api.Shoot
 		},
 	}
 
+	pendingShoot.Spec.SeedName = ptr.To("test-seed")
+
 	processingShoot := pendingShoot.DeepCopy()
 
 	processingShoot.Status.LastOperation.State = gardener_api.LastOperationStateProcessing
@@ -234,7 +236,7 @@ func fixShootsSequenceForUpdate(shoot *gardener_api.Shoot) []*gardener_api.Shoot
 
 	// processedShoot := processingShoot.DeepCopy() // will add specific data later
 
-	return []*gardener_api.Shoot{pendingShoot, processingShoot, readyShoot, readyShoot}
+	return []*gardener_api.Shoot{pendingShoot, processingShoot, readyShoot, readyShoot, readyShoot}
 }
 
 func fixShootsSequenceForDelete(shoot *gardener_api.Shoot) []*gardener_api.Shoot {
@@ -243,6 +245,8 @@ func fixShootsSequenceForDelete(shoot *gardener_api.Shoot) []*gardener_api.Shoot
 	currentShoot.Spec.DNS = &gardener_api.DNS{
 		Domain: ptr.To("test.domain"),
 	}
+
+	currentShoot.Spec.SeedName = ptr.To("test-seed")
 
 	// To workaround limitation that apply patches are not supported in the fake client.
 	// We need to set the annotation manually.  https://github.com/kubernetes/kubernetes/issues/115598
@@ -263,13 +267,43 @@ func fixShootsSequenceForDelete(shoot *gardener_api.Shoot) []*gardener_api.Shoot
 	pendingDeleteShoot.Status.LastOperation.Type = gardener_api.LastOperationTypeDelete
 	pendingDeleteShoot.Status.LastOperation.State = gardener_api.LastOperationStatePending
 
-	return []*gardener_api.Shoot{currentShoot, currentShoot, currentShoot, pendingDeleteShoot, nil}
+	return []*gardener_api.Shoot{currentShoot, currentShoot, currentShoot, currentShoot, pendingDeleteShoot, nil}
+}
+
+func fixSeedsSequence() []*gardener_api.Seed {
+	seed := &gardener_api.Seed{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-seed",
+		},
+		Spec: gardener_api.SeedSpec{
+			Provider: gardener_api.SeedProvider{
+				Type: "aws",
+			},
+		},
+	}
+
+	return []*gardener_api.Seed{seed}
+}
+
+func setupSeedObjectOnCluster(client client.Client) error {
+	seed := &gardener_api.Seed{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-seed",
+		},
+		Spec: gardener_api.SeedSpec{
+			Provider: gardener_api.SeedProvider{
+				Type: "aws",
+			},
+		},
+	}
+
+	return client.Create(context.Background(), seed)
 }
 
 func fixConverterConfigForTests() gardener_shoot.ConverterConfig {
 	return gardener_shoot.ConverterConfig{
 		Kubernetes: gardener_shoot.KubernetesConfig{
-			DefaultVersion: "1.29", //nolint:godox TODO: Should be parametrised
+			DefaultVersion: "1.29",
 		},
 
 		DNS: gardener_shoot.DNSConfig{
@@ -279,11 +313,15 @@ func fixConverterConfigForTests() gardener_shoot.ConverterConfig {
 		},
 		Provider: gardener_shoot.ProviderConfig{
 			AWS: gardener_shoot.AWSConfig{
-				EnableIMDSv2: true, //nolint:godox TODO: Should be parametrised
+				EnableIMDSv2: true,
 			},
 		},
 		Gardener: gardener_shoot.GardenerConfig{
-			ProjectName: "kyma-dev", //nolint:godox TODO: should be parametrised
+			ProjectName: "kyma-dev",
+		},
+		AuditLog: gardener_shoot.AuditLogConfig{
+			PolicyConfigMapName: "policy-config-map",
+			TenantConfigPath:    filepath.Join("testdata", "auditConfig.json"),
 		},
 	}
 }

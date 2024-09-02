@@ -65,6 +65,7 @@ const (
 	ConditionTypeRuntimeProvisionedDryRun RuntimeConditionType = "ProvisionedDryRun"
 	ConditionTypeRuntimeKubeconfigReady   RuntimeConditionType = "KubeconfigReady"
 	ConditionTypeRuntimeConfigured        RuntimeConditionType = "Configured"
+	ConditionTypeAuditLogConfigured       RuntimeConditionType = "AuditlogConfigured"
 	ConditionTypeRuntimeDeprovisioned     RuntimeConditionType = "Deprovisioned"
 )
 
@@ -94,6 +95,10 @@ const (
 	ConditionReasonKubernetesAPIErr     = RuntimeConditionReason("KubernetesErr")
 	ConditionReasonSerializationError   = RuntimeConditionReason("SerializationErr")
 	ConditionReasonDeleted              = RuntimeConditionReason("Deleted")
+
+	ConditionReasonAdministratorsConfigured = RuntimeConditionReason("AdministratorsConfigured")
+	ConditionReasonAuditLogConfigured       = RuntimeConditionReason("AuditLogConfigured")
+	ConditionReasonAuditLogError            = RuntimeConditionReason("AuditLogErr")
 )
 
 //+kubebuilder:object:root=true
