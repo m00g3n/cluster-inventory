@@ -3,11 +3,11 @@ package fsm
 import (
 	"bytes"
 	"context"
-	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	"io"
 	"time"
 
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm/testing"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
 	"sigs.k8s.io/yaml"

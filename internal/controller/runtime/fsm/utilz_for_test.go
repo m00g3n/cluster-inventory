@@ -2,8 +2,8 @@ package fsm
 
 import (
 	"fmt"
-	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	. "github.com/onsi/gomega" //nolint:revive
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
