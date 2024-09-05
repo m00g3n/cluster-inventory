@@ -10,7 +10,6 @@ const (
 	OidcExtensionType = "shoot-oidc-service"
 )
 
-// Extends Shoot spec with OIDC configuration and mutates Runtime spec with necessary OIDC defaults if missing
 func ExtendWithOIDC(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 	oidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig
 
