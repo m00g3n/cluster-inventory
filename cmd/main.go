@@ -17,8 +17,10 @@ limitations under the License.
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
 	"io"
 	"os"
 	"time"
@@ -168,6 +170,28 @@ func main() {
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	if err = validate.Struct(converterConfig); err != nil {
 		setupLog.Error(err, "invalid converter configuration")
+		os.Exit(1)
+	}
+
+	// load Audit Log configuration
+	getReader = func() (io.Reader, error) {
+		return os.Open(converterConfig.AuditLog.TenantConfigPath)
+	}
+	var auditLogConfig map[string]map[string]auditlogging.AuditLogData
+	r, err := getReader()
+	if err != nil {
+		setupLog.Error(err, "unable to get reader")
+		os.Exit(1)
+	}
+
+	if err = json.NewDecoder(r).Decode(&auditLogConfig); err != nil {
+		setupLog.Error(err, "unable to decode Audit Log configuration")
+		os.Exit(1)
+	}
+
+	auditLogValidate := validator.New(validator.WithRequiredStructEnabled())
+	if err = auditLogValidate.Struct(auditLogConfig); err != nil {
+		setupLog.Error(err, "invalid audit log configuration")
 		os.Exit(1)
 	}
 
