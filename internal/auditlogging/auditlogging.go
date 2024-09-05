@@ -22,7 +22,7 @@ const (
 
 //go:generate mockery --name=AuditLogging
 type AuditLogging interface {
-	Enable(ctx context.Context, shoot *gardener.Shoot) (bool, error)
+	Enable(ctx context.Context, shoot *gardener.Shoot, mandatory bool) (bool, error)
 }
 
 //go:generate mockery --name=AuditLogConfigurator
@@ -93,7 +93,7 @@ func (a *auditLogConfig) GetSeedObj(ctx context.Context, seedKey types.Namespace
 	return seed, nil
 }
 
-func (al *AuditLog) Enable(ctx context.Context, shoot *gardener.Shoot) (bool, error) {
+func (al *AuditLog) Enable(ctx context.Context, shoot *gardener.Shoot, mandatory bool) (bool, error) {
 	seedName := getSeedName(*shoot)
 
 	if !al.CanEnableAuditLogsForShoot(seedName) {
@@ -113,7 +113,7 @@ func (al *AuditLog) Enable(ctx context.Context, shoot *gardener.Shoot) (bool, er
 		return false, errors.Wrap(err, "Cannot get Gardener Seed object")
 	}
 
-	annotated, err := ApplyAuditLogConfig(shoot, auditConfigFromFile, seed.Spec.Provider.Type)
+	annotated, err := ApplyAuditLogConfig(shoot, auditConfigFromFile, seed.Spec.Provider.Type, mandatory)
 
 	if err != nil {
 		return false, errors.Wrap(err, "Error during enabling Audit Logs on shoot: "+shoot.Name)
@@ -128,7 +128,7 @@ func (al *AuditLog) Enable(ctx context.Context, shoot *gardener.Shoot) (bool, er
 	return annotated, nil
 }
 
-func ApplyAuditLogConfig(shoot *gardener.Shoot, auditConfigFromFile map[string]map[string]AuditLogData, providerType string) (bool, error) {
+func ApplyAuditLogConfig(shoot *gardener.Shoot, auditConfigFromFile map[string]map[string]AuditLogData, providerType string, mandatory bool) (bool, error) {
 	providerConfig := auditConfigFromFile[providerType]
 	if providerConfig == nil {
 		return false, fmt.Errorf("cannot find config for provider %s", providerType)
@@ -140,8 +140,11 @@ func ApplyAuditLogConfig(shoot *gardener.Shoot, auditConfigFromFile map[string]m
 	}
 
 	tenant, ok := providerConfig[auditID]
-	if !ok {
+	if !ok && mandatory {
 		return false, fmt.Errorf("auditlog config for region %s, provider %s is empty", auditID, providerType)
+	} else if !ok {
+		rollbackAuditPolicy(shoot)
+		return false, nil
 	}
 
 	changedExt, err := configureExtension(shoot, tenant)
@@ -282,6 +285,12 @@ func newAuditPolicyConfig(policyConfigMapName string) *gardener.AuditConfig {
 		AuditPolicy: &gardener.AuditPolicy{
 			ConfigMapRef: &v12.ObjectReference{Name: policyConfigMapName},
 		},
+	}
+}
+
+func rollbackAuditPolicy(shoot *gardener.Shoot) {
+	if shoot.Spec.Kubernetes.KubeAPIServer != nil {
+		shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig = nil
 	}
 }
 

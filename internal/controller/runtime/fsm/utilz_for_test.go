@@ -116,7 +116,7 @@ type stubAuditLogging struct {
 	err       error
 }
 
-func (s *stubAuditLogging) Enable(ctx context.Context, shoot *gardener.Shoot) (bool, error) {
+func (s *stubAuditLogging) Enable(ctx context.Context, shoot *gardener.Shoot, mandatory bool) (bool, error) {
 	return s.isEnabled, s.err
 }
 
