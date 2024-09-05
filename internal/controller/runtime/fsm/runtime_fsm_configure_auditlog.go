@@ -14,21 +14,31 @@ func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn,
 
 	if wasAuditLogEnabled {
 		m.log.Info("Audit Log configured for shoot: " + s.shoot.Name)
+		s.instance.UpdateStatePending(
+			imv1.ConditionTypeAuditLogConfigured,
+			imv1.ConditionReasonAuditLogConfigured,
+			"Unknown",
+			"Waiting for Gardener shoot to be Ready state after configuration of the Audit Logs",
+		)
+
+		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
+	}
+
+	if err != nil {
+		m.log.Error(err, "Failed to configure Audit Log")
+		s.instance.UpdateStatePending(
+			imv1.ConditionTypeAuditLogConfigured,
+			imv1.ConditionReasonAuditLogError,
+			"False",
+			err.Error(),
+		)
+	} else {
 		s.instance.UpdateStateReady(
 			imv1.ConditionTypeAuditLogConfigured,
 			imv1.ConditionReasonAuditLogConfigured,
-			"Audit Log configured",
+			"Audit Log configured successfully",
 		)
-
-		return updateStatusAndStop()
 	}
 
-	m.log.Error(err, "Failed to configure Audit Log")
-	s.instance.UpdateStatePending(
-		imv1.ConditionTypeAuditLogConfigured,
-		imv1.ConditionReasonAuditLogError,
-		"False",
-		err.Error(),
-	)
-	return updateStatusAndRequeueAfter(gardenerRequeueDuration)
+	return updateStatusAndStop()
 }

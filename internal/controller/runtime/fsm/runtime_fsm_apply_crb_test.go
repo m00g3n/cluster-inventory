@@ -131,7 +131,8 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 		Entry("add admin", tcApplySfn{
 			instance: testRuntimeWithAdmin,
 			expected: tcSfnExpected{
-				err: nil,
+				err:    nil,
+				result: ctrl.Result{RequeueAfter: time.Second * 15},
 			},
 			fsm: must(
 				newFakeFSM,
@@ -146,7 +147,8 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 		Entry("nothing change", tcApplySfn{
 			instance: testRuntime,
 			expected: tcSfnExpected{
-				err: nil,
+				err:    nil,
+				result: ctrl.Result{RequeueAfter: time.Second * 15},
 			},
 			fsm: must(
 				newFakeFSM,
