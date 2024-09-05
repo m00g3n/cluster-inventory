@@ -39,17 +39,12 @@ func TestOidcExtender(t *testing.T) {
 		}
 
 		// when
-		err := ExtendWithOIDC(&runtimeShoot, &shoot)
+		err := ExtendWithOIDC(runtimeShoot, &shoot)
 
 		// then
 		require.NoError(t, err)
 
 		assert.Equal(t, runtimeShoot.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig, *shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig)
-
-		// Default additionalOidcConfig is set when missing
-		defaultAdditionalOidcConfig := runtimeShoot.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig
-		assert.Equal(t, runtimeShoot.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig, (*defaultAdditionalOidcConfig)[0])
-
 		assert.Equal(t, false, *shoot.Spec.Extensions[0].Disabled)
 		assert.Equal(t, "shoot-oidc-service", shoot.Spec.Extensions[0].Type)
 	})
