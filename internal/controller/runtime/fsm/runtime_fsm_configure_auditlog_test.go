@@ -84,7 +84,7 @@ func TestAuditLogState(t *testing.T) {
 		assert.Equal(t, expectedRuntimeConditions, systemState.instance.Status.Conditions)
 	})
 
-	t.Run("Should requeue in case of error during configuration and set status on Runtime CR", func(t *testing.T) {
+	t.Run("Should stop in case of error during configuration and set status on Runtime CR", func(t *testing.T) {
 		// given
 		ctx := context.Background()
 		auditLog := &mocks.AuditLogging{}

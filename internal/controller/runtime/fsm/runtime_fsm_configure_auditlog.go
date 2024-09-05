@@ -32,14 +32,13 @@ func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn,
 			"False",
 			err.Error(),
 		)
-		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
+	} else {
+		s.instance.UpdateStateReady(
+			imv1.ConditionTypeAuditLogConfigured,
+			imv1.ConditionReasonAuditLogConfigured,
+			"Audit Log configured successfully",
+		)
 	}
-
-	s.instance.UpdateStateReady(
-		imv1.ConditionTypeAuditLogConfigured,
-		imv1.ConditionReasonAuditLogConfigured,
-		"Audit Log configured successfully",
-	)
 
 	return updateStatusAndStop()
 }
