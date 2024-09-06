@@ -9,12 +9,11 @@ import (
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
@@ -132,12 +131,14 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 		Entry("add admin", tcApplySfn{
 			instance: testRuntimeWithAdmin,
 			expected: tcSfnExpected{
-				err: nil,
+				err:    nil,
+				result: ctrl.Result{RequeueAfter: time.Second * 15},
 			},
 			fsm: must(
 				newFakeFSM,
+				withAuditLogging(true, nil),
 				withFakedK8sClient(testScheme, &testRuntimeWithAdmin),
-				withFn(sFnApplyClusterRoleBindings),
+				withFn(sFnApplyClusterRoleBindingsStateSetup),
 				withFakeEventRecorder(1),
 			),
 			setup: defaultSetup,
@@ -146,12 +147,14 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 		Entry("nothing change", tcApplySfn{
 			instance: testRuntime,
 			expected: tcSfnExpected{
-				err: nil,
+				err:    nil,
+				result: ctrl.Result{RequeueAfter: time.Second * 15},
 			},
 			fsm: must(
 				newFakeFSM,
+				withAuditLogging(true, nil),
 				withFakedK8sClient(testScheme, &testRuntime),
-				withFn(sFnApplyClusterRoleBindings),
+				withFn(sFnApplyClusterRoleBindingsStateSetup),
 				withFakeEventRecorder(1),
 			),
 			setup: defaultSetup,
@@ -164,8 +167,9 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 			},
 			fsm: must(
 				newFakeFSM,
+				withAuditLogging(true, nil),
 				withFakedK8sClient(testScheme, &testRuntime),
-				withFn(sFnApplyClusterRoleBindings),
+				withFn(sFnApplyClusterRoleBindingsStateSetup),
 				withFakeEventRecorder(1),
 			),
 			setup: func(f *fsm) error {
@@ -205,13 +209,6 @@ func (c *tcApplySfn) init() error {
 		return c.setup(c.fsm)
 	}
 	return nil
-}
-
-func toCRBs(admins []string) (result []rbacv1.ClusterRoleBinding) {
-	for _, crb := range admins {
-		result = append(result, toAdminClusterRoleBinding(crb))
-	}
-	return result
 }
 
 func newTestScheme() (*runtime.Scheme, error) {

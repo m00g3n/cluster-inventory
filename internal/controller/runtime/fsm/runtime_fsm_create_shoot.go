@@ -2,6 +2,7 @@ package fsm
 
 import (
 	"context"
+	"fmt"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -29,7 +30,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 			imv1.ConditionTypeRuntimeProvisioned,
 			imv1.ConditionReasonGardenerError,
 			"False",
-			"Gardener API create error",
+			fmt.Sprintf("Gardener API create error: %v", err),
 		)
 		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 	}

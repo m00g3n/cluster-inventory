@@ -2,6 +2,7 @@ package fsm
 
 import (
 	"context"
+	"fmt"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -51,7 +52,7 @@ func sFnDeleteKubeconfig(ctx context.Context, m *fsm, s *systemState) (stateFn, 
 			imv1.ConditionTypeRuntimeDeprovisioned,
 			imv1.ConditionReasonGardenerError,
 			"False",
-			"Gardener API shoot delete error",
+			fmt.Sprintf("Gardener API delete error: %v", err),
 		)
 	} else {
 		s.instance.UpdateStateDeletion(

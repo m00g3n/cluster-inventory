@@ -65,6 +65,7 @@ const (
 	ConditionTypeRuntimeProvisionedDryRun RuntimeConditionType = "ProvisionedDryRun"
 	ConditionTypeRuntimeKubeconfigReady   RuntimeConditionType = "KubeconfigReady"
 	ConditionTypeRuntimeConfigured        RuntimeConditionType = "Configured"
+	ConditionTypeAuditLogConfigured       RuntimeConditionType = "AuditlogConfigured"
 	ConditionTypeRuntimeDeprovisioned     RuntimeConditionType = "Deprovisioned"
 )
 
@@ -94,6 +95,10 @@ const (
 	ConditionReasonKubernetesAPIErr     = RuntimeConditionReason("KubernetesErr")
 	ConditionReasonSerializationError   = RuntimeConditionReason("SerializationErr")
 	ConditionReasonDeleted              = RuntimeConditionReason("Deleted")
+
+	ConditionReasonAdministratorsConfigured = RuntimeConditionReason("AdministratorsConfigured")
+	ConditionReasonAuditLogConfigured       = RuntimeConditionReason("AuditLogConfigured")
+	ConditionReasonAuditLogError            = RuntimeConditionReason("AuditLogErr")
 )
 
 //+kubebuilder:object:root=true
@@ -139,17 +144,17 @@ type RuntimeStatus struct {
 }
 
 type RuntimeShoot struct {
-	Name                string                `json:"name"`
-	Purpose             gardener.ShootPurpose `json:"purpose"`
-	PlatformRegion      string                `json:"platformRegion"`
-	Region              string                `json:"region"`
-	LicenceType         *string               `json:"licenceType,omitempty"`
-	SecretBindingName   string                `json:"secretBindingName"`
-	EnforceSeedLocation *bool                 `json:"enforceSeedLocation,omitempty"`
-	Kubernetes          Kubernetes            `json:"kubernetes,omitempty"`
-	Provider            Provider              `json:"provider"`
-	Networking          Networking            `json:"networking"`
-	ControlPlane        gardener.ControlPlane `json:"controlPlane"`
+	Name                string                 `json:"name"`
+	Purpose             gardener.ShootPurpose  `json:"purpose"`
+	PlatformRegion      string                 `json:"platformRegion"`
+	Region              string                 `json:"region"`
+	LicenceType         *string                `json:"licenceType,omitempty"`
+	SecretBindingName   string                 `json:"secretBindingName"`
+	EnforceSeedLocation *bool                  `json:"enforceSeedLocation,omitempty"`
+	Kubernetes          Kubernetes             `json:"kubernetes,omitempty"`
+	Provider            Provider               `json:"provider"`
+	Networking          Networking             `json:"networking"`
+	ControlPlane        *gardener.ControlPlane `json:"controlPlane,omitempty"`
 }
 
 type Kubernetes struct {

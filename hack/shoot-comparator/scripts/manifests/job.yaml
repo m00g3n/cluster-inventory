@@ -47,7 +47,7 @@ spec:
 # You can specify a date when the comparison should start from. The date should be in RFC3339 format.
 #        - --fromDate
 #        - 2024-07-31T20:04:29Z
-        image: europe-docker.pkg.dev/kyma-project/dev/shoot-comparator:PR-321
+        image: europe-docker.pkg.dev/kyma-project/dev/shoot-comparator:PR-329
         name: compare-shoots
         resources: {}
         securityContext:

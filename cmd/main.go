@@ -236,6 +236,5 @@ func initGardenerClients(kubeconfigPath string, namespace string) (client.Client
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to register Gardener schema")
 	}
-
 	return gardenerClient, shootClient, dynamicKubeconfigAPI, nil
 }
