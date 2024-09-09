@@ -10,7 +10,7 @@ import (
 func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	m.log.Info("Configure Audit Log state")
 
-	wasAuditLogEnabled, err := m.AuditLogging.Enable(ctx, s.shoot, m.RCCfg.AuditLogMandatory)
+	wasAuditLogEnabled, err := m.AuditLogging.Enable(ctx, s.shoot)
 
 	if wasAuditLogEnabled {
 		m.log.Info("Audit Log configured for shoot: " + s.shoot.Name)
@@ -24,7 +24,7 @@ func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn,
 		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 	}
 
-	if err != nil {
+	if err != nil { //nolint:nestif
 		errorMessage := err.Error()
 		if strings.Contains(errorMessage, "auditlog config for region") {
 			if m.RCCfg.AuditLogMandatory {

@@ -13,8 +13,6 @@ import (
 	"testing"
 )
 
-var auditLogMandatory = true
-
 func TestEnable(t *testing.T) {
 	t.Run("Should successfully enable Audit Log for Shoot", func(t *testing.T) {
 		// given
@@ -33,7 +31,7 @@ func TestEnable(t *testing.T) {
 
 		// when
 		auditLog := &auditlogging.AuditLog{AuditLogConfigurator: configurator}
-		enable, err := auditLog.Enable(ctx, shoot, auditLogMandatory)
+		enable, err := auditLog.Enable(ctx, shoot)
 
 		// then
 		configurator.AssertExpectations(t)
@@ -60,7 +58,7 @@ func TestEnable(t *testing.T) {
 
 		// when
 		auditLog := &auditlogging.AuditLog{AuditLogConfigurator: configurator}
-		enable, err := auditLog.Enable(ctx, shoot, auditLogMandatory)
+		enable, err := auditLog.Enable(ctx, shoot)
 
 		// then
 		configurator.AssertExpectations(t)
@@ -80,7 +78,7 @@ func TestEnable(t *testing.T) {
 		// when
 
 		auditLog := &auditlogging.AuditLog{AuditLogConfigurator: configurator}
-		enable, err := auditLog.Enable(ctx, shoot, auditLogMandatory)
+		enable, err := auditLog.Enable(ctx, shoot)
 
 		// then
 		configurator.AssertExpectations(t)
@@ -96,7 +94,7 @@ func TestApplyAuditLogConfig(t *testing.T) {
 		configFromFile := fileConfigData()
 
 		// when
-		annotated, err := auditlogging.ApplyAuditLogConfig(shoot, configFromFile, "aws", auditLogMandatory)
+		annotated, err := auditlogging.ApplyAuditLogConfig(shoot, configFromFile, "aws")
 
 		// then
 		require.True(t, annotated)
@@ -108,7 +106,7 @@ func TestApplyAuditLogConfig(t *testing.T) {
 		shoot := shootForTest()
 
 		// when
-		annotated, err := auditlogging.ApplyAuditLogConfig(shoot, map[string]map[string]auditlogging.AuditLogData{}, "aws", auditLogMandatory)
+		annotated, err := auditlogging.ApplyAuditLogConfig(shoot, map[string]map[string]auditlogging.AuditLogData{}, "aws")
 
 		// then
 		require.False(t, annotated)
@@ -122,7 +120,7 @@ func TestApplyAuditLogConfig(t *testing.T) {
 		shoot.Spec.Region = ""
 
 		// when
-		annotated, err := auditlogging.ApplyAuditLogConfig(shoot, configFromFile, "aws", auditLogMandatory)
+		annotated, err := auditlogging.ApplyAuditLogConfig(shoot, configFromFile, "aws")
 
 		// then
 		require.False(t, annotated)
@@ -137,7 +135,7 @@ func TestApplyAuditLogConfig(t *testing.T) {
 		}
 
 		// when
-		annotated, err := auditlogging.ApplyAuditLogConfig(shoot, configFromFile, "aws", auditLogMandatory)
+		annotated, err := auditlogging.ApplyAuditLogConfig(shoot, configFromFile, "aws")
 
 		// then
 		require.False(t, annotated)

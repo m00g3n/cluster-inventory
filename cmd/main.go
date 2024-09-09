@@ -251,7 +251,6 @@ func initGardenerClients(kubeconfigPath string, namespace string) (client.Client
 }
 
 func validateAuditLogConfiguration(tenantConfigPath string) error {
-
 	getReaderCloser := func() (io.ReadCloser, error) {
 		return os.Open(tenantConfigPath)
 	}

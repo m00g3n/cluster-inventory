@@ -36,7 +36,7 @@ func TestAuditLogState(t *testing.T) {
 		fsm := &fsm{AuditLogging: auditLog}
 		fsm.RCCfg.AuditLogMandatory = true
 
-		auditLog.On("Enable", ctx, shoot, true).Return(true, nil).Once()
+		auditLog.On("Enable", ctx, shoot).Return(true, nil).Once()
 
 		// when
 		stateFn, _, _ := sFnConfigureAuditLog(ctx, fsm, systemState)
@@ -73,7 +73,7 @@ func TestAuditLogState(t *testing.T) {
 		fsm := &fsm{AuditLogging: auditLog}
 		fsm.RCCfg.AuditLogMandatory = true
 
-		auditLog.On("Enable", ctx, shoot, true).Return(false, nil).Once()
+		auditLog.On("Enable", ctx, shoot).Return(false, nil).Once()
 
 		// when
 		stateFn, _, _ := sFnConfigureAuditLog(ctx, fsm, systemState)
@@ -110,7 +110,7 @@ func TestAuditLogState(t *testing.T) {
 		fsm := &fsm{AuditLogging: auditLog}
 		fsm.RCCfg.AuditLogMandatory = true
 
-		auditLog.On("Enable", ctx, shoot, true).Return(false, errors.New("auditlog config for region")).Once()
+		auditLog.On("Enable", ctx, shoot).Return(false, errors.New("auditlog config for region")).Once()
 
 		// when
 		stateFn, _, _ := sFnConfigureAuditLog(ctx, fsm, systemState)
@@ -147,7 +147,7 @@ func TestAuditLogState(t *testing.T) {
 		fsm := &fsm{AuditLogging: auditLog}
 		fsm.RCCfg.AuditLogMandatory = false
 
-		auditLog.On("Enable", ctx, shoot, false).Return(false, errors.New("auditlog config for region")).Once()
+		auditLog.On("Enable", ctx, shoot).Return(false, errors.New("auditlog config for region")).Once()
 
 		// when
 		stateFn, _, _ := sFnConfigureAuditLog(ctx, fsm, systemState)
@@ -184,7 +184,7 @@ func TestAuditLogState(t *testing.T) {
 		fsm := &fsm{AuditLogging: auditLog}
 		fsm.RCCfg.AuditLogMandatory = true
 
-		auditLog.On("Enable", ctx, shoot, true).Return(false, errors.New("some error during configuration")).Once()
+		auditLog.On("Enable", ctx, shoot).Return(false, errors.New("some error during configuration")).Once()
 
 		// when
 		stateFn, _, _ := sFnConfigureAuditLog(ctx, fsm, systemState)
@@ -221,7 +221,7 @@ func TestAuditLogState(t *testing.T) {
 		fsm := &fsm{AuditLogging: auditLog}
 		fsm.RCCfg.AuditLogMandatory = false
 
-		auditLog.On("Enable", ctx, shoot, false).Return(false, errors.New("some error during configuration")).Once()
+		auditLog.On("Enable", ctx, shoot).Return(false, errors.New("some error during configuration")).Once()
 
 		// when
 		stateFn, _, _ := sFnConfigureAuditLog(ctx, fsm, systemState)
