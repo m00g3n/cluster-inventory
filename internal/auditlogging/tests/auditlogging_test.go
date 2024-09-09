@@ -140,7 +140,7 @@ func TestApplyAuditLogConfig(t *testing.T) {
 
 		// then
 		require.False(t, annotated)
-		require.Equal(t, err, fmt.Errorf("auditlog config for region region, provider aws is empty"))
+		require.Equal(t, err, auditlogging.ErrMissingMapping)
 	})
 }
 

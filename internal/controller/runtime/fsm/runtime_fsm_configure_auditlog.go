@@ -2,9 +2,9 @@ package fsm
 
 import (
 	"context"
-	"strings"
-
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
+	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -27,7 +27,7 @@ func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn,
 
 	if err != nil { //nolint:nestif
 		errorMessage := err.Error()
-		if strings.Contains(errorMessage, "auditlog config for region") {
+		if errors.Is(err, auditlogging.ErrMissingMapping) {
 			if m.RCCfg.AuditLogMandatory {
 				m.log.Error(err, "Failed to configure Audit Log, missing region mapping for this shoot")
 				s.instance.UpdateStatePending(

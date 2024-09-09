@@ -2,6 +2,7 @@ package fsm
 
 import (
 	"context"
+	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
 	"testing"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -103,14 +104,14 @@ func TestAuditLogState(t *testing.T) {
 				Type:    string(v1.ConditionTypeAuditLogConfigured),
 				Status:  "False",
 				Reason:  string(v1.ConditionReasonAuditLogMissingRegionMapping),
-				Message: "auditlog config for region",
+				Message: auditlogging.ErrMissingMapping.Error(),
 			},
 		}
 
 		fsm := &fsm{AuditLogging: auditLog}
 		fsm.RCCfg.AuditLogMandatory = true
 
-		auditLog.On("Enable", ctx, shoot).Return(false, errors.New("auditlog config for region")).Once()
+		auditLog.On("Enable", ctx, shoot).Return(false, auditlogging.ErrMissingMapping).Once()
 
 		// when
 		stateFn, _, _ := sFnConfigureAuditLog(ctx, fsm, systemState)
@@ -147,7 +148,7 @@ func TestAuditLogState(t *testing.T) {
 		fsm := &fsm{AuditLogging: auditLog}
 		fsm.RCCfg.AuditLogMandatory = false
 
-		auditLog.On("Enable", ctx, shoot).Return(false, errors.New("auditlog config for region")).Once()
+		auditLog.On("Enable", ctx, shoot).Return(false, auditlogging.ErrMissingMapping).Once()
 
 		// when
 		stateFn, _, _ := sFnConfigureAuditLog(ctx, fsm, systemState)

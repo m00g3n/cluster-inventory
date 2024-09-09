@@ -20,6 +20,8 @@ const (
 	auditlogExtensionType   = "shoot-auditlog-service"
 )
 
+var ErrMissingMapping = errors.New("missing mapping for selected region in provider config")
+
 //go:generate mockery --name=AuditLogging
 type AuditLogging interface {
 	Enable(ctx context.Context, shoot *gardener.Shoot) (bool, error)
@@ -141,7 +143,7 @@ func ApplyAuditLogConfig(shoot *gardener.Shoot, auditConfigFromFile map[string]m
 
 	tenant, ok := providerConfig[auditID]
 	if !ok {
-		return false, fmt.Errorf("auditlog config for region %s, provider %s is empty", auditID, providerType)
+		return false, ErrMissingMapping
 	}
 
 	changedExt, err := configureExtension(shoot, tenant)
