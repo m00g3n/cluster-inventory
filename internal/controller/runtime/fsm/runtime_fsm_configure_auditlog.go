@@ -2,9 +2,10 @@ package fsm
 
 import (
 	"context"
+	"strings"
+
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"strings"
 )
 
 func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
