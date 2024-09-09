@@ -96,9 +96,10 @@ const (
 	ConditionReasonSerializationError   = RuntimeConditionReason("SerializationErr")
 	ConditionReasonDeleted              = RuntimeConditionReason("Deleted")
 
-	ConditionReasonAdministratorsConfigured = RuntimeConditionReason("AdministratorsConfigured")
-	ConditionReasonAuditLogConfigured       = RuntimeConditionReason("AuditLogConfigured")
-	ConditionReasonAuditLogError            = RuntimeConditionReason("AuditLogErr")
+	ConditionReasonAdministratorsConfigured     = RuntimeConditionReason("AdministratorsConfigured")
+	ConditionReasonAuditLogConfigured           = RuntimeConditionReason("AuditLogConfigured")
+	ConditionReasonAuditLogError                = RuntimeConditionReason("AuditLogErr")
+	ConditionReasonAuditLogMissingRegionMapping = RuntimeConditionReason("AuditLogMissingRegionMappingErr")
 )
 
 //+kubebuilder:object:root=true

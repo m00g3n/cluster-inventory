@@ -45,9 +45,9 @@ type auditLogConfig struct {
 }
 
 type AuditLogData struct {
-	TenantID   string `json:"tenantID"`
-	ServiceURL string `json:"serviceURL"`
-	SecretName string `json:"secretName"`
+	TenantID   string `json:"tenantID" validate:"required"`
+	ServiceURL string `json:"serviceURL" validate:"required,url"`
+	SecretName string `json:"secretName" validate:"required"`
 }
 
 type AuditlogExtensionConfig struct {
@@ -140,11 +140,8 @@ func ApplyAuditLogConfig(shoot *gardener.Shoot, auditConfigFromFile map[string]m
 	}
 
 	tenant, ok := providerConfig[auditID]
-	if !ok && mandatory {
+	if !ok {
 		return false, fmt.Errorf("auditlog config for region %s, provider %s is empty", auditID, providerType)
-	} else if !ok {
-		rollbackAuditPolicy(shoot)
-		return false, nil
 	}
 
 	changedExt, err := configureExtension(shoot, tenant)
@@ -285,12 +282,6 @@ func newAuditPolicyConfig(policyConfigMapName string) *gardener.AuditConfig {
 		AuditPolicy: &gardener.AuditPolicy{
 			ConfigMapRef: &v12.ObjectReference{Name: policyConfigMapName},
 		},
-	}
-}
-
-func rollbackAuditPolicy(shoot *gardener.Shoot) {
-	if shoot.Spec.Kubernetes.KubeAPIServer != nil {
-		shoot.Spec.Kubernetes.KubeAPIServer.AuditConfig = nil
 	}
 }
 

@@ -155,6 +155,10 @@ var testReader io.Reader = strings.NewReader(`{
   },
   "gardener": {
     "projectName": "test-project"
+  },
+  "auditLogging": {
+    "policyConfigMapName": "test-policy",
+    "tenantConfigPath": "test-path"
   }
 }`)
 
@@ -188,6 +192,10 @@ func Test_ConverterConfig_Load_OK(t *testing.T) {
 		},
 		Gardener: GardenerConfig{
 			ProjectName: "test-project",
+		},
+		AuditLog: AuditLogConfig{
+			PolicyConfigMapName: "test-policy",
+			TenantConfigPath:    "test-path",
 		},
 	}
 	assert.Equal(t, expected, cfg)

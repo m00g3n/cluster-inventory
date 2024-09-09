@@ -34,7 +34,7 @@ func TestAuditLogState(t *testing.T) {
 		}
 
 		fsm := &fsm{AuditLogging: auditLog}
-		fsm.AuditLog.Mandatory = true
+		fsm.RCCfg.AuditLogMandatory = true
 
 		auditLog.On("Enable", ctx, shoot, true).Return(true, nil).Once()
 
@@ -71,7 +71,7 @@ func TestAuditLogState(t *testing.T) {
 		}
 
 		fsm := &fsm{AuditLogging: auditLog}
-		fsm.AuditLog.Mandatory = true
+		fsm.RCCfg.AuditLogMandatory = true
 
 		auditLog.On("Enable", ctx, shoot, true).Return(false, nil).Once()
 
@@ -88,7 +88,81 @@ func TestAuditLogState(t *testing.T) {
 		assert.Equal(t, expectedRuntimeConditions, systemState.instance.Status.Conditions)
 	})
 
-	t.Run("Should stop in case of error during configuration and set status on Runtime CR", func(t *testing.T) {
+	t.Run("Should set status on Runtime CR when region mapping is missing and Audit Log is mandatory (hard error)", func(t *testing.T) {
+		// given
+		ctx := context.Background()
+		auditLog := &mocks.AuditLogging{}
+		shoot := shootForTest()
+		instance := runtimeForTest()
+		systemState := &systemState{
+			instance: instance,
+			shoot:    shoot,
+		}
+		expectedRuntimeConditions := []metav1.Condition{
+			{
+				Type:    string(v1.ConditionTypeAuditLogConfigured),
+				Status:  "False",
+				Reason:  string(v1.ConditionReasonAuditLogMissingRegionMapping),
+				Message: "auditlog config for region",
+			},
+		}
+
+		fsm := &fsm{AuditLogging: auditLog}
+		fsm.RCCfg.AuditLogMandatory = true
+
+		auditLog.On("Enable", ctx, shoot, true).Return(false, errors.New("auditlog config for region")).Once()
+
+		// when
+		stateFn, _, _ := sFnConfigureAuditLog(ctx, fsm, systemState)
+
+		// set the time to its zero value for comparison purposes
+		systemState.instance.Status.Conditions[0].LastTransitionTime = metav1.Time{}
+
+		// then
+		auditLog.AssertExpectations(t)
+		require.Contains(t, stateFn.name(), "sFnUpdateStatus")
+		assert.Equal(t, v1.RuntimeStateFailed, string(systemState.instance.Status.State))
+		assert.Equal(t, expectedRuntimeConditions, systemState.instance.Status.Conditions)
+	})
+
+	t.Run("Should set status on Runtime CR when region mapping is missing and Audit Log is not mandatory (proceed to next step)", func(t *testing.T) {
+		// given
+		ctx := context.Background()
+		auditLog := &mocks.AuditLogging{}
+		shoot := shootForTest()
+		instance := runtimeForTest()
+		systemState := &systemState{
+			instance: instance,
+			shoot:    shoot,
+		}
+		expectedRuntimeConditions := []metav1.Condition{
+			{
+				Type:    string(v1.ConditionTypeAuditLogConfigured),
+				Status:  "True",
+				Reason:  string(v1.ConditionReasonAuditLogMissingRegionMapping),
+				Message: "Missing region mapping for this shoot. Audit Log is not mandatory. Skipping configuration",
+			},
+		}
+
+		fsm := &fsm{AuditLogging: auditLog}
+		fsm.RCCfg.AuditLogMandatory = false
+
+		auditLog.On("Enable", ctx, shoot, false).Return(false, errors.New("auditlog config for region")).Once()
+
+		// when
+		stateFn, _, _ := sFnConfigureAuditLog(ctx, fsm, systemState)
+
+		// set the time to its zero value for comparison purposes
+		systemState.instance.Status.Conditions[0].LastTransitionTime = metav1.Time{}
+
+		// then
+		auditLog.AssertExpectations(t)
+		require.Contains(t, stateFn.name(), "sFnUpdateStatus")
+		assert.Equal(t, v1.RuntimeStateReady, string(systemState.instance.Status.State))
+		assert.Equal(t, expectedRuntimeConditions, systemState.instance.Status.Conditions)
+	})
+
+	t.Run("Should stop in case of error during configuration if Audit Log is mandatory, and set status on Runtime CR (hard error)", func(t *testing.T) {
 		// given
 		ctx := context.Background()
 		auditLog := &mocks.AuditLogging{}
@@ -108,7 +182,7 @@ func TestAuditLogState(t *testing.T) {
 		}
 
 		fsm := &fsm{AuditLogging: auditLog}
-		fsm.AuditLog.Mandatory = true
+		fsm.RCCfg.AuditLogMandatory = true
 
 		auditLog.On("Enable", ctx, shoot, true).Return(false, errors.New("some error during configuration")).Once()
 
@@ -122,6 +196,43 @@ func TestAuditLogState(t *testing.T) {
 		auditLog.AssertExpectations(t)
 		require.Contains(t, stateFn.name(), "sFnUpdateStatus")
 		assert.Equal(t, v1.RuntimeStateFailed, string(systemState.instance.Status.State))
+		assert.Equal(t, expectedRuntimeConditions, systemState.instance.Status.Conditions)
+	})
+
+	t.Run("Should stop in case of error during configuration if Audit Log is not mandatory, and set status on Runtime CR (proceed to next step)", func(t *testing.T) {
+		// given
+		ctx := context.Background()
+		auditLog := &mocks.AuditLogging{}
+		shoot := shootForTest()
+		instance := runtimeForTest()
+		systemState := &systemState{
+			instance: instance,
+			shoot:    shoot,
+		}
+		expectedRuntimeConditions := []metav1.Condition{
+			{
+				Type:    string(v1.ConditionTypeAuditLogConfigured),
+				Status:  "True",
+				Reason:  string(v1.ConditionReasonAuditLogError),
+				Message: "Configuration of Audit Log is not mandatory, error for context: some error during configuration",
+			},
+		}
+
+		fsm := &fsm{AuditLogging: auditLog}
+		fsm.RCCfg.AuditLogMandatory = false
+
+		auditLog.On("Enable", ctx, shoot, false).Return(false, errors.New("some error during configuration")).Once()
+
+		// when
+		stateFn, _, _ := sFnConfigureAuditLog(ctx, fsm, systemState)
+
+		// set the time to its zero value for comparison purposes
+		systemState.instance.Status.Conditions[0].LastTransitionTime = metav1.Time{}
+
+		// then
+		auditLog.AssertExpectations(t)
+		require.Contains(t, stateFn.name(), "sFnUpdateStatus")
+		assert.Equal(t, v1.RuntimeStateReady, string(systemState.instance.Status.State))
 		assert.Equal(t, expectedRuntimeConditions, systemState.instance.Status.Conditions)
 	})
 }
