@@ -30,7 +30,7 @@ func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn,
 		errorMessage := err.Error()
 		if errors.Is(err, auditlogging.ErrMissingMapping) {
 			if m.RCCfg.AuditLogMandatory {
-				m.log.Error(err, "Failed to configure Audit Log, missing region mapping for this shoot")
+				m.log.Error(err, "Failed to configure Audit Log, missing region mapping for this shoot", "AuditLogMandatory", m.RCCfg.AuditLogMandatory, "providerType", s.shoot.Spec.Provider.Type, "region", s.shoot.Spec.Region)
 				s.instance.UpdateStatePending(
 					imv1.ConditionTypeAuditLogConfigured,
 					imv1.ConditionReasonAuditLogMissingRegionMapping,
@@ -38,7 +38,7 @@ func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn,
 					errorMessage,
 				)
 			} else {
-				m.log.Info(errorMessage, "Failed to configure Audit Log, missing region mapping for this shoot, but is not mandatory to be configured")
+				m.log.Info(errorMessage, "Audit Log was not configured, missing region mapping for this shoot.", "AuditLogMandatory", m.RCCfg.AuditLogMandatory, "providerType", s.shoot.Spec.Provider.Type, "region", s.shoot.Spec.Region)
 				s.instance.UpdateStateReady(
 					imv1.ConditionTypeAuditLogConfigured,
 					imv1.ConditionReasonAuditLogMissingRegionMapping,
@@ -46,14 +46,14 @@ func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn,
 			}
 		} else {
 			if m.RCCfg.AuditLogMandatory {
-				m.log.Error(err, "Failed to configure Audit Log")
+				m.log.Error(err, "Failed to configure Audit Log", "AuditLogMandatory", m.RCCfg.AuditLogMandatory)
 				s.instance.UpdateStatePending(
 					imv1.ConditionTypeAuditLogConfigured,
 					imv1.ConditionReasonAuditLogError,
 					"False",
 					errorMessage)
 			} else {
-				m.log.Info(errorMessage, "Failed to configure Audit Log, but is not mandatory to be configured")
+				m.log.Info(errorMessage, "AuditLogMandatory", m.RCCfg.AuditLogMandatory)
 				s.instance.UpdateStateReady(
 					imv1.ConditionTypeAuditLogConfigured,
 					imv1.ConditionReasonAuditLogError,
