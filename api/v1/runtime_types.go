@@ -64,6 +64,7 @@ const (
 	ConditionTypeRuntimeProvisioned       RuntimeConditionType = "Provisioned"
 	ConditionTypeRuntimeProvisionedDryRun RuntimeConditionType = "ProvisionedDryRun"
 	ConditionTypeRuntimeKubeconfigReady   RuntimeConditionType = "KubeconfigReady"
+	ConditionTypeOidcConfigured           RuntimeConditionType = "OidcConfigured"
 	ConditionTypeRuntimeConfigured        RuntimeConditionType = "Configured"
 	ConditionTypeAuditLogConfigured       RuntimeConditionType = "AuditlogConfigured"
 	ConditionTypeRuntimeDeprovisioned     RuntimeConditionType = "Deprovisioned"
