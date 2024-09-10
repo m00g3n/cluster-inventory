@@ -13,10 +13,23 @@ const (
 func ExtendWithOIDC(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 	oidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig
 
-	setOIDCExtension(shoot)
+	if CanEnableExtension(shoot) {
+		setOIDCExtension(shoot)
+	}
 	setKubeAPIServerOIDCConfig(shoot, oidcConfig)
 
 	return nil
+}
+
+func CanEnableExtension(shoot *gardener.Shoot) bool {
+	controlledByProvisionerLabelValue := shoot.Labels[imv1.LabelControlledByProvisioner]
+	canEnable := false
+
+	if controlledByProvisionerLabelValue == "false" {
+		canEnable = true
+	}
+
+	return canEnable
 }
 
 func setOIDCExtension(shoot *gardener.Shoot) {
