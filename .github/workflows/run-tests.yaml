@@ -1,6 +1,27 @@
 name: tests
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-*"
+    paths-ignore:
+      - .reuse
+      - LICENSES/
+      - LICENSE
+      - .gitignore
+      - "**.md"
+
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths-ignore:
+      - .reuse
+      - LICENSES/
+      - LICENSE
+      - .gitignore
+      - "**.md"
 
 permissions:
   contents: read
