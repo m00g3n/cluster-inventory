@@ -39,8 +39,8 @@ type KubernetesConfig struct {
 }
 
 type AuditLogConfig struct {
-	PolicyConfigMapName string `json:"policyConfigMapName"`
-	TenantConfigPath    string `json:"tenantConfigPath"`
+	PolicyConfigMapName string `json:"policyConfigMapName" validate:"required"`
+	TenantConfigPath    string `json:"tenantConfigPath" validate:"required"`
 }
 
 type ReaderGetter = func() (io.Reader, error)
@@ -51,7 +51,7 @@ type ConverterConfig struct {
 	Provider     ProviderConfig     `json:"provider"`
 	MachineImage MachineImageConfig `json:"machineImage" validate:"required"`
 	Gardener     GardenerConfig     `json:"gardener" validate:"required"`
-	AuditLog     AuditLogConfig     `json:"auditLogging"`
+	AuditLog     AuditLogConfig     `json:"auditLogging" validate:"required"`
 }
 
 func (c *ConverterConfig) Load(f ReaderGetter) error {

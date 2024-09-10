@@ -30,9 +30,10 @@ type writerGetter = func(filePath string) (io.Writer, error)
 
 // runtime reconciler specific configuration
 type RCCfg struct {
-	Finalizer       string
-	PVCPath         string
-	ShootNamesapace string
+	Finalizer         string
+	PVCPath           string
+	ShootNamesapace   string
+	AuditLogMandatory bool
 	shoot.ConverterConfig
 }
 
