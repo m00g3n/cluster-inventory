@@ -22,11 +22,11 @@ func ExtendWithOIDC(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 }
 
 func CanEnableExtension(shoot *gardener.Shoot) bool {
-	controlledByProvisionerLabelValue := shoot.Labels[imv1.LabelControlledByProvisioner]
-	canEnable := false
+	canEnable := true
+	createdByMigrator := shoot.Labels["operator.kyma-project.io/created-by-migrator"]
 
-	if controlledByProvisionerLabelValue == "false" {
-		canEnable = true
+	if createdByMigrator == "true" {
+		canEnable = false
 	}
 
 	return canEnable
