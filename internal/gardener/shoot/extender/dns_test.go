@@ -58,9 +58,7 @@ func fixEmptyGardenerShoot(name, namespace string) gardener.Shoot {
 		ObjectMeta: v1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
-			Labels: map[string]string{
-				"kyma-project.io/controlled-by-provisioner": "false",
-			},
+			Labels:    map[string]string{},
 		},
 		Spec: gardener.ShootSpec{},
 	}
