@@ -71,6 +71,8 @@ func TestOidcExtender(t *testing.T) {
 			if testCase.expectedOidcExtensionEnabled {
 				assert.Equal(t, testCase.expectedOidcExtensionEnabled, !*shoot.Spec.Extensions[0].Disabled)
 				assert.Equal(t, "shoot-oidc-service", shoot.Spec.Extensions[0].Type)
+			} else {
+				assert.Equal(t, 0, len(shoot.Spec.Extensions))
 			}
 		})
 	}
