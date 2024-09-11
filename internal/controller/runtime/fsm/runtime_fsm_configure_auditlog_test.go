@@ -2,9 +2,10 @@ package fsm
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"testing"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"

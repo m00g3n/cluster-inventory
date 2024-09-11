@@ -2,6 +2,7 @@ package fsm
 
 import (
 	"context"
+
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
