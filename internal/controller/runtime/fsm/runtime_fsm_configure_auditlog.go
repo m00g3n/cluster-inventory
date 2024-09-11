@@ -56,7 +56,7 @@ func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn,
 		if m.RCCfg.AuditLogMandatory {
 			m.log.Error(err, errorMsg)
 		} else {
-			m.log.Info(err.Error(), "Failed to configure Audit Log, but is not mandatory to be configured")
+			m.log.Info(err.Error(), infoMsg)
 		}
 	}
 
