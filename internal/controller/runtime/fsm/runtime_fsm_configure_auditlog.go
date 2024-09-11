@@ -2,6 +2,7 @@ package fsm
 
 import (
 	"context"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
@@ -14,7 +15,7 @@ func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn,
 
 	wasAuditLogEnabled, err := m.AuditLogging.Enable(ctx, s.shoot)
 
-	if wasAuditLogEnabled {
+	if wasAuditLogEnabled && err == nil {
 		m.log.Info("Audit Log configured for shoot: " + s.shoot.Name)
 		s.instance.UpdateStatePending(
 			imv1.ConditionTypeAuditLogConfigured,
@@ -27,6 +28,16 @@ func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn,
 	}
 
 	if err != nil { //nolint:nestif
+		if k8serrors.IsConflict(err) {
+			m.log.Error(err, "Conflict while updating Shoot object after applying Audit Log configuration, retrying")
+			s.instance.UpdateStatePending(
+				imv1.ConditionTypeAuditLogConfigured,
+				imv1.ConditionReasonAuditLogError,
+				"True",
+				err.Error(),
+			)
+			return updateStatusAndRequeue()
+		}
 		errorMessage := err.Error()
 		if errors.Is(err, auditlogging.ErrMissingMapping) {
 			if m.RCCfg.AuditLogMandatory {
