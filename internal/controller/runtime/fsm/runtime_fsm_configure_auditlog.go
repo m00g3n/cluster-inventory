@@ -3,11 +3,10 @@ package fsm
 import (
 	"context"
 
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
 	"github.com/pkg/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
