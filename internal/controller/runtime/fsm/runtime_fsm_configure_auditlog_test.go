@@ -4,15 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging/mocks"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
