@@ -1,6 +1,27 @@
 name: tests
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-*"
+    paths-ignore:
+      - .reuse
+      - LICENSES/
+      - LICENSE
+      - .gitignore
+      - "**.md"
+
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths-ignore:
+      - .reuse
+      - LICENSES/
+      - LICENSE
+      - .gitignore
+      - "**.md"
 
 permissions:
   contents: read
@@ -28,7 +49,7 @@ jobs:
     - name: Set up go environment
       uses: actions/setup-go@v5
       with:
-        go-version: 1.22.4
+        go-version: 1.23.0
 ############################################################################################
     - name: Run unit tests
       run: make test
