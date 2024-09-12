@@ -2,6 +2,7 @@ package fsm
 
 import (
 	"context"
+	"strconv"
 
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
@@ -26,11 +27,13 @@ func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn,
 		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 	}
 
+	auditLogMandatoryString := strconv.FormatBool(m.RCCfg.AuditLogMandatory)
+
 	if err != nil { //nolint:nestif
 		errorMessage := err.Error()
 		if errors.Is(err, auditlogging.ErrMissingMapping) {
 			if m.RCCfg.AuditLogMandatory {
-				m.log.Error(err, "Failed to configure Audit Log, missing region mapping for this shoot", "AuditLogMandatory", m.RCCfg.AuditLogMandatory, "providerType", s.shoot.Spec.Provider.Type, "region", s.shoot.Spec.Region)
+				m.log.Error(err, "AuditLogMandatory", auditLogMandatoryString, "providerType", s.shoot.Spec.Provider.Type, "region", s.shoot.Spec.Region)
 				s.instance.UpdateStatePending(
 					imv1.ConditionTypeAuditLogConfigured,
 					imv1.ConditionReasonAuditLogMissingRegionMapping,
@@ -38,7 +41,7 @@ func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn,
 					errorMessage,
 				)
 			} else {
-				m.log.Info(errorMessage, "Audit Log was not configured, missing region mapping for this shoot.", "AuditLogMandatory", m.RCCfg.AuditLogMandatory, "providerType", s.shoot.Spec.Provider.Type, "region", s.shoot.Spec.Region)
+				m.log.Info(errorMessage, "AuditLogMandatory", auditLogMandatoryString, "providerType", s.shoot.Spec.Provider.Type, "region", s.shoot.Spec.Region)
 				s.instance.UpdateStateReady(
 					imv1.ConditionTypeAuditLogConfigured,
 					imv1.ConditionReasonAuditLogMissingRegionMapping,
@@ -46,14 +49,14 @@ func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn,
 			}
 		} else {
 			if m.RCCfg.AuditLogMandatory {
-				m.log.Error(err, "Failed to configure Audit Log", "AuditLogMandatory", m.RCCfg.AuditLogMandatory)
+				m.log.Error(err, "AuditLogMandatory", auditLogMandatoryString)
 				s.instance.UpdateStatePending(
 					imv1.ConditionTypeAuditLogConfigured,
 					imv1.ConditionReasonAuditLogError,
 					"False",
 					errorMessage)
 			} else {
-				m.log.Info(errorMessage, "AuditLogMandatory", m.RCCfg.AuditLogMandatory)
+				m.log.Info(errorMessage, "AuditLogMandatory", auditLogMandatoryString)
 				s.instance.UpdateStateReady(
 					imv1.ConditionTypeAuditLogConfigured,
 					imv1.ConditionReasonAuditLogError,
