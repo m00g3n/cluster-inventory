@@ -1,6 +1,7 @@
 package extender
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -40,8 +41,12 @@ func TestOidcExtender(t *testing.T) {
 			usernameClaim := "sub"
 
 			shoot := fixEmptyGardenerShoot("test", "kcp-system")
-			shoot.Labels[MigratorLabel] = testCase.migratorLabel[MigratorLabel]
 			runtimeShoot := imv1.Runtime{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						MigratorLabel: testCase.migratorLabel[MigratorLabel],
+					},
+				},
 				Spec: imv1.RuntimeSpec{
 					Shoot: imv1.RuntimeShoot{
 						Kubernetes: imv1.Kubernetes{
