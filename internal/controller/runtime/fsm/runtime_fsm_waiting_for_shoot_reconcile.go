@@ -47,7 +47,7 @@ func sFnWaitForShootReconcile(_ context.Context, m *fsm, s *systemState) (stateF
 		return ensureStatusConditionIsSetAndContinue(
 			&s.instance,
 			imv1.ConditionTypeRuntimeProvisioned,
-			imv1.ConditionReasonAuditLogConfigured,
+			imv1.ConditionReasonConfigurationCompleted,
 			"Runtime processing completed successfully",
 			sFnApplyClusterRoleBindings)
 	}
