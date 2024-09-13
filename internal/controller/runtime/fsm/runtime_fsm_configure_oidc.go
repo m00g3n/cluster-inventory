@@ -2,17 +2,16 @@ package fsm
 
 import (
 	"context"
+	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	authenticationv1alpha1 "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	m.log.Info("Configure OIDC state")
-
-	createOpenIDConnectResource(s.instance)
 
 	//done 0. plug in to the state machine without actually doing anything
 	//TODO: - check condition if going into this state is necessary
@@ -25,8 +24,9 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 	//TODO: - (???) remove existing "additionalOidcs" from the Shoot spec
 	//TODO: - recreate "additionalOidcs" in the Shoot spec
 	//TODO: - extract rest client to a separate interface
-	//TODO:   consider if we should stop in case of a failure
-	//TODO:  the condition set should reflect framefrog condition strategy
+	//TODO: - consider if we should stop in case of a failure
+	//TODO:  - possibly merge with CRB state
+	//TODO:  - the condition set should reflect framefrog condition strategy
 	//TODO: - unit test the function
 
 	//s.instance.UpdateStatePending(imv1.ConditionTypeRuntimeKubeconfigReady, imv1.ConditionReasonGardenerCRCreated, "Unknown", "Gardener Cluster CR created, waiting for readiness")
@@ -43,7 +43,14 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 		return updateStatusAndStopWithError(err)
 	}
 
-	openIDConnectResource := createOpenIDConnectResource(s.instance)
+	if s.instance.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig == nil {
+		var error = errors.New("default OIDC configuration is not present")
+		m.log.Error(error, "default OIDC configuration is not present")
+		return updateStatusAndStopWithError(error)
+	}
+
+	additionalOidcConfig := (*s.instance.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig)[0]
+	openIDConnectResource := createOpenIDConnectResource(additionalOidcConfig)
 	errResourceCreation := shootAdminClient.Create(ctx, openIDConnectResource)
 
 	if errResourceCreation != nil {
@@ -61,39 +68,44 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 	return updateStatusAndStop()
 }
 
-func createOpenIDConnectResource(runtime imv1.Runtime) *authenticationv1alpha1.OpenIDConnect {
-	//additionalOidcConfig := (*runtime.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig)[0]
-
-	//cr := &authenticationv1alpha1.OpenIDConnect{
-	//	Spec: authenticationv1alpha1.OIDCAuthenticationSpec{
-	//		IssuerURL:      *additionalOidcConfig.IssuerURL,
-	//		ClientID:       *additionalOidcConfig.ClientID,
-	//		UsernameClaim:  additionalOidcConfig.UsernameClaim,
-	//		UsernamePrefix: additionalOidcConfig.UsernamePrefix,
-	//		GroupsClaim:    additionalOidcConfig.GroupsClaim,
-	//		GroupsPrefix:   additionalOidcConfig.GroupsPrefix,
-	//		RequiredClaims: additionalOidcConfig.RequiredClaims,
-	//	},
-	//}
-
+func createOpenIDConnectResource(additionalOidcConfig gardener.OIDCConfig) *authenticationv1alpha1.OpenIDConnect {
 	cr := &authenticationv1alpha1.OpenIDConnect{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "OpenIDConnect",
 			APIVersion: "authentication.gardener.cloud/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "my-oidc",
+			Name: "to-be-changed",
 		},
 		Spec: authenticationv1alpha1.OIDCAuthenticationSpec{
-			IssuerURL:      "https://token.actions.githubusercontent.com",
-			ClientID:       "my-kubernetes-cluster",
-			UsernameClaim:  ptr.To("sub"),
-			UsernamePrefix: ptr.To("actions-oidc:"),
-			GroupsPrefix:   ptr.To("deploy-kubernetes"),
-			GroupsClaim:    ptr.To("myOrg/myRepo"),
-			RequiredClaims: map[string]string{},
+			IssuerURL:      *additionalOidcConfig.IssuerURL,
+			ClientID:       *additionalOidcConfig.ClientID,
+			UsernameClaim:  additionalOidcConfig.UsernameClaim,
+			UsernamePrefix: additionalOidcConfig.UsernamePrefix,
+			GroupsClaim:    additionalOidcConfig.GroupsClaim,
+			GroupsPrefix:   additionalOidcConfig.GroupsPrefix,
+			RequiredClaims: additionalOidcConfig.RequiredClaims,
 		},
 	}
+
+	//cr := &authenticationv1alpha1.OpenIDConnect{
+	//	TypeMeta: metav1.TypeMeta{
+	//		Kind:       "OpenIDConnect",
+	//		APIVersion: "authentication.gardener.cloud/v1alpha1",
+	//	},
+	//	ObjectMeta: metav1.ObjectMeta{
+	//		Name: "my-oidc",
+	//	},
+	//	Spec: authenticationv1alpha1.OIDCAuthenticationSpec{
+	//		IssuerURL:      "https://token.actions.githubusercontent.com",
+	//		ClientID:       "my-kubernetes-cluster",
+	//		UsernameClaim:  ptr.To("sub"),
+	//		UsernamePrefix: ptr.To("actions-oidc:"),
+	//		GroupsPrefix:   ptr.To("deploy-kubernetes"),
+	//		GroupsClaim:    ptr.To("myOrg/myRepo"),
+	//		RequiredClaims: map[string]string{},
+	//	},
+	//}
 
 	return cr
 }

@@ -57,6 +57,7 @@ func convertShoot(instance *imv1.Runtime, cfg shoot.ConverterConfig) (gardener.S
 		return gardener.Shoot{}, err
 	}
 
+	defaultAdditionalOidcIfNotPresent(instance)
 	converter := gardener_shoot.NewConverter(cfg)
 	newShoot, err := converter.ToShoot(*instance)
 
@@ -65,6 +66,18 @@ func convertShoot(instance *imv1.Runtime, cfg shoot.ConverterConfig) (gardener.S
 	}
 
 	return newShoot, err
+}
+
+func defaultAdditionalOidcIfNotPresent(runtime *imv1.Runtime) {
+	oidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig
+	additionalOidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig
+
+	if nil == additionalOidcConfig {
+		additionalOidcConfig = &[]gardener.OIDCConfig{}
+		*additionalOidcConfig = append(*additionalOidcConfig, oidcConfig)
+	}
+
+	runtime.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig = additionalOidcConfig
 }
 
 // workaround
