@@ -17,30 +17,45 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 
 	if !isOidcExtensionEnabled(*s.shoot) {
 		m.log.Info("OIDC extension is disabled")
+		s.instance.UpdateStateReady(
+			imv1.ConditionTypeOidcConfigured,
+			imv1.ConditionReasonOidcConfigured,
+			"OIDC extension disabled",
+		)
 		updateStatusAndStop()
 	}
 
-	if s.instance.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig == nil {
-		var error = errors.New("default OIDC configuration is not present")
-		m.log.Error(error, "default OIDC configuration is not present")
-		return updateStatusAndStopWithError(error)
+	validationError := validateOidcConfiguration(s.instance)
+	if validationError != nil {
+		m.log.Error(validationError, "default OIDC configuration is not present")
+		updateConditionFailed(&s.instance)
+		return updateStatusAndStopWithError(validationError)
 	}
 
 	err := createOpenIdConnectResources(ctx, m, s)
 
 	if err != nil {
 		m.log.Error(err, "Failed to create OpenIDConnect resource")
+		updateConditionFailed(&s.instance)
+		return updateStatusAndStopWithError(err)
 	}
 
 	s.instance.UpdateStateReady(
 		imv1.ConditionTypeOidcConfigured,
-		imv1.ConditionReasonConfigurationCompleted,
+		imv1.ConditionReasonOidcConfigured,
 		"OIDC configuration completed",
 	)
 
 	m.log.Info("OIDC has been configured", "Name", s.shoot.Name)
 
 	return updateStatusAndStop()
+}
+
+func validateOidcConfiguration(rt imv1.Runtime) (err error) {
+	if rt.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig == nil {
+		err = errors.New("default OIDC configuration is not present")
+	}
+	return err
 }
 
 func createOpenIdConnectResources(ctx context.Context, m *fsm, s *systemState) error {
@@ -91,4 +106,13 @@ func createOpenIDConnectResource(additionalOidcConfig gardener.OIDCConfig, oidcI
 	}
 
 	return cr
+}
+
+func updateConditionFailed(rt *imv1.Runtime) {
+	rt.UpdateStatePending(
+		imv1.ConditionTypeOidcConfigured,
+		imv1.ConditionReasonOidcError,
+		string(metav1.ConditionFalse),
+		"failed to configure OIDC",
+	)
 }

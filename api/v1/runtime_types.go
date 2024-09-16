@@ -101,6 +101,8 @@ const (
 	ConditionReasonAuditLogConfigured           = RuntimeConditionReason("AuditLogConfigured")
 	ConditionReasonAuditLogError                = RuntimeConditionReason("AuditLogErr")
 	ConditionReasonAuditLogMissingRegionMapping = RuntimeConditionReason("AuditLogMissingRegionMappingErr")
+	ConditionReasonOidcConfigured               = RuntimeConditionReason("OidcConfigured")
+	ConditionReasonOidcError                    = RuntimeConditionReason("OidcConfigurationErr")
 )
 
 //+kubebuilder:object:root=true
