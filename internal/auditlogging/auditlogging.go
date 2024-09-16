@@ -147,9 +147,14 @@ func ApplyAuditLogConfig(shoot *gardener.Shoot, auditConfigFromFile map[string]m
 	}
 
 	changedExt, err := configureExtension(shoot, tenant)
+
+	if err != nil {
+		return false, err
+	}
+
 	changedSec := configureSecret(shoot, tenant)
 
-	return changedExt || changedSec, err
+	return changedExt || changedSec, nil
 }
 
 func configureExtension(shoot *gardener.Shoot, config AuditLogData) (changed bool, err error) {
