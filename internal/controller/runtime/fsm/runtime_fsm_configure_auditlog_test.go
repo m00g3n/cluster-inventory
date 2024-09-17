@@ -2,15 +2,16 @@ package fsm
 
 import (
 	"context"
-	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
 	"testing"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging/mocks"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -234,6 +235,43 @@ func TestAuditLogState(t *testing.T) {
 		auditLog.AssertExpectations(t)
 		require.Contains(t, stateFn.name(), "sFnConfigureOidc")
 		assert.Equal(t, v1.RuntimeStateReady, string(systemState.instance.Status.State))
+		assert.Equal(t, expectedRuntimeConditions, systemState.instance.Status.Conditions)
+	})
+
+	t.Run("Should requeue in case of Kubernetes object conflict error during update of Shoot object and set status on Runtime CR", func(t *testing.T) {
+		// given
+		ctx := context.Background()
+		auditLog := &mocks.AuditLogging{}
+		shoot := shootForTest()
+		instance := runtimeForTest()
+		systemState := &systemState{
+			instance: instance,
+			shoot:    shoot,
+		}
+		expectedRuntimeConditions := []metav1.Condition{
+			{
+				Type:    string(v1.ConditionTypeAuditLogConfigured),
+				Status:  "True",
+				Reason:  string(v1.ConditionReasonAuditLogError),
+				Message: k8serrors.NewConflict(gardener.Resource("shoots"), shoot.Name, errors.New("k8s conflict on update error")).Error(),
+			},
+		}
+
+		fsm := &fsm{AuditLogging: auditLog}
+		fsm.RCCfg.AuditLogMandatory = true
+
+		auditLog.On("Enable", ctx, shoot).Return(false, k8serrors.NewConflict(gardener.Resource("shoots"), shoot.Name, errors.New("k8s conflict on update error"))).Once()
+
+		// when
+		stateFn, _, _ := sFnConfigureAuditLog(ctx, fsm, systemState)
+
+		// set the time to its zero value for comparison purposes
+		systemState.instance.Status.Conditions[0].LastTransitionTime = metav1.Time{}
+
+		// then
+		auditLog.AssertExpectations(t)
+		require.Contains(t, stateFn.name(), "sFnUpdateStatus")
+		assert.Equal(t, v1.RuntimeStatePending, string(systemState.instance.Status.State))
 		assert.Equal(t, expectedRuntimeConditions, systemState.instance.Status.Conditions)
 	})
 }
