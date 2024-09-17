@@ -82,5 +82,5 @@ func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn,
 		)
 	}
 
-	return switchState(sFnConfigureOidc)
+	return updateStatusAndStop()
 }
