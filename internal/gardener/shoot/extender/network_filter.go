@@ -8,7 +8,6 @@ import (
 const NetworkFilterType = "shoot-networking-filter"
 
 func ExtendWithNetworkFilter(runtime imv1.Runtime, shoot *gardener.Shoot) error { //nolint:revive
-
 	networkingFilter := gardener.Extension{
 		Type: NetworkFilterType,
 		// this pointer is safe, because runtime is fully pass-by-value
