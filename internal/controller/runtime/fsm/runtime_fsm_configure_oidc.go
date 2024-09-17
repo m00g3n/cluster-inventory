@@ -23,7 +23,7 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 			imv1.ConditionReasonOidcConfigured,
 			"OIDC extension disabled",
 		)
-		updateStatusAndStop()
+		return updateStatusAndStop()
 	}
 
 	validationError := validateOidcConfiguration(s.instance)
@@ -33,7 +33,7 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 		return updateStatusAndStopWithError(validationError)
 	}
 
-	err := createOpenIdConnectResources(ctx, m, s)
+	err := createOpenIDConnectResources(ctx, m, s)
 
 	if err != nil {
 		m.log.Error(err, "Failed to create OpenIDConnect resource")
@@ -59,7 +59,7 @@ func validateOidcConfiguration(rt imv1.Runtime) (err error) {
 	return err
 }
 
-func createOpenIdConnectResources(ctx context.Context, m *fsm, s *systemState) error {
+func createOpenIDConnectResources(ctx context.Context, m *fsm, s *systemState) error {
 	srscClient := m.ShootClient.SubResource("adminkubeconfig")
 	shootAdminClient, shootClientError := GetShootClient(ctx, srscClient, s.shoot)
 
@@ -86,14 +86,14 @@ func isOidcExtensionEnabled(shoot gardener.Shoot) bool {
 	return false
 }
 
-func createOpenIDConnectResource(additionalOidcConfig gardener.OIDCConfig, oidcId int) *authenticationv1alpha1.OpenIDConnect {
+func createOpenIDConnectResource(additionalOidcConfig gardener.OIDCConfig, oidcID int) *authenticationv1alpha1.OpenIDConnect {
 	cr := &authenticationv1alpha1.OpenIDConnect{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "OpenIDConnect",
 			APIVersion: "authentication.gardener.cloud/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("kyma-oidc-%v", oidcId),
+			Name: fmt.Sprintf("kyma-oidc-%v", oidcID),
 		},
 		Spec: authenticationv1alpha1.OIDCAuthenticationSpec{
 			IssuerURL:      *additionalOidcConfig.IssuerURL,

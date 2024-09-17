@@ -11,7 +11,7 @@ import (
 )
 
 func TestOidcExtender(t *testing.T) {
-	const MigratorLabel = "operator.kyma-project.io/created-by-migrator"
+	const migratorLabel = "operator.kyma-project.io/created-by-migrator"
 	for _, testCase := range []struct {
 		name                         string
 		migratorLabel                map[string]string
@@ -19,12 +19,12 @@ func TestOidcExtender(t *testing.T) {
 	}{
 		{
 			name:                         "label created-by-migrator=true should not configure OIDC",
-			migratorLabel:                map[string]string{MigratorLabel: "true"},
+			migratorLabel:                map[string]string{migratorLabel: "true"},
 			expectedOidcExtensionEnabled: false,
 		},
 		{
 			name:                         "label created-by-migrator=false should configure OIDC",
-			migratorLabel:                map[string]string{MigratorLabel: "false"},
+			migratorLabel:                map[string]string{migratorLabel: "false"},
 			expectedOidcExtensionEnabled: true,
 		},
 		{
@@ -44,7 +44,7 @@ func TestOidcExtender(t *testing.T) {
 			runtimeShoot := imv1.Runtime{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						MigratorLabel: testCase.migratorLabel[MigratorLabel],
+						migratorLabel: testCase.migratorLabel[migratorLabel],
 					},
 				},
 				Spec: imv1.RuntimeSpec{
