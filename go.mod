@@ -94,5 +94,5 @@ replace (
 	golang.org/x/sys => golang.org/x/sys v0.21.0
 	golang.org/x/text => golang.org/x/text v0.16.0
 	golang.org/x/tools => golang.org/x/tools v0.22.0
-	gopkg.in/square/go-jose.v2 => gopkg.in/go-jose/go-jose.v2 v2.6.3
+	gopkg.in/square/go-jose.v2 => github.com/go-jose/go-jose/v4 v4.0.4
 )
