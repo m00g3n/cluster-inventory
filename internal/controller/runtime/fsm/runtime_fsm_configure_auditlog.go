@@ -60,9 +60,9 @@ func handleError(err error, m *fsm, s *systemState) (stateFn, *ctrl.Result, erro
 
 	logError := func(err error, keysAndValues ...any) {
 		if m.RCCfg.AuditLogMandatory {
-			m.log.Error(nil, err.Error(), keysAndValues)
+			m.log.Error(nil, err.Error(), keysAndValues...)
 		} else {
-			m.log.Info(err.Error(), keysAndValues)
+			m.log.Info(err.Error(), keysAndValues...)
 		}
 	}
 
