@@ -14,9 +14,9 @@ import (
 func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	m.log.Info("Configure Audit Log state")
 
-	wasAuditLogEnabled, err := m.AuditLogging.Enable(ctx, s.shoot)
+	shootNeedsToBeReconciled, err := m.AuditLogging.Enable(ctx, s.shoot)
 
-	if wasAuditLogEnabled && err == nil {
+	if shootNeedsToBeReconciled && err == nil {
 		m.log.Info("Audit Log configured for shoot: " + s.shoot.Name)
 		s.instance.UpdateStatePending(
 			imv1.ConditionTypeAuditLogConfigured,
@@ -39,52 +39,6 @@ func sFnConfigureAuditLog(ctx context.Context, m *fsm, s *systemState) (stateFn,
 	}
 
 	return handleError(err, m, s)
-	//if err != nil { //nolint:nestif
-	//	if k8serrors.IsConflict(err) {
-	//		m.log.Error(err, "Conflict while updating Shoot object after applying Audit Log configuration, retrying")
-	//		s.instance.UpdateStatePending(
-	//			imv1.ConditionTypeAuditLogConfigured,
-	//			imv1.ConditionReasonAuditLogError,
-	//			"True",
-	//			err.Error(),
-	//		)
-	//		return updateStatusAndRequeue()
-	//	}
-	//	errorMessage := err.Error()
-	//
-	//	if errors.Is(err, auditlogging.ErrMissingMapping) {
-	//		if m.RCCfg.AuditLogMandatory {
-	//			m.log.Error(err, "AuditLogMandatory", auditLogMandatoryString, "providerType", s.shoot.Spec.Provider.Type, "region", s.shoot.Spec.Region)
-	//			s.instance.UpdateStatePending(
-	//				imv1.ConditionTypeAuditLogConfigured,
-	//				imv1.ConditionReasonAuditLogMissingRegionMapping,
-	//				"False",
-	//				errorMessage,
-	//			)
-	//		} else {
-	//			m.log.Info(errorMessage, "AuditLogMandatory", auditLogMandatoryString, "providerType", s.shoot.Spec.Provider.Type, "region", s.shoot.Spec.Region)
-	//			s.instance.UpdateStateReady(
-	//				imv1.ConditionTypeAuditLogConfigured,
-	//				imv1.ConditionReasonAuditLogMissingRegionMapping,
-	//				"Missing region mapping for this shoot. Audit Log is not mandatory. Skipping configuration")
-	//		}
-	//	} else {
-	//		if m.RCCfg.AuditLogMandatory {
-	//			m.log.Error(err, "AuditLogMandatory", auditLogMandatoryString)
-	//			s.instance.UpdateStatePending(
-	//				imv1.ConditionTypeAuditLogConfigured,
-	//				imv1.ConditionReasonAuditLogError,
-	//				"False",
-	//				errorMessage)
-	//		} else {
-	//			m.log.Info(errorMessage, "AuditLogMandatory", auditLogMandatoryString)
-	//			s.instance.UpdateStateReady(
-	//				imv1.ConditionTypeAuditLogConfigured,
-	//				imv1.ConditionReasonAuditLogError,
-	//				"Configuration of Audit Log is not mandatory, error for context: "+errorMessage)
-	//		}
-	//	}
-	//}
 }
 
 func handleError(err error, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
@@ -104,11 +58,11 @@ func handleError(err error, m *fsm, s *systemState) (stateFn, *ctrl.Result, erro
 		}
 	}
 
-	logError := func(err error, errorMsg, infoMsg string, keysAndValues ...any) {
+	logError := func(err error, keysAndValues ...any) {
 		if m.RCCfg.AuditLogMandatory {
-			m.log.Error(err, errorMsg, keysAndValues)
+			m.log.Error(nil, err.Error(), keysAndValues)
 		} else {
-			m.log.Info(err.Error(), infoMsg)
+			m.log.Info(err.Error(), keysAndValues)
 		}
 	}
 
@@ -131,20 +85,16 @@ func handleError(err error, m *fsm, s *systemState) (stateFn, *ctrl.Result, erro
 		readyStatusMsg := "Missing region mapping for this shoot. Audit Log is not mandatory. Skipping configuration"
 		setStateForAuditLogError(imv1.ConditionReasonAuditLogMissingRegionMapping, pendingStatusMsg, readyStatusMsg)
 
-		errorMsg := "Failed to configure Audit Log"
-		infoMsg := "Failed to configure Audit Log"
-		logError(err, errorMsg, infoMsg, "AuditLogMandatory", auditLogMandatoryString, "providerType", s.shoot.Spec.Provider.Type, "region", s.shoot.Spec.Region)
+		logError(err, "AuditLogMandatory", auditLogMandatoryString, "providerType", s.shoot.Spec.Provider.Type, "region", s.shoot.Spec.Region)
 
-		return updateStatusAndRequeue()
+		return updateStatusAndStop()
 	}
 
 	pendingStatusMsg := err.Error()
 	readyStatusMsg := "Configuration of Audit Log is not mandatory, error for context: " + err.Error()
 	setStateForAuditLogError(imv1.ConditionReasonAuditLogError, pendingStatusMsg, readyStatusMsg)
 
-	errorMsg := "Failed to configure Audit Log"
-	infoMsg := "Failed to configure Audit Log"
-	logError(err, errorMsg, infoMsg, "AuditLogMandatory", auditLogMandatoryString)
+	logError(err, "AuditLogMandatory", auditLogMandatoryString)
 
-	return updateStatusAndRequeue()
+	return updateStatusAndStop()
 }
