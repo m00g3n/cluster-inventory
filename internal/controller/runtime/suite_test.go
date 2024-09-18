@@ -19,12 +19,12 @@ package runtime
 import (
 	"context"
 	"encoding/json"
-	gardener_oidc "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
 	"path/filepath"
 	"testing"
 	"time"
 
 	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardener_oidc "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
