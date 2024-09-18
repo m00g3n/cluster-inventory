@@ -233,7 +233,7 @@ func TestAuditLogState(t *testing.T) {
 
 		// then
 		auditLog.AssertExpectations(t)
-		require.Contains(t, stateFn.name(), "sFnConfigureOidc")
+		require.Contains(t, stateFn.name(), "sFnUpdateStatus")
 		assert.Equal(t, v1.RuntimeStateReady, string(systemState.instance.Status.State))
 		assert.Equal(t, expectedRuntimeConditions, systemState.instance.Status.Conditions)
 	})

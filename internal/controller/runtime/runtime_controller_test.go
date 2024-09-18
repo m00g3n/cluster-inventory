@@ -18,6 +18,7 @@ package runtime
 
 import (
 	"context"
+	"k8s.io/utils/ptr"
 	"time"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -257,6 +258,18 @@ func CreateRuntimeStub(resourceName string) *imv1.Runtime {
 					},
 				},
 				Region: "eu-central-1",
+				Kubernetes: imv1.Kubernetes{
+					KubeAPIServer: imv1.APIServer{
+						OidcConfig: gardener.OIDCConfig{
+							ClientID:       ptr.To("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+							GroupsClaim:    ptr.To("groups"),
+							IssuerURL:      ptr.To("https://example.com"),
+							SigningAlgs:    []string{"RSA256"},
+							UsernameClaim:  ptr.To("sub"),
+							UsernamePrefix: ptr.To("-"),
+						},
+					},
+				},
 			},
 			Security: imv1.Security{
 				Administrators: []string{

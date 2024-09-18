@@ -19,6 +19,7 @@ package runtime
 import (
 	"context"
 	"encoding/json"
+	gardener_oidc "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
 	"path/filepath"
 	"testing"
 	"time"
@@ -119,6 +120,7 @@ var _ = BeforeSuite(func() {
 
 	shootClientScheme := runtime.NewScheme()
 	_ = rbacv1.AddToScheme(shootClientScheme)
+	err = gardener_oidc.AddToScheme(shootClientScheme)
 	k8sFakeClientRoleBindings = fake.NewClientBuilder().WithScheme(shootClientScheme).Build()
 
 	fsm.GetShootClient = func(_ context.Context, _ client.SubResourceClient, _ *gardener_api.Shoot) (client.Client, error) {

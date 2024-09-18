@@ -3,6 +3,8 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	authenticationv1alpha1 "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
@@ -25,7 +27,7 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 		)
 		return updateStatusAndStop()
 	}
-
+	shoot.DefaultAdditionalOidcIfNotPresent(&s.instance)
 	validationError := validateOidcConfiguration(s.instance)
 	if validationError != nil {
 		m.log.Error(validationError, "default OIDC configuration is not present")
@@ -34,6 +36,10 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 	}
 
 	err := createOpenIDConnectResources(ctx, m, s)
+
+	if k8serrors.IsAlreadyExists(err) {
+		return switchState(sFnApplyClusterRoleBindings)
+	}
 
 	if err != nil {
 		m.log.Error(err, "Failed to create OpenIDConnect resource")
@@ -49,7 +55,7 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 
 	m.log.Info("OIDC has been configured", "Name", s.shoot.Name)
 
-	return updateStatusAndStop()
+	return switchState(sFnApplyClusterRoleBindings)
 }
 
 func validateOidcConfiguration(rt imv1.Runtime) (err error) {
