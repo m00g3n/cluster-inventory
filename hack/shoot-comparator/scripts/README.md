@@ -166,4 +166,4 @@ kubectl exec mount-kim-volume-with-write-access -n kcp-system -it -- /bin/sh
 6. Remove the pod with the following command:
 ```bash
 kubectl delete -f ./manifests/mount-kim-volume-with-write-access.yaml
-`
+```
