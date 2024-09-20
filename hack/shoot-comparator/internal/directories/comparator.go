@@ -3,9 +3,9 @@ package directories
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"io"
-	"k8s.io/apimachinery/pkg/util/json"
 	"os"
 	"path"
+	"sigs.k8s.io/yaml"
 	"slices"
 	"strings"
 	"time"
@@ -112,6 +112,7 @@ func getCreationDate(entry os.DirEntry, dir string) (time.Time, error) {
 
 func getCreationDateFromYaml(filePath string) (time.Time, error) {
 	var shoot gardener.Shoot
+
 	file, err := os.Open(filePath)
 	if err != nil {
 		return time.Time{}, err
@@ -126,9 +127,14 @@ func getCreationDateFromYaml(filePath string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	err = json.Unmarshal(bytes, &shoot)
+	err = yaml.Unmarshal(bytes, &shoot)
 	if err != nil {
 		return time.Time{}, err
+	}
+
+	if shoot.ObjectMeta.CreationTimestamp.Time.IsZero() {
+		//In case the file does not contain creation timestamp, we use current time as a fallback to include it in the comparison
+		return time.Now(), nil
 	}
 
 	return shoot.ObjectMeta.CreationTimestamp.Time, nil
