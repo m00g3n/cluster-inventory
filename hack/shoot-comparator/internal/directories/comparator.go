@@ -1,16 +1,16 @@
 package directories
 
 import (
-	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"io"
 	"os"
 	"path"
-	"sigs.k8s.io/yaml"
 	"slices"
 	"strings"
 	"time"
 
+	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/infrastructure-manager/tools/shoot-comparator/internal/files"
+	"sigs.k8s.io/yaml"
 )
 
 type Result struct {
