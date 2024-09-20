@@ -6,7 +6,7 @@ metadata:
   name: mount-kim-volume-with-write-access
   namespace: kcp-system
 spec:
-  nodeName: "gke-kyma-mps-dev-kyma-mps-dev-mgmt-9c-5da0253b-4w0i"
+  nodeName: "KIM'S NODE NAME GOES HERE"
   volumes:
     - name: provisioner-kim
       persistentVolumeClaim:

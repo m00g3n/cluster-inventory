@@ -6,7 +6,7 @@ metadata:
   name: mount-prov-volume-with-write-access
   namespace: kcp-system
 spec:
-  nodeName: "gke-kyma-mps-dev-kyma-mps-dev-app-41b-a2ca8bf0-zi2g"
+  nodeName: "PROVISIONER'S NODE NAME GOES HERE"
   volumes:
     - name: provisioner-ps
       persistentVolumeClaim:
