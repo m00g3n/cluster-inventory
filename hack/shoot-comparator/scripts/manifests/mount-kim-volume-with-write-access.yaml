@@ -2,15 +2,15 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    run: mount-prov-volume-with-write-access
-  name: mount-prov-volume-with-write-access
+    run: mount-kim-volume-with-write-access
+  name: mount-kim-volume-with-write-access
   namespace: kcp-system
 spec:
-  nodeName: "gke-kyma-mps-dev-kyma-mps-dev-app-41b-a2ca8bf0-zi2g"
+  nodeName: "gke-kyma-mps-dev-kyma-mps-dev-mgmt-9c-5da0253b-4w0i"
   volumes:
-    - name: provisioner-ps
+    - name: provisioner-kim
       persistentVolumeClaim:
-        claimName: test-prov-shoot-spec-storage
+        claimName: test-kim-shoot-spec-storage
   containers:
     - args:
         - /bin/sh
@@ -19,8 +19,8 @@ spec:
       image: europe-docker.pkg.dev/kyma-project/prod/external/busybox:1.34.1-v1
       name: get-pvc
       volumeMounts:
-        - name: provisioner-ps
-          mountPath: /testdata/provisioner
+        - name: provisioner-kim
+          mountPath: /testdata/kim
       resources: {}
   dnsPolicy: ClusterFirst
   restartPolicy: Always
