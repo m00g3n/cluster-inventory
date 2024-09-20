@@ -10,15 +10,33 @@ const (
 	OidcExtensionType = "shoot-oidc-service"
 )
 
-func ExtendWithOIDC(runtime imv1.Runtime, shoot *gardener.Shoot) error {
-	oidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig
+func ShouldDefaultOidcConfig(config gardener.OIDCConfig) bool {
+	return config.ClientID == nil && config.IssuerURL == nil
+}
 
-	if CanEnableExtension(runtime) {
-		setOIDCExtension(shoot)
+func NewOidcExtender(clientId, groupsClaim, issuerURL, usernameClaim, usernamePrefix string, signingAlgs []string) func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
+	return func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
+		if CanEnableExtension(runtime) {
+			setOIDCExtension(shoot)
+		}
+
+		oidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig
+
+		if ShouldDefaultOidcConfig(oidcConfig) {
+			oidcConfig = gardener.OIDCConfig{
+				ClientID:       &clientId,
+				GroupsClaim:    &groupsClaim,
+				IssuerURL:      &issuerURL,
+				SigningAlgs:    signingAlgs,
+				UsernameClaim:  &usernameClaim,
+				UsernamePrefix: &usernamePrefix,
+			}
+		}
+
+		setKubeAPIServerOIDCConfig(shoot, oidcConfig)
+
+		return nil
 	}
-	setKubeAPIServerOIDCConfig(shoot, oidcConfig)
-
-	return nil
 }
 
 func CanEnableExtension(runtime imv1.Runtime) bool {

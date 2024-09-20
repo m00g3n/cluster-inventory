@@ -107,9 +107,19 @@ var _ = Describe("Runtime Controller", func() {
 					return false
 				}
 
+				if !runtime.IsConditionSet(imv1.ConditionTypeOidcConfigured, imv1.ConditionReasonOidcConfigured) {
+					return false
+				}
+
+				if !runtime.IsConditionSetWithStatus(imv1.ConditionTypeOidcConfigured, imv1.ConditionReasonOidcConfigured, metav1.ConditionTrue) {
+					return false
+				}
+
 				if !runtime.IsConditionSet(imv1.ConditionTypeAuditLogConfigured, imv1.ConditionReasonAuditLogConfigured) {
 					return false
 				}
+
+				//TODO: condition should be 'TRUE'
 
 				return true
 			}, time.Second*300, time.Second*3).Should(BeTrue())

@@ -3,7 +3,6 @@ package fsm
 import (
 	"context"
 	"fmt"
-
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	authenticationv1alpha1 "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -14,6 +13,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
+
+func DefaultAdditionalOidcIfNotPresent(runtime *imv1.Runtime, cfg RCCfg) {
+	additionalOidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig
+
+	if nil == additionalOidcConfig {
+		additionalOidcConfig = &[]gardener.OIDCConfig{}
+		defaultOIDCConfig := shoot.CreateDefaultOIDCConfig(cfg.Kubernetes.DefaultSharedIASTenant)
+		*additionalOidcConfig = append(*additionalOidcConfig, defaultOIDCConfig)
+		runtime.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig = additionalOidcConfig
+	}
+}
 
 func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	m.log.Info("Configure OIDC state")
@@ -27,7 +37,9 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 		)
 		return updateStatusAndStop()
 	}
-	shoot.DefaultAdditionalOidcIfNotPresent(&s.instance)
+
+	//DefaultOidcIfNotPresent(&s.instance, m.RCCfg)
+	DefaultAdditionalOidcIfNotPresent(&s.instance, m.RCCfg)
 	validationError := validateOidcConfiguration(s.instance)
 	if validationError != nil {
 		m.log.Error(validationError, "default OIDC configuration is not present")

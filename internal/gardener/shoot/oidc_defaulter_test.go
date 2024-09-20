@@ -16,7 +16,7 @@ func TestOidcDefaulter(t *testing.T) {
 		runtime := CreateRuntimeStub("runtime")
 
 		// when
-		DefaultAdditionalOidcIfNotPresent(runtime)
+		DefaultOidcConfigurationIfNotPresent(runtime)
 
 		// then
 		assert.NotNil(t, runtime.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig)

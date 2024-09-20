@@ -33,9 +33,20 @@ type DNSConfig struct {
 }
 
 type KubernetesConfig struct {
-	DefaultVersion                      string `json:"defaultVersion" validate:"required"`
-	EnableKubernetesVersionAutoUpdate   bool   `json:"enableKubernetesVersionAutoUpdate"`
-	EnableMachineImageVersionAutoUpdate bool   `json:"enableMachineImageVersionVersionAutoUpdate"`
+	DefaultVersion                      string       `json:"defaultVersion" validate:"required"`
+	EnableKubernetesVersionAutoUpdate   bool         `json:"enableKubernetesVersionAutoUpdate"`
+	EnableMachineImageVersionAutoUpdate bool         `json:"enableMachineImageVersionVersionAutoUpdate"`
+	DefaultOperatorOidc                 OidcProvider `json:"defaultOperatorOidc" validate:"required"`
+	DefaultSharedIASTenant              OidcProvider `json:"defaultSharedIASTenant" validate:"required"`
+}
+
+type OidcProvider struct {
+	ClientID       string   `json:"clientID" validate:"required"`
+	GroupsClaim    string   `json:"groupsClaim" validate:"required"`
+	IssuerURL      string   `json:"issuerURL" validate:"required"`
+	SigningAlgs    []string `json:"signingAlgs" validate:"required"`
+	UsernameClaim  string   `json:"usernameClaim" validate:"required"`
+	UsernamePrefix string   `json:"usernamePrefix" validate:"required"`
 }
 
 type AuditLogConfig struct {
@@ -77,7 +88,12 @@ func NewConverter(config ConverterConfig) Converter {
 		extender.NewKubernetesExtender(config.Kubernetes.DefaultVersion),
 		extender.NewProviderExtender(config.Provider.AWS.EnableIMDSv2, config.MachineImage.DefaultVersion),
 		extender.NewDNSExtender(config.DNS.SecretName, config.DNS.DomainPrefix, config.DNS.ProviderType),
-		extender.ExtendWithOIDC,
+		extender.NewOidcExtender(config.Kubernetes.DefaultOperatorOidc.ClientID,
+			config.Kubernetes.DefaultOperatorOidc.GroupsClaim,
+			config.Kubernetes.DefaultOperatorOidc.IssuerURL,
+			config.Kubernetes.DefaultOperatorOidc.UsernameClaim,
+			config.Kubernetes.DefaultOperatorOidc.UsernamePrefix,
+			config.Kubernetes.DefaultOperatorOidc.SigningAlgs),
 		extender.ExtendWithCloudProfile,
 		extender.ExtendWithNetworkFilter,
 		extender.ExtendWithCertConfig,

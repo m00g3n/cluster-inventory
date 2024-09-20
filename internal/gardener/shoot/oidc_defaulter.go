@@ -5,14 +5,26 @@ import (
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 )
 
-func DefaultAdditionalOidcIfNotPresent(runtime *imv1.Runtime) {
+func DefaultOidcIfNotPresent(runtime *imv1.Runtime, oidcProviderCfg OidcProvider) {
 	oidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig
-	additionalOidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig
 
-	if nil == additionalOidcConfig {
-		additionalOidcConfig = &[]gardener.OIDCConfig{}
-		*additionalOidcConfig = append(*additionalOidcConfig, oidcConfig)
+	if ShouldDefaultOidcConfig(oidcConfig) {
+		defaultOIDCConfig := CreateDefaultOIDCConfig(oidcProviderCfg)
+		runtime.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig = defaultOIDCConfig
 	}
+}
 
-	runtime.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig = additionalOidcConfig
+func ShouldDefaultOidcConfig(config gardener.OIDCConfig) bool {
+	return config.ClientID == nil && config.IssuerURL == nil
+}
+
+func CreateDefaultOIDCConfig(defaultSharedIASTenant OidcProvider) gardener.OIDCConfig {
+	return gardener.OIDCConfig{
+		ClientID:       &defaultSharedIASTenant.ClientID,
+		GroupsClaim:    &defaultSharedIASTenant.GroupsClaim,
+		IssuerURL:      &defaultSharedIASTenant.IssuerURL,
+		SigningAlgs:    defaultSharedIASTenant.SigningAlgs,
+		UsernameClaim:  &defaultSharedIASTenant.UsernameClaim,
+		UsernamePrefix: &defaultSharedIASTenant.UsernamePrefix,
+	}
 }

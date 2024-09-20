@@ -39,6 +39,8 @@ func TestOidcExtender(t *testing.T) {
 			groupsClaim := "groups"
 			issuerURL := "https://my.cool.tokens.com"
 			usernameClaim := "sub"
+			usernamePrefix := "-"
+			signingAlgs := []string{"RS256"}
 
 			shoot := fixEmptyGardenerShoot("test", "kcp-system")
 			runtimeShoot := imv1.Runtime{
@@ -52,12 +54,10 @@ func TestOidcExtender(t *testing.T) {
 						Kubernetes: imv1.Kubernetes{
 							KubeAPIServer: imv1.APIServer{
 								OidcConfig: gardener.OIDCConfig{
-									ClientID:    &clientID,
-									GroupsClaim: &groupsClaim,
-									IssuerURL:   &issuerURL,
-									SigningAlgs: []string{
-										"RS256",
-									},
+									ClientID:      &clientID,
+									GroupsClaim:   &groupsClaim,
+									IssuerURL:     &issuerURL,
+									SigningAlgs:   signingAlgs,
 									UsernameClaim: &usernameClaim,
 								},
 							},
@@ -67,7 +67,8 @@ func TestOidcExtender(t *testing.T) {
 			}
 
 			// when
-			err := ExtendWithOIDC(runtimeShoot, &shoot)
+			extender := NewOidcExtender(clientID, groupsClaim, issuerURL, usernameClaim, usernamePrefix, signingAlgs)
+			err := extender(runtimeShoot, &shoot)
 
 			// then
 			require.NoError(t, err)
