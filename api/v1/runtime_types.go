@@ -167,7 +167,7 @@ type Kubernetes struct {
 }
 
 type APIServer struct {
-	OidcConfig           gardener.OIDCConfig    `json:"oidcConfig"`
+	OidcConfig           gardener.OIDCConfig    `json:"oidcConfig,omitempty"`
 	AdditionalOidcConfig *[]gardener.OIDCConfig `json:"additionalOidcConfig,omitempty"`
 }
 
