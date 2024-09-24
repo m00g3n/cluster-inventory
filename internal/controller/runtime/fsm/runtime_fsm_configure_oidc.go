@@ -3,6 +3,7 @@ package fsm
 import (
 	"context"
 	"fmt"
+
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	authenticationv1alpha1 "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -49,7 +50,7 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 		return updateStatusAndStop()
 	}
 
-	//DefaultOidcIfNotPresent(&s.instance, m.RCCfg)
+	// DefaultOidcIfNotPresent(&s.instance, m.RCCfg)
 	DefaultAdditionalOidcIfNotPresent(&s.instance, m.RCCfg)
 	validationError := validateOidcConfiguration(s.instance)
 	if validationError != nil {

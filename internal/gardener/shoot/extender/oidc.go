@@ -14,7 +14,7 @@ func ShouldDefaultOidcConfig(config gardener.OIDCConfig) bool {
 	return config.ClientID == nil && config.IssuerURL == nil
 }
 
-func NewOidcExtender(clientId, groupsClaim, issuerURL, usernameClaim, usernamePrefix string, signingAlgs []string) func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
+func NewOidcExtender(clientID, groupsClaim, issuerURL, usernameClaim, usernamePrefix string, signingAlgs []string) func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 	return func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 		if CanEnableExtension(runtime) {
 			setOIDCExtension(shoot)
@@ -23,7 +23,7 @@ func NewOidcExtender(clientId, groupsClaim, issuerURL, usernameClaim, usernamePr
 		oidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig
 		if ShouldDefaultOidcConfig(oidcConfig) {
 			oidcConfig = gardener.OIDCConfig{
-				ClientID:       &clientId,
+				ClientID:       &clientID,
 				GroupsClaim:    &groupsClaim,
 				IssuerURL:      &issuerURL,
 				SigningAlgs:    signingAlgs,
