@@ -21,7 +21,6 @@ func NewOidcExtender(clientId, groupsClaim, issuerURL, usernameClaim, usernamePr
 		}
 
 		oidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig
-
 		if ShouldDefaultOidcConfig(oidcConfig) {
 			oidcConfig = gardener.OIDCConfig{
 				ClientID:       &clientId,
@@ -32,13 +31,11 @@ func NewOidcExtender(clientId, groupsClaim, issuerURL, usernameClaim, usernamePr
 				UsernamePrefix: &usernamePrefix,
 			}
 		}
-
 		setKubeAPIServerOIDCConfig(shoot, oidcConfig)
 
 		return nil
 	}
 }
-
 func CanEnableExtension(runtime imv1.Runtime) bool {
 	canEnable := true
 	createdByMigrator := runtime.Labels["operator.kyma-project.io/created-by-migrator"]

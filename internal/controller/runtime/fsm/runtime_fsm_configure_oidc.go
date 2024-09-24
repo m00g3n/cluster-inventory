@@ -19,9 +19,20 @@ func DefaultAdditionalOidcIfNotPresent(runtime *imv1.Runtime, cfg RCCfg) {
 
 	if nil == additionalOidcConfig {
 		additionalOidcConfig = &[]gardener.OIDCConfig{}
-		defaultOIDCConfig := shoot.CreateDefaultOIDCConfig(cfg.Kubernetes.DefaultSharedIASTenant)
+		defaultOIDCConfig := CreateDefaultOIDCConfig(cfg.Kubernetes.DefaultSharedIASTenant)
 		*additionalOidcConfig = append(*additionalOidcConfig, defaultOIDCConfig)
 		runtime.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig = additionalOidcConfig
+	}
+}
+
+func CreateDefaultOIDCConfig(defaultSharedIASTenant shoot.OidcProvider) gardener.OIDCConfig {
+	return gardener.OIDCConfig{
+		ClientID:       &defaultSharedIASTenant.ClientID,
+		GroupsClaim:    &defaultSharedIASTenant.GroupsClaim,
+		IssuerURL:      &defaultSharedIASTenant.IssuerURL,
+		SigningAlgs:    defaultSharedIASTenant.SigningAlgs,
+		UsernameClaim:  &defaultSharedIASTenant.UsernameClaim,
+		UsernamePrefix: &defaultSharedIASTenant.UsernamePrefix,
 	}
 }
 
