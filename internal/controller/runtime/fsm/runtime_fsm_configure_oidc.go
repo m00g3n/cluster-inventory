@@ -3,6 +3,7 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	authenticationv1alpha1 "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
@@ -59,7 +60,7 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 		return updateStatusAndStopWithError(validationError)
 	}
 
-	err := createOpenIDConnectResources(ctx, m, s)
+	err := recreateOpenIDConnectResources(ctx, m, s)
 
 	if k8serrors.IsAlreadyExists(err) {
 		return switchState(sFnApplyClusterRoleBindings)
@@ -89,7 +90,7 @@ func validateOidcConfiguration(rt imv1.Runtime) (err error) {
 	return err
 }
 
-func createOpenIDConnectResources(ctx context.Context, m *fsm, s *systemState) error {
+func recreateOpenIDConnectResources(ctx context.Context, m *fsm, s *systemState) error {
 	srscClient := m.ShootClient.SubResource("adminkubeconfig")
 	shootAdminClient, shootClientError := GetShootClient(ctx, srscClient, s.shoot)
 
@@ -97,14 +98,35 @@ func createOpenIDConnectResources(ctx context.Context, m *fsm, s *systemState) e
 		return shootClientError
 	}
 
-	additionalOidcConfigs := *s.instance.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig
+	err := deleteExistingKymaOpenIDConnectResources(ctx, shootAdminClient)
+	if err != nil {
+		return err
+	}
 
+	additionalOidcConfigs := *s.instance.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig
 	var errResourceCreation error
 	for id, additionalOidcConfig := range additionalOidcConfigs {
 		openIDConnectResource := createOpenIDConnectResource(additionalOidcConfig, id)
 		errResourceCreation = shootAdminClient.Create(ctx, openIDConnectResource)
 	}
 	return errResourceCreation
+}
+
+func deleteExistingKymaOpenIDConnectResources(ctx context.Context, client client.Client) error {
+
+	oidcList := &authenticationv1alpha1.OpenIDConnectList{}
+	if err := client.List(ctx, oidcList); err != nil {
+		return err
+	}
+
+	for _, oidc := range oidcList.Items {
+		if _, ok := oidc.Labels[imv1.LabelKymaManagedBy]; ok {
+			err := client.Delete(ctx, &oidc)
+			if err != nil {
+				return err
+			}
+		}
+	}
 }
 
 func isOidcExtensionEnabled(shoot gardener.Shoot) bool {
@@ -124,6 +146,9 @@ func createOpenIDConnectResource(additionalOidcConfig gardener.OIDCConfig, oidcI
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("kyma-oidc-%v", oidcID),
+			Labels: map[string]string{
+				imv1.LabelKymaManagedBy: "infrastructure-manager",
+			},
 		},
 		Spec: authenticationv1alpha1.OIDCAuthenticationSpec{
 			IssuerURL:      *additionalOidcConfig.IssuerURL,
