@@ -138,7 +138,23 @@ var testReader io.Reader = strings.NewReader(`{
   "kubernetes": {
     "defaultVersion": "0.1.2.3",
     "enableKubernetesVersionAutoUpdate": true,
-    "enableMachineImageVersionAutoUpdate": false
+    "enableMachineImageVersionAutoUpdate": false,
+	"defaultOperatorOidc": {
+		"clientID": "test-clientID",
+		"groupsClaim": "test-group",
+		"issuerURL": "test-issuer-url",
+		"signingAlgs": ["test-alg"],
+		"usernameClaim": "test-username-claim",
+		"usernamePrefix": "-"
+	},
+	"defaultSharedIASTenant": {
+		"clientID": "test-clientID",
+		"groupsClaim": "test-group",
+		"issuerURL": "test-issuer-url",
+		"signingAlgs": ["test-alg"],
+		"usernameClaim": "test-username-claim",
+		"usernamePrefix": "-"
+	}
   },
   "dns": {
     "secretName": "test-secret-name",
@@ -177,6 +193,22 @@ func Test_ConverterConfig_Load_OK(t *testing.T) {
 			DefaultVersion:                      "0.1.2.3",
 			EnableKubernetesVersionAutoUpdate:   true,
 			EnableMachineImageVersionAutoUpdate: false,
+			DefaultOperatorOidc: OidcProvider{
+				ClientID:       "test-clientID",
+				GroupsClaim:    "test-group",
+				IssuerURL:      "test-issuer-url",
+				SigningAlgs:    []string{"test-alg"},
+				UsernameClaim:  "test-username-claim",
+				UsernamePrefix: "-",
+			},
+			DefaultSharedIASTenant: OidcProvider{
+				ClientID:       "test-clientID",
+				GroupsClaim:    "test-group",
+				IssuerURL:      "test-issuer-url",
+				SigningAlgs:    []string{"test-alg"},
+				UsernameClaim:  "test-username-claim",
+				UsernamePrefix: "-",
+			},
 		},
 		DNS: DNSConfig{
 			SecretName:   "test-secret-name",
