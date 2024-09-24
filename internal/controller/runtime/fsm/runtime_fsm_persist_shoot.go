@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/yaml"
 )
@@ -43,6 +45,10 @@ func sFnDumpShootSpec(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 	convertedShoot, err := convertShoot(&s.instance, m.ConverterConfig)
 	if err != nil {
 		return updateStatusAndStopWithError(err)
+	}
+
+	convertedShoot.ObjectMeta.CreationTimestamp = metav1.Time{
+		Time: time.Now(),
 	}
 
 	runtimeCp := s.instance.DeepCopy()

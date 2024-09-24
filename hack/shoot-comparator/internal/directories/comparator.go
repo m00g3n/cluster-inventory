@@ -1,12 +1,16 @@
 package directories
 
 import (
+	"io"
 	"os"
 	"path"
 	"slices"
+	"strings"
 	"time"
 
+	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/infrastructure-manager/tools/shoot-comparator/internal/files"
+	"sigs.k8s.io/yaml"
 )
 
 type Result struct {
@@ -72,12 +76,12 @@ func getFileNames(dir string, olderThan time.Time) ([]string, error) {
 			continue
 		}
 
-		fileInfo, err := dirEntry.Info()
+		timestamp, err := getCreationDate(dirEntry, dir)
 		if err != nil {
 			return nil, err
 		}
 
-		if fileInfo.ModTime().After(olderThan) {
+		if timestamp.After(olderThan) {
 			fileNames = append(fileNames, dirEntry.Name())
 		}
 	}
@@ -85,6 +89,55 @@ func getFileNames(dir string, olderThan time.Time) ([]string, error) {
 	slices.Sort(fileNames)
 
 	return fileNames, nil
+}
+
+func getCreationDate(entry os.DirEntry, dir string) (time.Time, error) {
+	filePath := path.Join(dir, entry.Name())
+
+	if strings.Contains(filePath, "shootCR") {
+		timestamp, err := getCreationDateFromYaml(filePath)
+		if err == nil {
+			return timestamp, nil
+		}
+		// getting modification time from entry is a fallback
+	}
+
+	fileInfo, err := entry.Info()
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return fileInfo.ModTime(), nil
+}
+
+func getCreationDateFromYaml(filePath string) (time.Time, error) {
+	var shoot gardener.Shoot
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	defer func() {
+		_ = file.Close()
+	}()
+
+	bytes, err := io.ReadAll(file)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	err = yaml.Unmarshal(bytes, &shoot)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	if shoot.ObjectMeta.CreationTimestamp.Time.IsZero() {
+		//In case the file does not contain creation timestamp, we use current time as a fallback to include it in the comparison
+		return time.Now(), nil
+	}
+
+	return shoot.ObjectMeta.CreationTimestamp.Time, nil
 }
 
 func getIntersection(leftFiles []string, rightFiles []string) []string {

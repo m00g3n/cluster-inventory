@@ -124,3 +124,46 @@ In order to fetch the compared files you must copy the contents of the files. Yo
 ```bash
 ./fetch_shoots_for_provisioner_and_kim.sh
 ```
+## Cleaning volume with shoots, and mutations for Provisioner
+
+If you need to remove some files from the volume perform the following steps:
+1. Check what node Provisioner is running on:
+```bash
+kubectl get po/<Provisioner pod> -n kcp-system -ojsonpath={.spec.nodeName}
+```
+2. Modify the `./manifests/mount-prov-volume-with-write-access.yaml` file by providing the node name in the `nodeName` field.
+3. Apply the changes by executing the following command:
+```bash
+kubectl apply -f ./manifests/mount-prov-volume-with-write-access.yaml
+```
+4. Wait for the job to complete. Once the job is completed, exec into pod with the following command:
+```bash
+kubectl exec mount-prov-volume-with-write-access -n kcp-system -it -- /bin/sh
+```
+5. Remove the files from the `/testdata/provisioner` directory.
+6. Remove the pod with the following command:
+```bash
+kubectl delete -f ./manifests/mount-prov-volume-with-write-access.yaml
+```
+
+## Cleaning volume with shoots, and runtime CRs for KIM
+
+If you need to remove some files from the volume perform the following steps:
+1. Check what node KIM is running on:
+```bash
+kubectl get po/<KIM pod> -n kcp-system -ojsonpath={.spec.nodeName}
+```
+2. Modify the `./manifests/mount-kim-volume-with-write-access.yaml` file by providing the node name in the `nodeName` field.
+3. Apply the changes by executing the following command:
+```bash
+kubectl apply -f ./manifests/mount-kim-volume-with-write-access.yaml
+```
+4. Wait for the job to complete. Once the job is completed, exec into pod with the following command:
+```bash
+kubectl exec mount-kim-volume-with-write-access -n kcp-system -it -- /bin/sh
+```
+5. Remove the files from the `/testdata/kim` directory.
+6. Remove the pod with the following command:
+```bash
+kubectl delete -f ./manifests/mount-kim-volume-with-write-access.yaml
+```

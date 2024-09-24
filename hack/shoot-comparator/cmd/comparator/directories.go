@@ -51,7 +51,7 @@ var directoriesCmd = &cobra.Command{
 		}
 
 		slog.Info(fmt.Sprintf("Comparing directories: %s and %s", leftDir, rightDir))
-		result, err := directories.CompareDirectories(leftDir, rightDir, time.Time{})
+		result, err := directories.CompareDirectories(leftDir, rightDir, fromDate)
 		if err != nil {
 			slog.Error(fmt.Sprintf("Failed to compare directories: %q", err.Error()))
 			return
