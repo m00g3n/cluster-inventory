@@ -112,21 +112,23 @@ func recreateOpenIDConnectResources(ctx context.Context, m *fsm, s *systemState)
 	return errResourceCreation
 }
 
-func deleteExistingKymaOpenIDConnectResources(ctx context.Context, client client.Client) error {
+func deleteExistingKymaOpenIDConnectResources(ctx context.Context, client client.Client) (err error) {
 
 	oidcList := &authenticationv1alpha1.OpenIDConnectList{}
-	if err := client.List(ctx, oidcList); err != nil {
-		return err
+	if err = client.List(ctx, oidcList); err != nil {
+		return
 	}
 
 	for _, oidc := range oidcList.Items {
 		if _, ok := oidc.Labels[imv1.LabelKymaManagedBy]; ok {
-			err := client.Delete(ctx, &oidc)
+			err = client.Delete(ctx, &oidc)
 			if err != nil {
-				return err
+				return
 			}
 		}
 	}
+
+	return
 }
 
 func isOidcExtensionEnabled(shoot gardener.Shoot) bool {
