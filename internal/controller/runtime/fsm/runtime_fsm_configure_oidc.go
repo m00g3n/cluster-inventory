@@ -3,7 +3,6 @@ package fsm
 import (
 	"context"
 	"fmt"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	authenticationv1alpha1 "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
@@ -14,6 +13,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func DefaultAdditionalOidcIfNotPresent(runtime *imv1.Runtime, cfg RCCfg) {
@@ -113,7 +113,6 @@ func recreateOpenIDConnectResources(ctx context.Context, m *fsm, s *systemState)
 }
 
 func deleteExistingKymaOpenIDConnectResources(ctx context.Context, client client.Client) (err error) {
-
 	oidcList := &authenticationv1alpha1.OpenIDConnectList{}
 	if err = client.List(ctx, oidcList); err != nil {
 		return
