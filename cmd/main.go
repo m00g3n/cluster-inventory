@@ -181,17 +181,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	cfg := fsm.RCCfg{
-		Finalizer:         infrastructuremanagerv1.Finalizer,
-		ShootNamesapace:   gardenerNamespace,
-		ConverterConfig:   converterConfig,
-		AuditLogMandatory: auditLogMandatory,
-	}
-	if shootSpecDumpEnabled {
-		cfg.PVCPath = "/testdata/kim"
-	}
-
 	if enableRuntimeReconciler {
+		cfg := fsm.RCCfg{
+			Finalizer:         infrastructuremanagerv1.Finalizer,
+			ShootNamesapace:   gardenerNamespace,
+			ConverterConfig:   converterConfig,
+			AuditLogMandatory: auditLogMandatory,
+		}
+		if shootSpecDumpEnabled {
+			cfg.PVCPath = "/testdata/kim"
+		}
+
 		runtimeReconciler := runtime_controller.NewRuntimeReconciler(
 			mgr,
 			gardenerClient,
