@@ -15,6 +15,7 @@ func sFnUpdateStatus(result *ctrl.Result, err error) stateFn {
 		}
 
 		updateErr := m.Status().Update(ctx, &s.instance)
+
 		if updateErr != nil {
 			m.log.Error(updateErr, "unable to update instance status!")
 			if err == nil {
@@ -22,6 +23,8 @@ func sFnUpdateStatus(result *ctrl.Result, err error) stateFn {
 			}
 			return nil, nil, err
 		}
+
+		m.metrics.SetRuntimeStates()
 		next := sFnEmmitEventfunc(nil, result, err)
 		return next, nil, nil
 	}

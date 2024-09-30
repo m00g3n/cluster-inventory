@@ -3,6 +3,7 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"io"
 	"reflect"
 	"runtime"
@@ -61,6 +62,7 @@ type Fsm interface {
 type fsm struct {
 	fn             stateFn
 	writerProvider writerGetter
+	metrics        metrics.Metrics
 	log            logr.Logger
 	K8s
 	RCCfg
