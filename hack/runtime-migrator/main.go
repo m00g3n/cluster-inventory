@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/hack/runtime-migrator/internal/comparator"
+	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	"log"
 	"os"
 	"slices"
@@ -38,6 +40,12 @@ func main() {
 	cfg := migrator.NewConfig()
 	migratorContext, cancel := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancel()
+
+	converterConfig, err := migrator.LoadConverterConfig(cfg)
+	if err != nil {
+		log.Print("failed to read converterConfig file - ", err)
+		return
+	}
 
 	runtimeIDs := getRuntimeIDsFromStdin(cfg)
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.GardenerProjectName)
@@ -81,7 +89,29 @@ func main() {
 			continue
 		}
 
-		err := saveRuntime(migratorContext, cfg, runtime, kcpClient)
+		// runtime cr -> shoot
+		converter := gardener_shoot.NewConverter(converterConfig)
+		shootFromConverter, err := converter.ToShoot(runtime)
+		if err != nil {
+			log.Print("Error during converting generated RuntimeCR to Shoot object - ", err)
+			return
+		}
+
+		// compare Gardener shoot with shoot from converter
+		result, err := comparator.CompareShoots(shoot, shootFromConverter)
+		if err != nil {
+			return
+		}
+
+		// save comparison report with differences
+		resultsDir, err := comparator.SaveComparisonReport(result, cfg.OutputPath, shoot.Name)
+		if err != nil {
+			log.Print("Failed to save comparison report - ", err.Error())
+		} else {
+			log.Printf("Results stored in %q", resultsDir)
+		}
+
+		err = saveRuntime(migratorContext, cfg, runtime, kcpClient)
 		if err != nil {
 			log.Printf("Failed to apply runtime CR, %s\n", err)
 
@@ -435,8 +465,8 @@ func getAllRuntimeLabels(ctx context.Context, shoot v1beta1.Shoot, getClient mig
 	enrichedRuntimeLabels["kyma-project.io/region"] = gardenerCluster.Labels["kyma-project.io/region"]
 	enrichedRuntimeLabels["kyma-project.io/shoot-name"] = gardenerCluster.Labels["kyma-project.io/shoot-name"]
 	enrichedRuntimeLabels["operator.kyma-project.io/kyma-name"] = gardenerCluster.Labels["operator.kyma-project.io/kyma-name"]
-	// The runtime CR should be controlled by the KIM
-	enrichedRuntimeLabels["kyma-project.io/controlled-by-provisioner"] = "false"
+	// The runtime CR should be controlled by the KIM in dry-run mode
+	enrichedRuntimeLabels["kyma-project.io/controlled-by-provisioner"] = "true"
 	// add custom label for the migrator
 	enrichedRuntimeLabels[migratorLabel] = "true"
 
