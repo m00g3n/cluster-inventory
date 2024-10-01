@@ -35,6 +35,7 @@ type RCCfg struct {
 	PVCPath           string
 	ShootNamesapace   string
 	AuditLogMandatory bool
+	Metrics           metrics.Metrics
 	shoot.ConverterConfig
 }
 
@@ -62,7 +63,6 @@ type Fsm interface {
 type fsm struct {
 	fn             stateFn
 	writerProvider writerGetter
-	metrics        metrics.Metrics
 	log            logr.Logger
 	K8s
 	RCCfg

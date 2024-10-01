@@ -187,6 +187,7 @@ func main() {
 			ShootNamesapace:   gardenerNamespace,
 			ConverterConfig:   converterConfig,
 			AuditLogMandatory: auditLogMandatory,
+			Metrics:           metrics,
 		}
 		if shootSpecDumpEnabled {
 			cfg.PVCPath = "/testdata/kim"
