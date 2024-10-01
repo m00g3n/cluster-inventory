@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	k8s_client "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func defaultAdditionalOidcIfNotPresent(runtime *imv1.Runtime, cfg RCCfg) {
@@ -92,19 +93,9 @@ func recreateOpenIDConnectResources(ctx context.Context, m *fsm, s *systemState)
 }
 
 func deleteExistingKymaOpenIDConnectResources(ctx context.Context, client client.Client) (err error) {
-	oidcList := &authenticationv1alpha1.OpenIDConnectList{}
-	if err = client.List(ctx, oidcList); err != nil {
-		return err
-	}
-
-	for _, oidc := range oidcList.Items {
-		if _, ok := oidc.Labels[imv1.LabelKymaManagedBy]; ok {
-			err = client.Delete(ctx, &oidc)
-			if err != nil {
-				return err
-			}
-		}
-	}
+	err = client.DeleteAllOf(ctx, &authenticationv1alpha1.OpenIDConnect{}, k8s_client.MatchingLabels(map[string]string{
+		imv1.LabelKymaManagedBy: "infrastructure-manager",
+	}))
 
 	return err
 }
