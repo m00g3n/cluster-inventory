@@ -6,7 +6,7 @@ import (
 )
 
 type InfrastructureManagerConfig struct {
-	Converter              ConverterConfig `json:"converter" validate:"required"`
+	ConverterConfig        ConverterConfig `json:"converter" validate:"required"`
 	DefaultSharedIASTenant OidcProvider    `json:"defaultSharedIASTenant" validate:"required"`
 }
 

@@ -2,7 +2,6 @@ package shoot
 
 import (
 	"fmt"
-	"github.com/kyma-project/infrastructure-manager/internal"
 	"io"
 	"strings"
 	"testing"
@@ -10,6 +9,7 @@ import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/go-playground/validator/v10"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -129,7 +129,7 @@ func Test_ConverterConfig_Load_Err(t *testing.T) {
 	failingReaderGetter := func() (io.Reader, error) {
 		return nil, errTestReaderGetterFailed
 	}
-	var cfg internal.ConverterConfig
+	var cfg internal.InfrastructureManagerConfig
 	if err := cfg.Load(failingReaderGetter); err != errTestReaderGetterFailed {
 		t.Error("ConverterConfig load should fail")
 	}
@@ -184,53 +184,55 @@ func Test_ConverterConfig_Load_OK(t *testing.T) {
 	readerGetter := func() (io.Reader, error) {
 		return testReader, nil
 	}
-	var cfg internal.ConverterConfig
+	var cfg internal.InfrastructureManagerConfig
 	if err := cfg.Load(readerGetter); err != nil {
 		t.Errorf("ConverterConfig load failed: %s", err)
 	}
 
-	expected := internal.ConverterConfig{
-		Kubernetes: internal.KubernetesConfig{
-			DefaultVersion:                      "0.1.2.3",
-			EnableKubernetesVersionAutoUpdate:   true,
-			EnableMachineImageVersionAutoUpdate: false,
-			DefaultOperatorOidc: internal.OidcProvider{
-				ClientID:       "test-clientID",
-				GroupsClaim:    "test-group",
-				IssuerURL:      "test-issuer-url",
-				SigningAlgs:    []string{"test-alg"},
-				UsernameClaim:  "test-username-claim",
-				UsernamePrefix: "-",
+	expected := internal.InfrastructureManagerConfig{
+		DefaultSharedIASTenant: internal.OidcProvider{
+			ClientID:       "test-clientID",
+			GroupsClaim:    "test-group",
+			IssuerURL:      "test-issuer-url",
+			SigningAlgs:    []string{"test-alg"},
+			UsernameClaim:  "test-username-claim",
+			UsernamePrefix: "-",
+		},
+		ConverterConfig: internal.ConverterConfig{
+			Kubernetes: internal.KubernetesConfig{
+				DefaultVersion:                      "0.1.2.3",
+				EnableKubernetesVersionAutoUpdate:   true,
+				EnableMachineImageVersionAutoUpdate: false,
+				DefaultOperatorOidc: internal.OidcProvider{
+					ClientID:       "test-clientID",
+					GroupsClaim:    "test-group",
+					IssuerURL:      "test-issuer-url",
+					SigningAlgs:    []string{"test-alg"},
+					UsernameClaim:  "test-username-claim",
+					UsernamePrefix: "-",
+				},
 			},
-			DefaultSharedIASTenant: internal.OidcProvider{
-				ClientID:       "test-clientID",
-				GroupsClaim:    "test-group",
-				IssuerURL:      "test-issuer-url",
-				SigningAlgs:    []string{"test-alg"},
-				UsernameClaim:  "test-username-claim",
-				UsernamePrefix: "-",
+			DNS: internal.DNSConfig{
+				SecretName:   "test-secret-name",
+				DomainPrefix: "test-domain-prefix",
+				ProviderType: "test-provider-type",
 			},
-		},
-		DNS: internal.DNSConfig{
-			SecretName:   "test-secret-name",
-			DomainPrefix: "test-domain-prefix",
-			ProviderType: "test-provider-type",
-		},
-		Provider: internal.ProviderConfig{
-			AWS: internal.AWSConfig{
-				EnableIMDSv2: true,
+			Provider: internal.ProviderConfig{
+				AWS: internal.AWSConfig{
+					EnableIMDSv2: true,
+				},
 			},
-		},
-		MachineImage: internal.MachineImageConfig{
-			DefaultName:    "test-image-name",
-			DefaultVersion: "0.1.2.3.4",
-		},
-		Gardener: internal.GardenerConfig{
-			ProjectName: "test-project",
-		},
-		AuditLog: internal.AuditLogConfig{
-			PolicyConfigMapName: "test-policy",
-			TenantConfigPath:    "test-path",
+			MachineImage: internal.MachineImageConfig{
+				DefaultName:    "test-image-name",
+				DefaultVersion: "0.1.2.3.4",
+			},
+			Gardener: internal.GardenerConfig{
+				ProjectName: "test-project",
+			},
+			AuditLog: internal.AuditLogConfig{
+				PolicyConfigMapName: "test-policy",
+				TenantConfigPath:    "test-path",
+			},
 		},
 	}
 	assert.Equal(t, expected, cfg)

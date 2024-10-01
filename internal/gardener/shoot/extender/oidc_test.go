@@ -5,6 +5,7 @@ import (
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,12 +36,14 @@ func TestOidcExtender(t *testing.T) {
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			// given
-			clientID := "client-id"
-			groupsClaim := "groups"
-			issuerURL := "https://my.cool.tokens.com"
-			usernameClaim := "sub"
-			usernamePrefix := "-"
-			signingAlgs := []string{"RS256"}
+			defaultOidc := internal.OidcProvider{
+				ClientID:       "client-id",
+				GroupsClaim:    "groups",
+				IssuerURL:      "https://my.cool.tokens.com",
+				SigningAlgs:    []string{"RS256"},
+				UsernameClaim:  "sub",
+				UsernamePrefix: "-",
+			}
 
 			shoot := fixEmptyGardenerShoot("test", "kcp-system")
 			runtimeShoot := imv1.Runtime{
@@ -54,11 +57,11 @@ func TestOidcExtender(t *testing.T) {
 						Kubernetes: imv1.Kubernetes{
 							KubeAPIServer: imv1.APIServer{
 								OidcConfig: gardener.OIDCConfig{
-									ClientID:      &clientID,
-									GroupsClaim:   &groupsClaim,
-									IssuerURL:     &issuerURL,
-									SigningAlgs:   signingAlgs,
-									UsernameClaim: &usernameClaim,
+									ClientID:      &defaultOidc.ClientID,
+									GroupsClaim:   &defaultOidc.GroupsClaim,
+									IssuerURL:     &defaultOidc.IssuerURL,
+									SigningAlgs:   defaultOidc.SigningAlgs,
+									UsernameClaim: &defaultOidc.UsernameClaim,
 								},
 							},
 						},
@@ -67,7 +70,7 @@ func TestOidcExtender(t *testing.T) {
 			}
 
 			// when
-			extender := NewOidcExtender(clientID, groupsClaim, issuerURL, usernameClaim, usernamePrefix, signingAlgs)
+			extender := NewOidcExtender(defaultOidc)
 			err := extender(runtimeShoot, &shoot)
 
 			// then

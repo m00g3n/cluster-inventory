@@ -2,10 +2,10 @@ package fsm
 
 import (
 	"context"
-	"github.com/kyma-project/infrastructure-manager/internal"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal"
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -15,7 +15,7 @@ import (
 func sFnPatchExistingShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	m.log.Info("Patch shoot state")
 
-	updatedShoot, err := convertShoot(&s.instance, m.InfrastructureManagerConfig.Converter)
+	updatedShoot, err := convertShoot(&s.instance, m.InfrastructureManagerConfig.ConverterConfig)
 	if err != nil {
 		m.log.Error(err, "Failed to convert Runtime instance to shoot object, exiting with no retry")
 		return updateStatePendingWithErrorAndStop(&s.instance, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonConversionError, "Runtime conversion error")

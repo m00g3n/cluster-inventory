@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/kyma-project/infrastructure-manager/internal"
 	"io"
 	"os"
 	"time"
@@ -30,6 +29,7 @@ import (
 	gardener_oidc "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
 	"github.com/go-playground/validator/v10"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
 	kubeconfig_controller "github.com/kyma-project/infrastructure-manager/internal/controller/kubeconfig"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
@@ -177,7 +177,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = validateAuditLogConfiguration(converterConfig.Converter.AuditLog.TenantConfigPath)
+	err = validateAuditLogConfiguration(converterConfig.ConverterConfig.AuditLog.TenantConfigPath)
 	if err != nil {
 		setupLog.Error(err, "invalid Audit Log configuration")
 		os.Exit(1)
