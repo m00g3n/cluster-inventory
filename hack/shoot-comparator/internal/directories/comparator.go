@@ -9,7 +9,7 @@ import (
 	"time"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-project/infrastructure-manager/tools/shoot-comparator/internal/files"
+	"github.com/kyma-project/infrastructure-manager/hack/shoot-comparator/internal/files"
 	"sigs.k8s.io/yaml"
 )
 
