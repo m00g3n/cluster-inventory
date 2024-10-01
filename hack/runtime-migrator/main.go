@@ -111,6 +111,11 @@ func main() {
 			log.Printf("Results stored in %q", resultsDir)
 		}
 
+		if !result.Equal {
+			log.Print("Generated Shoot and Shoot from converter are not equal, stopping migration of shoot: ", shoot.Name)
+			return
+		}
+
 		err = saveRuntime(migratorContext, cfg, runtime, kcpClient)
 		if err != nil {
 			log.Printf("Failed to apply runtime CR, %s\n", err)
