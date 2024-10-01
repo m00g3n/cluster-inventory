@@ -19,6 +19,7 @@ package runtime
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-project/infrastructure-manager/internal"
 	"path/filepath"
 	"testing"
 	"time"
@@ -331,26 +332,26 @@ func setupSeedObjectOnCluster(client client.Client) error {
 	return client.Create(context.Background(), seed)
 }
 
-func fixConverterConfigForTests() gardener_shoot.ConverterConfig {
-	return gardener_shoot.ConverterConfig{
-		Kubernetes: gardener_shoot.KubernetesConfig{
+func fixConverterConfigForTests() internal.ConverterConfig {
+	return internal.ConverterConfig{
+		Kubernetes: internal.KubernetesConfig{
 			DefaultVersion: "1.29",
 		},
 
-		DNS: gardener_shoot.DNSConfig{
+		DNS: internal.DNSConfig{
 			SecretName:   "aws-route53-secret-dev",
 			DomainPrefix: "dev.kyma.ondemand.com",
 			ProviderType: "aws-route53",
 		},
-		Provider: gardener_shoot.ProviderConfig{
-			AWS: gardener_shoot.AWSConfig{
+		Provider: internal.ProviderConfig{
+			AWS: internal.AWSConfig{
 				EnableIMDSv2: true,
 			},
 		},
-		Gardener: gardener_shoot.GardenerConfig{
+		Gardener: internal.GardenerConfig{
 			ProjectName: "kyma-dev",
 		},
-		AuditLog: gardener_shoot.AuditLogConfig{
+		AuditLog: internal.AuditLogConfig{
 			PolicyConfigMapName: "policy-config-map",
 			TenantConfigPath:    filepath.Join("testdata", "auditConfig.json"),
 		},

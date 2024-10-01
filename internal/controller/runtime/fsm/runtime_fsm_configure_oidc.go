@@ -3,11 +3,11 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/internal"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	authenticationv1alpha1 "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/extender"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -19,13 +19,13 @@ func defaultAdditionalOidcIfNotPresent(runtime *imv1.Runtime, cfg RCCfg) {
 
 	if additionalOidcConfig == nil {
 		additionalOidcConfig = &[]gardener.OIDCConfig{}
-		defaultOIDCConfig := createDefaultOIDCConfig(cfg.Kubernetes.DefaultSharedIASTenant)
+		defaultOIDCConfig := createDefaultOIDCConfig(cfg.DefaultSharedIASTenant)
 		*additionalOidcConfig = append(*additionalOidcConfig, defaultOIDCConfig)
 		runtime.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig = additionalOidcConfig
 	}
 }
 
-func createDefaultOIDCConfig(defaultSharedIASTenant shoot.OidcProvider) gardener.OIDCConfig {
+func createDefaultOIDCConfig(defaultSharedIASTenant internal.OidcProvider) gardener.OIDCConfig {
 	return gardener.OIDCConfig{
 		ClientID:       &defaultSharedIASTenant.ClientID,
 		GroupsClaim:    &defaultSharedIASTenant.GroupsClaim,

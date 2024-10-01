@@ -3,6 +3,7 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/internal"
 	"io"
 	"reflect"
 	"runtime"
@@ -11,7 +12,6 @@ import (
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
-	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,7 +34,7 @@ type RCCfg struct {
 	PVCPath           string
 	ShootNamesapace   string
 	AuditLogMandatory bool
-	shoot.ConverterConfig
+	internal.InfrastructureManagerConfig
 }
 
 func (f stateFn) String() string {
@@ -108,6 +108,6 @@ func NewFsm(log logr.Logger, cfg RCCfg, k8s K8s) Fsm {
 		RCCfg:          cfg,
 		log:            log,
 		K8s:            k8s,
-		AuditLogging:   auditlogging.NewAuditLogging(cfg.AuditLog.TenantConfigPath, cfg.AuditLog.PolicyConfigMapName, k8s.ShootClient),
+		AuditLogging:   auditlogging.NewAuditLogging(cfg.InfrastructureManagerConfig.Converter.AuditLog.TenantConfigPath, cfg.InfrastructureManagerConfig.Converter.AuditLog.PolicyConfigMapName, k8s.ShootClient),
 	}
 }

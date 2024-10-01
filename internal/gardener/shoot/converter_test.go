@@ -2,6 +2,7 @@ package shoot
 
 import (
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/internal"
 	"io"
 	"strings"
 	"testing"
@@ -37,20 +38,20 @@ func TestConverter(t *testing.T) {
 	})
 }
 
-func fixConverterConfig() ConverterConfig {
-	return ConverterConfig{
-		Kubernetes: KubernetesConfig{
+func fixConverterConfig() internal.ConverterConfig {
+	return internal.ConverterConfig{
+		Kubernetes: internal.KubernetesConfig{
 			DefaultVersion:                      "1.29",
 			EnableKubernetesVersionAutoUpdate:   true,
 			EnableMachineImageVersionAutoUpdate: false,
 		},
-		DNS: DNSConfig{
+		DNS: internal.DNSConfig{
 			SecretName:   "dns-secret",
 			DomainPrefix: "dev.mydomain.com",
 			ProviderType: "aws-route53",
 		},
-		Provider: ProviderConfig{
-			AWS: AWSConfig{
+		Provider: internal.ProviderConfig{
+			AWS: internal.AWSConfig{
 				EnableIMDSv2: true,
 			},
 		},
@@ -128,7 +129,7 @@ func Test_ConverterConfig_Load_Err(t *testing.T) {
 	failingReaderGetter := func() (io.Reader, error) {
 		return nil, errTestReaderGetterFailed
 	}
-	var cfg ConverterConfig
+	var cfg internal.ConverterConfig
 	if err := cfg.Load(failingReaderGetter); err != errTestReaderGetterFailed {
 		t.Error("ConverterConfig load should fail")
 	}
@@ -183,17 +184,17 @@ func Test_ConverterConfig_Load_OK(t *testing.T) {
 	readerGetter := func() (io.Reader, error) {
 		return testReader, nil
 	}
-	var cfg ConverterConfig
+	var cfg internal.ConverterConfig
 	if err := cfg.Load(readerGetter); err != nil {
 		t.Errorf("ConverterConfig load failed: %s", err)
 	}
 
-	expected := ConverterConfig{
-		Kubernetes: KubernetesConfig{
+	expected := internal.ConverterConfig{
+		Kubernetes: internal.KubernetesConfig{
 			DefaultVersion:                      "0.1.2.3",
 			EnableKubernetesVersionAutoUpdate:   true,
 			EnableMachineImageVersionAutoUpdate: false,
-			DefaultOperatorOidc: OidcProvider{
+			DefaultOperatorOidc: internal.OidcProvider{
 				ClientID:       "test-clientID",
 				GroupsClaim:    "test-group",
 				IssuerURL:      "test-issuer-url",
@@ -201,7 +202,7 @@ func Test_ConverterConfig_Load_OK(t *testing.T) {
 				UsernameClaim:  "test-username-claim",
 				UsernamePrefix: "-",
 			},
-			DefaultSharedIASTenant: OidcProvider{
+			DefaultSharedIASTenant: internal.OidcProvider{
 				ClientID:       "test-clientID",
 				GroupsClaim:    "test-group",
 				IssuerURL:      "test-issuer-url",
@@ -210,24 +211,24 @@ func Test_ConverterConfig_Load_OK(t *testing.T) {
 				UsernamePrefix: "-",
 			},
 		},
-		DNS: DNSConfig{
+		DNS: internal.DNSConfig{
 			SecretName:   "test-secret-name",
 			DomainPrefix: "test-domain-prefix",
 			ProviderType: "test-provider-type",
 		},
-		Provider: ProviderConfig{
-			AWS: AWSConfig{
+		Provider: internal.ProviderConfig{
+			AWS: internal.AWSConfig{
 				EnableIMDSv2: true,
 			},
 		},
-		MachineImage: MachineImageConfig{
+		MachineImage: internal.MachineImageConfig{
 			DefaultName:    "test-image-name",
 			DefaultVersion: "0.1.2.3.4",
 		},
-		Gardener: GardenerConfig{
+		Gardener: internal.GardenerConfig{
 			ProjectName: "test-project",
 		},
-		AuditLog: AuditLogConfig{
+		AuditLog: internal.AuditLogConfig{
 			PolicyConfigMapName: "test-policy",
 			TenantConfigPath:    "test-path",
 		},

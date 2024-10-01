@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/internal"
 	"io"
 	"os"
 	"time"
@@ -36,7 +37,6 @@ import (
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/kubeconfig"
-	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	"github.com/pkg/errors"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -165,7 +165,7 @@ func main() {
 	getReader := func() (io.Reader, error) {
 		return os.Open(converterConfigFilepath)
 	}
-	var converterConfig shoot.ConverterConfig
+	var converterConfig internal.InfrastructureManagerConfig
 	if err = converterConfig.Load(getReader); err != nil {
 		setupLog.Error(err, "unable to load converter configuration")
 		os.Exit(1)
@@ -177,17 +177,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = validateAuditLogConfiguration(converterConfig.AuditLog.TenantConfigPath)
+	err = validateAuditLogConfiguration(converterConfig.Converter.AuditLog.TenantConfigPath)
 	if err != nil {
 		setupLog.Error(err, "invalid Audit Log configuration")
 		os.Exit(1)
 	}
 
 	cfg := fsm.RCCfg{
-		Finalizer:         infrastructuremanagerv1.Finalizer,
-		ShootNamesapace:   gardenerNamespace,
-		ConverterConfig:   converterConfig,
-		AuditLogMandatory: auditLogMandatory,
+		Finalizer:                   infrastructuremanagerv1.Finalizer,
+		ShootNamesapace:             gardenerNamespace,
+		InfrastructureManagerConfig: converterConfig,
+		AuditLogMandatory:           auditLogMandatory,
 	}
 	if shootSpecDumpEnabled {
 		cfg.PVCPath = "/testdata/kim"
