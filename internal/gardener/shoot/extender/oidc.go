@@ -3,6 +3,7 @@ package extender
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal"
 	"k8s.io/utils/ptr"
 )
 
@@ -14,7 +15,7 @@ func shouldDefaultOidcConfig(config gardener.OIDCConfig) bool {
 	return config.ClientID == nil && config.IssuerURL == nil
 }
 
-func NewOidcExtender(clientID, groupsClaim, issuerURL, usernameClaim, usernamePrefix string, signingAlgs []string) func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
+func NewOidcExtender(oidcProvider internal.OidcProvider) func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 	return func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 		if CanEnableExtension(runtime) {
 			setOIDCExtension(shoot)
@@ -23,12 +24,12 @@ func NewOidcExtender(clientID, groupsClaim, issuerURL, usernameClaim, usernamePr
 		oidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig
 		if shouldDefaultOidcConfig(oidcConfig) {
 			oidcConfig = gardener.OIDCConfig{
-				ClientID:       &clientID,
-				GroupsClaim:    &groupsClaim,
-				IssuerURL:      &issuerURL,
-				SigningAlgs:    signingAlgs,
-				UsernameClaim:  &usernameClaim,
-				UsernamePrefix: &usernamePrefix,
+				ClientID:       &oidcProvider.ClientID,
+				GroupsClaim:    &oidcProvider.GroupsClaim,
+				IssuerURL:      &oidcProvider.IssuerURL,
+				SigningAlgs:    oidcProvider.SigningAlgs,
+				UsernameClaim:  &oidcProvider.UsernameClaim,
+				UsernamePrefix: &oidcProvider.UsernamePrefix,
 			}
 		}
 		setKubeAPIServerOIDCConfig(shoot, oidcConfig)
