@@ -36,11 +36,9 @@ func NewOidcExtender(clientID, groupsClaim, issuerURL, usernameClaim, usernamePr
 		return nil
 	}
 }
+
 func CanEnableExtension(runtime imv1.Runtime) bool {
-	if runtime.Labels["operator.kyma-project.io/created-by-migrator"] == "true" {
-		return false
-	}
-	return true
+	return runtime.Labels["operator.kyma-project.io/created-by-migrator"] != "true"
 }
 
 func setOIDCExtension(shoot *gardener.Shoot) {

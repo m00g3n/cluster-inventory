@@ -9,7 +9,6 @@ import (
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/extender"
-	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,13 +50,6 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 	}
 
 	defaultAdditionalOidcIfNotPresent(&s.instance, m.RCCfg)
-	validationError := validateOidcConfiguration(s.instance)
-	if validationError != nil {
-		m.log.Error(validationError, "default OIDC configuration is not present")
-		updateConditionFailed(&s.instance)
-		return updateStatusAndStopWithError(validationError)
-	}
-
 	err := recreateOpenIDConnectResources(ctx, m, s)
 
 	if err != nil {
@@ -75,13 +67,6 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 	m.log.Info("OIDC has been configured", "Name", s.shoot.Name)
 
 	return switchState(sFnApplyClusterRoleBindings)
-}
-
-func validateOidcConfiguration(rt imv1.Runtime) (err error) {
-	if rt.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig == nil {
-		err = errors.New("default OIDC configuration is not present")
-	}
-	return err
 }
 
 func recreateOpenIDConnectResources(ctx context.Context, m *fsm, s *systemState) error {
