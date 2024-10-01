@@ -10,24 +10,23 @@ import (
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/extender"
 	"github.com/pkg/errors"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func DefaultAdditionalOidcIfNotPresent(runtime *imv1.Runtime, cfg RCCfg) {
+func defaultAdditionalOidcIfNotPresent(runtime *imv1.Runtime, cfg RCCfg) {
 	additionalOidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig
 
-	if nil == additionalOidcConfig {
+	if additionalOidcConfig == nil {
 		additionalOidcConfig = &[]gardener.OIDCConfig{}
-		defaultOIDCConfig := CreateDefaultOIDCConfig(cfg.Kubernetes.DefaultSharedIASTenant)
+		defaultOIDCConfig := createDefaultOIDCConfig(cfg.Kubernetes.DefaultSharedIASTenant)
 		*additionalOidcConfig = append(*additionalOidcConfig, defaultOIDCConfig)
 		runtime.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig = additionalOidcConfig
 	}
 }
 
-func CreateDefaultOIDCConfig(defaultSharedIASTenant shoot.OidcProvider) gardener.OIDCConfig {
+func createDefaultOIDCConfig(defaultSharedIASTenant shoot.OidcProvider) gardener.OIDCConfig {
 	return gardener.OIDCConfig{
 		ClientID:       &defaultSharedIASTenant.ClientID,
 		GroupsClaim:    &defaultSharedIASTenant.GroupsClaim,
@@ -48,11 +47,10 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 			imv1.ConditionReasonOidcConfigured,
 			"OIDC extension disabled",
 		)
-		return updateStatusAndStop()
+		return switchState(sFnApplyClusterRoleBindings)
 	}
 
-	// DefaultOidcIfNotPresent(&s.instance, m.RCCfg)
-	DefaultAdditionalOidcIfNotPresent(&s.instance, m.RCCfg)
+	defaultAdditionalOidcIfNotPresent(&s.instance, m.RCCfg)
 	validationError := validateOidcConfiguration(s.instance)
 	if validationError != nil {
 		m.log.Error(validationError, "default OIDC configuration is not present")
@@ -61,10 +59,6 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 	}
 
 	err := recreateOpenIDConnectResources(ctx, m, s)
-
-	if k8serrors.IsAlreadyExists(err) {
-		return switchState(sFnApplyClusterRoleBindings)
-	}
 
 	if err != nil {
 		m.log.Error(err, "Failed to create OpenIDConnect resource")
@@ -115,19 +109,19 @@ func recreateOpenIDConnectResources(ctx context.Context, m *fsm, s *systemState)
 func deleteExistingKymaOpenIDConnectResources(ctx context.Context, client client.Client) (err error) {
 	oidcList := &authenticationv1alpha1.OpenIDConnectList{}
 	if err = client.List(ctx, oidcList); err != nil {
-		return
+		return err
 	}
 
 	for _, oidc := range oidcList.Items {
 		if _, ok := oidc.Labels[imv1.LabelKymaManagedBy]; ok {
 			err = client.Delete(ctx, &oidc)
 			if err != nil {
-				return
+				return err
 			}
 		}
 	}
 
-	return
+	return err
 }
 
 func isOidcExtensionEnabled(shoot gardener.Shoot) bool {

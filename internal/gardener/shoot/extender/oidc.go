@@ -10,7 +10,7 @@ const (
 	OidcExtensionType = "shoot-oidc-service"
 )
 
-func ShouldDefaultOidcConfig(config gardener.OIDCConfig) bool {
+func shouldDefaultOidcConfig(config gardener.OIDCConfig) bool {
 	return config.ClientID == nil && config.IssuerURL == nil
 }
 
@@ -21,7 +21,7 @@ func NewOidcExtender(clientID, groupsClaim, issuerURL, usernameClaim, usernamePr
 		}
 
 		oidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig
-		if ShouldDefaultOidcConfig(oidcConfig) {
+		if shouldDefaultOidcConfig(oidcConfig) {
 			oidcConfig = gardener.OIDCConfig{
 				ClientID:       &clientID,
 				GroupsClaim:    &groupsClaim,
@@ -37,14 +37,10 @@ func NewOidcExtender(clientID, groupsClaim, issuerURL, usernameClaim, usernamePr
 	}
 }
 func CanEnableExtension(runtime imv1.Runtime) bool {
-	canEnable := true
-	createdByMigrator := runtime.Labels["operator.kyma-project.io/created-by-migrator"]
-
-	if createdByMigrator == "true" {
-		canEnable = false
+	if runtime.Labels["operator.kyma-project.io/created-by-migrator"] == "true" {
+		return false
 	}
-
-	return canEnable
+	return true
 }
 
 func setOIDCExtension(shoot *gardener.Shoot) {
