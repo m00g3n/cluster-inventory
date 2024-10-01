@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-project/infrastructure-manager/tools/shoot-comparator/pkg/shoot"
+	"github.com/kyma-project/infrastructure-manager/hack/shoot-comparator/pkg/shoot"
 	"sigs.k8s.io/yaml"
 )
 

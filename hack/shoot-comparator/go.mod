@@ -1,4 +1,4 @@
-module github.com/kyma-project/infrastructure-manager/tools/shoot-comparator
+module github.com/kyma-project/infrastructure-manager/hack/shoot-comparator
 
 go 1.23.0
 
