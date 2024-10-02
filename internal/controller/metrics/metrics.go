@@ -95,7 +95,7 @@ func (m Metrics) SetRuntimeStates(runtime v1.Runtime) {
 }
 
 func (m Metrics) CleanUpRuntimeGauge(runtimeID string) {
-	m.gardenerClustersStateGaugeVec.DeletePartialMatch(prometheus.Labels{
+	m.runtimeStateGauge.DeletePartialMatch(prometheus.Labels{
 		runtimeIDKeyName: runtimeID,
 	})
 }
