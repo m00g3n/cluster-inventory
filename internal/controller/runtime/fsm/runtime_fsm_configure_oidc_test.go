@@ -3,13 +3,14 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-	"testing"
 )
 
 func TestOidcState(t *testing.T) {
@@ -40,14 +41,13 @@ func TestOidcState(t *testing.T) {
 			},
 		}
 
-		//when
+		// when
 		stateFn, _, _ := sFnConfigureOidc(ctx, fsm, systemState)
 
-		//then
+		// then
 		require.Contains(t, stateFn.name(), "sFnApplyClusterRoleBindings")
 		assertEqualConditions(t, expectedRuntimeConditions, systemState.instance.Status.Conditions)
 	})
-
 }
 
 // sets the time to its zero value for comparison purposes

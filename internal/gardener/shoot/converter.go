@@ -2,10 +2,10 @@ package shoot
 
 import (
 	"fmt"
-	"github.com/kyma-project/infrastructure-manager/internal/config"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/config"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/extender"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
