@@ -2,8 +2,8 @@ package fsm
 
 import (
 	"context"
-
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"k8s.io/apimachinery/pkg/api/meta"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -92,10 +92,14 @@ func addFinalizerAndRequeue(ctx context.Context, m *fsm, s *systemState) (stateF
 func removeFinalizerAndStop(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	m.log.Info("removing finalizer")
 	controllerutil.RemoveFinalizer(&s.instance, m.Finalizer)
-
 	err := m.Update(ctx, &s.instance)
 	if err != nil {
 		return updateStatusAndStopWithError(err)
 	}
+
+	// remove from metrics
+	runtimeID := s.instance.GetLabels()[metrics.RuntimeIDLabel]
+	m.Metrics.CleanUpRuntimeGauge(runtimeID)
+
 	return stop()
 }

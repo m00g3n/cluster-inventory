@@ -54,7 +54,7 @@ func NewMetrics() Metrics {
 				Subsystem: componentName,
 				Name:      RuntimeStateMetricName,
 				Help:      "Exposes current Status.state for Runtime CRs",
-			}, []string{runtimeIDKeyName, shootNameIDKeyName, provider, state, reason}),
+			}, []string{runtimeIDKeyName, shootNameIDKeyName, provider, state}),
 	}
 	ctrlMetrics.Registry.MustRegister(m.gardenerClustersStateGaugeVec, m.kubeconfigExpirationGauge, m.runtimeStateGauge)
 	return m
@@ -85,13 +85,12 @@ func (m Metrics) SetRuntimeStates(runtime v1.Runtime) {
 	runtimeID := runtime.GetLabels()[RuntimeIDLabel]
 
 	if runtimeID != "" {
-		if len(runtime.Status.Conditions) != 0 {
-			var reason = runtime.Status.Conditions[0].Reason // will change it
-
-			// first clean the old metric
-			m.CleanUpRuntimeGauge(runtimeID)
-			m.runtimeStateGauge.WithLabelValues(runtimeID, runtime.Spec.Shoot.Name, runtime.Spec.Shoot.Provider.Type, string(runtime.Status.State), reason).Set(1)
-		}
+		//if len(runtime.Status.Conditions) != 0 {
+		//var reason = runtime.Status.Conditions[0].Reason // will change it
+		// first clean the old metric
+		m.CleanUpRuntimeGauge(runtimeID)
+		m.runtimeStateGauge.WithLabelValues(runtimeID, runtime.Spec.Shoot.Name, runtime.Spec.Shoot.Provider.Type, string(runtime.Status.State)).Set(1)
+		//}
 	}
 }
 
