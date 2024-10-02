@@ -19,6 +19,7 @@ package runtime
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-project/infrastructure-manager/internal/config"
 	"path/filepath"
 	"testing"
 	"time"
@@ -26,7 +27,6 @@ import (
 	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_oidc "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	"github.com/kyma-project/infrastructure-manager/internal"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
@@ -109,7 +109,7 @@ var _ = BeforeSuite(func() {
 	customTracker = NewCustomTracker(tracker, []*gardener_api.Shoot{}, []*gardener_api.Seed{})
 	gardenerTestClient = fake.NewClientBuilder().WithScheme(clientScheme).WithObjectTracker(customTracker).Build()
 
-	runtimeReconciler = NewRuntimeReconciler(mgr, gardenerTestClient, logger, fsm.RCCfg{Finalizer: infrastructuremanagerv1.Finalizer, InfrastructureManagerConfig: fixConverterConfigForTests()})
+	runtimeReconciler = NewRuntimeReconciler(mgr, gardenerTestClient, logger, fsm.RCCfg{Finalizer: infrastructuremanagerv1.Finalizer, Config: fixConverterConfigForTests()})
 	Expect(runtimeReconciler).NotTo(BeNil())
 	err = runtimeReconciler.SetupWithManager(mgr)
 	Expect(err).To(BeNil())
@@ -332,27 +332,27 @@ func setupSeedObjectOnCluster(client client.Client) error {
 	return client.Create(context.Background(), seed)
 }
 
-func fixConverterConfigForTests() internal.InfrastructureManagerConfig {
-	return internal.InfrastructureManagerConfig{
-		ConverterConfig: internal.ConverterConfig{
-			Kubernetes: internal.KubernetesConfig{
+func fixConverterConfigForTests() config.Config {
+	return config.Config{
+		ConverterConfig: config.ConverterConfig{
+			Kubernetes: config.KubernetesConfig{
 				DefaultVersion: "1.29",
 			},
 
-			DNS: internal.DNSConfig{
+			DNS: config.DNSConfig{
 				SecretName:   "aws-route53-secret-dev",
 				DomainPrefix: "dev.kyma.ondemand.com",
 				ProviderType: "aws-route53",
 			},
-			Provider: internal.ProviderConfig{
-				AWS: internal.AWSConfig{
+			Provider: config.ProviderConfig{
+				AWS: config.AWSConfig{
 					EnableIMDSv2: true,
 				},
 			},
-			Gardener: internal.GardenerConfig{
+			Gardener: config.GardenerConfig{
 				ProjectName: "kyma-dev",
 			},
-			AuditLog: internal.AuditLogConfig{
+			AuditLog: config.AuditLogConfig{
 				PolicyConfigMapName: "policy-config-map",
 				TenantConfigPath:    filepath.Join("testdata", "auditConfig.json"),
 			},

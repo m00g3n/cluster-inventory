@@ -1,11 +1,11 @@
 package extender
 
 import (
+	"github.com/kyma-project/infrastructure-manager/internal/config"
 	"testing"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	"github.com/kyma-project/infrastructure-manager/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,7 +36,7 @@ func TestOidcExtender(t *testing.T) {
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			// given
-			defaultOidc := internal.OidcProvider{
+			defaultOidc := config.OidcProvider{
 				ClientID:       "client-id",
 				GroupsClaim:    "groups",
 				IssuerURL:      "https://my.cool.tokens.com",

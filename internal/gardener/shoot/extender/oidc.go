@@ -3,7 +3,7 @@ package extender
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	"github.com/kyma-project/infrastructure-manager/internal"
+	"github.com/kyma-project/infrastructure-manager/internal/config"
 	"k8s.io/utils/ptr"
 )
 
@@ -15,7 +15,7 @@ func shouldDefaultOidcConfig(config gardener.OIDCConfig) bool {
 	return config.ClientID == nil && config.IssuerURL == nil
 }
 
-func NewOidcExtender(oidcProvider internal.OidcProvider) func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
+func NewOidcExtender(oidcProvider config.OidcProvider) func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 	return func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
 		if CanEnableExtension(runtime) {
 			setOIDCExtension(shoot)

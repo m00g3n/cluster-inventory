@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/internal/config"
 	"io"
 	"os"
 	"time"
@@ -29,7 +30,6 @@ import (
 	gardener_oidc "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
 	"github.com/go-playground/validator/v10"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	"github.com/kyma-project/infrastructure-manager/internal"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
 	kubeconfig_controller "github.com/kyma-project/infrastructure-manager/internal/controller/kubeconfig"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
@@ -165,7 +165,7 @@ func main() {
 	getReader := func() (io.Reader, error) {
 		return os.Open(converterConfigFilepath)
 	}
-	var converterConfig internal.InfrastructureManagerConfig
+	var converterConfig config.Config
 	if err = converterConfig.Load(getReader); err != nil {
 		setupLog.Error(err, "unable to load converter configuration")
 		os.Exit(1)
@@ -184,10 +184,10 @@ func main() {
 	}
 
 	cfg := fsm.RCCfg{
-		Finalizer:                   infrastructuremanagerv1.Finalizer,
-		ShootNamesapace:             gardenerNamespace,
-		InfrastructureManagerConfig: converterConfig,
-		AuditLogMandatory:           auditLogMandatory,
+		Finalizer:         infrastructuremanagerv1.Finalizer,
+		ShootNamesapace:   gardenerNamespace,
+		Config:            converterConfig,
+		AuditLogMandatory: auditLogMandatory,
 	}
 	if shootSpecDumpEnabled {
 		cfg.PVCPath = "/testdata/kim"

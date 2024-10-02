@@ -3,39 +3,17 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/internal/config"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	authenticationv1alpha1 "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	"github.com/kyma-project/infrastructure-manager/internal"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/extender"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	k8s_client "sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-func defaultAdditionalOidcIfNotPresent(runtime *imv1.Runtime, cfg RCCfg) {
-	additionalOidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig
-
-	if additionalOidcConfig == nil {
-		additionalOidcConfig = &[]gardener.OIDCConfig{}
-		defaultOIDCConfig := createDefaultOIDCConfig(cfg.DefaultSharedIASTenant)
-		*additionalOidcConfig = append(*additionalOidcConfig, defaultOIDCConfig)
-		runtime.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig = additionalOidcConfig
-	}
-}
-
-func createDefaultOIDCConfig(defaultSharedIASTenant internal.OidcProvider) gardener.OIDCConfig {
-	return gardener.OIDCConfig{
-		ClientID:       &defaultSharedIASTenant.ClientID,
-		GroupsClaim:    &defaultSharedIASTenant.GroupsClaim,
-		IssuerURL:      &defaultSharedIASTenant.IssuerURL,
-		SigningAlgs:    defaultSharedIASTenant.SigningAlgs,
-		UsernameClaim:  &defaultSharedIASTenant.UsernameClaim,
-		UsernamePrefix: &defaultSharedIASTenant.UsernamePrefix,
-	}
-}
 
 func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	m.log.Info("Configure OIDC state")
@@ -68,6 +46,28 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 	m.log.Info("OIDC has been configured", "Name", s.shoot.Name)
 
 	return switchState(sFnApplyClusterRoleBindings)
+}
+
+func defaultAdditionalOidcIfNotPresent(runtime *imv1.Runtime, cfg RCCfg) {
+	additionalOidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig
+
+	if additionalOidcConfig == nil {
+		additionalOidcConfig = &[]gardener.OIDCConfig{}
+		defaultOIDCConfig := createDefaultOIDCConfig(cfg.ClusterConfig.DefaultSharedIASTenant)
+		*additionalOidcConfig = append(*additionalOidcConfig, defaultOIDCConfig)
+		runtime.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig = additionalOidcConfig
+	}
+}
+
+func createDefaultOIDCConfig(defaultSharedIASTenant config.OidcProvider) gardener.OIDCConfig {
+	return gardener.OIDCConfig{
+		ClientID:       &defaultSharedIASTenant.ClientID,
+		GroupsClaim:    &defaultSharedIASTenant.GroupsClaim,
+		IssuerURL:      &defaultSharedIASTenant.IssuerURL,
+		SigningAlgs:    defaultSharedIASTenant.SigningAlgs,
+		UsernameClaim:  &defaultSharedIASTenant.UsernameClaim,
+		UsernamePrefix: &defaultSharedIASTenant.UsernamePrefix,
+	}
 }
 
 func recreateOpenIDConnectResources(ctx context.Context, m *fsm, s *systemState) error {

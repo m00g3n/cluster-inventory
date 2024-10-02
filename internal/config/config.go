@@ -1,13 +1,17 @@
-package internal
+package config
 
 import (
 	"encoding/json"
 	"io"
 )
 
-type InfrastructureManagerConfig struct {
-	ConverterConfig        ConverterConfig `json:"converter" validate:"required"`
-	DefaultSharedIASTenant OidcProvider    `json:"defaultSharedIASTenant" validate:"required"`
+type Config struct {
+	ConverterConfig ConverterConfig `json:"converter" validate:"required"`
+	ClusterConfig   ClusterConfig   `json:"cluster" validate:"required"`
+}
+
+type ClusterConfig struct {
+	DefaultSharedIASTenant OidcProvider `json:"defaultSharedIASTenant" validate:"required"`
 }
 
 type ProviderConfig struct {
@@ -65,7 +69,7 @@ type ConverterConfig struct {
 
 type ReaderGetter = func() (io.Reader, error)
 
-func (c *InfrastructureManagerConfig) Load(f ReaderGetter) error {
+func (c *Config) Load(f ReaderGetter) error {
 	r, err := f()
 	if err != nil {
 		return err

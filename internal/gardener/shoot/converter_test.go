@@ -2,6 +2,7 @@ package shoot
 
 import (
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/internal/config"
 	"io"
 	"strings"
 	"testing"
@@ -9,7 +10,6 @@ import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/go-playground/validator/v10"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	"github.com/kyma-project/infrastructure-manager/internal"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,20 +38,20 @@ func TestConverter(t *testing.T) {
 	})
 }
 
-func fixConverterConfig() internal.ConverterConfig {
-	return internal.ConverterConfig{
-		Kubernetes: internal.KubernetesConfig{
+func fixConverterConfig() config.ConverterConfig {
+	return config.ConverterConfig{
+		Kubernetes: config.KubernetesConfig{
 			DefaultVersion:                      "1.29",
 			EnableKubernetesVersionAutoUpdate:   true,
 			EnableMachineImageVersionAutoUpdate: false,
 		},
-		DNS: internal.DNSConfig{
+		DNS: config.DNSConfig{
 			SecretName:   "dns-secret",
 			DomainPrefix: "dev.mydomain.com",
 			ProviderType: "aws-route53",
 		},
-		Provider: internal.ProviderConfig{
-			AWS: internal.AWSConfig{
+		Provider: config.ProviderConfig{
+			AWS: config.AWSConfig{
 				EnableIMDSv2: true,
 			},
 		},
@@ -129,7 +129,7 @@ func Test_ConverterConfig_Load_Err(t *testing.T) {
 	failingReaderGetter := func() (io.Reader, error) {
 		return nil, errTestReaderGetterFailed
 	}
-	var cfg internal.InfrastructureManagerConfig
+	var cfg config.Config
 	if err := cfg.Load(failingReaderGetter); err != errTestReaderGetterFailed {
 		t.Error("ConverterConfig load should fail")
 	}
@@ -138,13 +138,15 @@ func Test_ConverterConfig_Load_Err(t *testing.T) {
 var testReader io.Reader = strings.NewReader(
 	`
 {
-  "defaultSharedIASTenant" : {
-	"clientID": "test-clientID",
-	"groupsClaim": "test-group",
-	"issuerURL": "test-issuer-url",
-	"signingAlgs": ["test-alg"],
-	"usernameClaim": "test-username-claim",
-	"usernamePrefix": "-"
+  "cluster": {
+	  "defaultSharedIASTenant" : {
+		"clientID": "test-clientID",
+		"groupsClaim": "test-group",
+		"issuerURL": "test-issuer-url",
+		"signingAlgs": ["test-alg"],
+		"usernameClaim": "test-username-claim",
+		"usernamePrefix": "-"
+	  }
   },
   "converter": {
 	  "kubernetes": {
@@ -196,26 +198,28 @@ func Test_ConverterConfig_Load_OK(t *testing.T) {
 	readerGetter := func() (io.Reader, error) {
 		return testReader, nil
 	}
-	var cfg internal.InfrastructureManagerConfig
+	var cfg config.Config
 	if err := cfg.Load(readerGetter); err != nil {
 		t.Errorf("ConverterConfig load failed: %s", err)
 	}
 
-	expected := internal.InfrastructureManagerConfig{
-		DefaultSharedIASTenant: internal.OidcProvider{
-			ClientID:       "test-clientID",
-			GroupsClaim:    "test-group",
-			IssuerURL:      "test-issuer-url",
-			SigningAlgs:    []string{"test-alg"},
-			UsernameClaim:  "test-username-claim",
-			UsernamePrefix: "-",
+	expected := config.Config{
+		ClusterConfig: config.ClusterConfig{
+			DefaultSharedIASTenant: config.OidcProvider{
+				ClientID:       "test-clientID",
+				GroupsClaim:    "test-group",
+				IssuerURL:      "test-issuer-url",
+				SigningAlgs:    []string{"test-alg"},
+				UsernameClaim:  "test-username-claim",
+				UsernamePrefix: "-",
+			},
 		},
-		ConverterConfig: internal.ConverterConfig{
-			Kubernetes: internal.KubernetesConfig{
+		ConverterConfig: config.ConverterConfig{
+			Kubernetes: config.KubernetesConfig{
 				DefaultVersion:                      "0.1.2.3",
 				EnableKubernetesVersionAutoUpdate:   true,
 				EnableMachineImageVersionAutoUpdate: false,
-				DefaultOperatorOidc: internal.OidcProvider{
+				DefaultOperatorOidc: config.OidcProvider{
 					ClientID:       "test-clientID",
 					GroupsClaim:    "test-group",
 					IssuerURL:      "test-issuer-url",
@@ -224,24 +228,24 @@ func Test_ConverterConfig_Load_OK(t *testing.T) {
 					UsernamePrefix: "-",
 				},
 			},
-			DNS: internal.DNSConfig{
+			DNS: config.DNSConfig{
 				SecretName:   "test-secret-name",
 				DomainPrefix: "test-domain-prefix",
 				ProviderType: "test-provider-type",
 			},
-			Provider: internal.ProviderConfig{
-				AWS: internal.AWSConfig{
+			Provider: config.ProviderConfig{
+				AWS: config.AWSConfig{
 					EnableIMDSv2: true,
 				},
 			},
-			MachineImage: internal.MachineImageConfig{
+			MachineImage: config.MachineImageConfig{
 				DefaultName:    "test-image-name",
 				DefaultVersion: "0.1.2.3.4",
 			},
-			Gardener: internal.GardenerConfig{
+			Gardener: config.GardenerConfig{
 				ProjectName: "test-project",
 			},
-			AuditLog: internal.AuditLogConfig{
+			AuditLog: config.AuditLogConfig{
 				PolicyConfigMapName: "test-policy",
 				TenantConfigPath:    "test-path",
 			},
