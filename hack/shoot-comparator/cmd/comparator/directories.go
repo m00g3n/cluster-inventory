@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/kyma-project/infrastructure-manager/tools/shoot-comparator/internal/directories"
+	"github.com/kyma-project/infrastructure-manager/hack/shoot-comparator/internal/directories"
 	"github.com/spf13/cobra"
 )
 
