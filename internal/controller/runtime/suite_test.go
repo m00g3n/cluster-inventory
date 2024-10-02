@@ -19,7 +19,6 @@ package runtime
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"path/filepath"
 	"testing"
 	"time"
@@ -27,6 +26,7 @@ import (
 	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive

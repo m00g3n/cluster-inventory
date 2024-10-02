@@ -85,7 +85,7 @@ func (m Metrics) SetRuntimeStates(runtime v1.Runtime) {
 	runtimeID := runtime.GetLabels()[RuntimeIDLabel]
 
 	if runtimeID != "" {
-		//if len(runtime.Status.Conditions) != 0 {
+		// if len(runtime.Status.Conditions) != 0 {
 		//var reason = runtime.Status.Conditions[0].Reason // will change it
 		// first clean the old metric
 		m.CleanUpRuntimeGauge(runtimeID)
