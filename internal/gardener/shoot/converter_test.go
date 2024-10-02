@@ -135,49 +135,61 @@ func Test_ConverterConfig_Load_Err(t *testing.T) {
 	}
 }
 
-var testReader io.Reader = strings.NewReader(`{
-  "kubernetes": {
-    "defaultVersion": "0.1.2.3",
-    "enableKubernetesVersionAutoUpdate": true,
-    "enableMachineImageVersionAutoUpdate": false,
-	"defaultOperatorOidc": {
-		"clientID": "test-clientID",
-		"groupsClaim": "test-group",
-		"issuerURL": "test-issuer-url",
-		"signingAlgs": ["test-alg"],
-		"usernameClaim": "test-username-claim",
-		"usernamePrefix": "-"
-	},
-	"defaultSharedIASTenant": {
-		"clientID": "test-clientID",
-		"groupsClaim": "test-group",
-		"issuerURL": "test-issuer-url",
-		"signingAlgs": ["test-alg"],
-		"usernameClaim": "test-username-claim",
-		"usernamePrefix": "-"
-	}
+var testReader io.Reader = strings.NewReader(
+	`
+{
+  "defaultSharedIASTenant" : {
+	"clientID": "test-clientID",
+	"groupsClaim": "test-group",
+	"issuerURL": "test-issuer-url",
+	"signingAlgs": ["test-alg"],
+	"usernameClaim": "test-username-claim",
+	"usernamePrefix": "-"
   },
-  "dns": {
-    "secretName": "test-secret-name",
-    "domainPrefix": "test-domain-prefix",
-    "providerType": "test-provider-type"
-  },
-  "provider": {
-    "aws": {
-      "enableIMDSv2": true
-    }
-  },
-  "machineImage": {
-  	"defaultName": "test-image-name",
-    "defaultVersion": "0.1.2.3.4"
-  },
-  "gardener": {
-    "projectName": "test-project"
-  },
-  "auditLogging": {
-    "policyConfigMapName": "test-policy",
-    "tenantConfigPath": "test-path"
-  }
+  "converter": {
+	  "kubernetes": {
+		"defaultVersion": "0.1.2.3",
+		"enableKubernetesVersionAutoUpdate": true,
+		"enableMachineImageVersionAutoUpdate": false,
+		"defaultOperatorOidc": {
+			"clientID": "test-clientID",
+			"groupsClaim": "test-group",
+			"issuerURL": "test-issuer-url",
+			"signingAlgs": ["test-alg"],
+			"usernameClaim": "test-username-claim",
+			"usernamePrefix": "-"
+		},
+		"defaultSharedIASTenant": {
+			"clientID": "test-clientID",
+			"groupsClaim": "test-group",
+			"issuerURL": "test-issuer-url",
+			"signingAlgs": ["test-alg"],
+			"usernameClaim": "test-username-claim",
+			"usernamePrefix": "-"
+		}
+	  },
+	  "dns": {
+		"secretName": "test-secret-name",
+		"domainPrefix": "test-domain-prefix",
+		"providerType": "test-provider-type"
+	  },
+	  "provider": {
+		"aws": {
+		  "enableIMDSv2": true
+		}
+	  },
+	  "machineImage": {
+		"defaultName": "test-image-name",
+		"defaultVersion": "0.1.2.3.4"
+	  },
+	  "gardener": {
+		"projectName": "test-project"
+	  },
+	  "auditLogging": {
+		"policyConfigMapName": "test-policy",
+		"tenantConfigPath": "test-path"
+	  }
+}
 }`)
 
 func Test_ConverterConfig_Load_OK(t *testing.T) {
