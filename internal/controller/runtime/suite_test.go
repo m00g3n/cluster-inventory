@@ -108,7 +108,12 @@ var _ = BeforeSuite(func() {
 	customTracker = NewCustomTracker(tracker, []*gardener_api.Shoot{}, []*gardener_api.Seed{})
 	gardenerTestClient = fake.NewClientBuilder().WithScheme(clientScheme).WithObjectTracker(customTracker).Build()
 
-	runtimeReconciler = NewRuntimeReconciler(mgr, gardenerTestClient, logger, fsm.RCCfg{Finalizer: infrastructuremanagerv1.Finalizer, ConverterConfig: fixConverterConfigForTests(), Metrics: metrics.NewMetrics()})
+	convConfig := fixConverterConfigForTests()
+	auditLogging := auditlogging.NewAuditLogging(convConfig.AuditLog.TenantConfigPath, convConfig.AuditLog.PolicyConfigMapName, gardenerTestClient)
+
+	fsmCfg := fsm.RCCfg{Finalizer: infrastructuremanagerv1.Finalizer, ConverterConfig: convConfig, Metrics: metrics.NewMetrics(), AuditLogging: auditLogging}
+
+	runtimeReconciler = NewRuntimeReconciler(mgr, gardenerTestClient, logger, fsmCfg)
 	Expect(runtimeReconciler).NotTo(BeNil())
 	err = runtimeReconciler.SetupWithManager(mgr)
 	Expect(err).To(BeNil())

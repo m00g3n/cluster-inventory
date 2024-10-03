@@ -76,6 +76,7 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 	}
 
 	m.log.Info("noting to reconcile, stopping fsm")
+
 	return stop()
 }
 
@@ -92,6 +93,7 @@ func addFinalizerAndRequeue(ctx context.Context, m *fsm, s *systemState) (stateF
 
 func removeFinalizerAndStop(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
 	m.log.Info("removing finalizer")
+	runtimeID := s.instance.GetLabels()[metrics.RuntimeIDLabel]
 	controllerutil.RemoveFinalizer(&s.instance, m.Finalizer)
 	err := m.Update(ctx, &s.instance)
 	if err != nil {
@@ -99,8 +101,6 @@ func removeFinalizerAndStop(ctx context.Context, m *fsm, s *systemState) (stateF
 	}
 
 	// remove from metrics
-	runtimeID := s.instance.GetLabels()[metrics.RuntimeIDLabel]
 	m.Metrics.CleanUpRuntimeGauge(runtimeID)
-
 	return stop()
 }

@@ -51,7 +51,6 @@ func (r *RuntimeReconciler) Reconcile(ctx context.Context, request ctrl.Request)
 	r.Log.Info(request.String())
 
 	var runtime imv1.Runtime
-
 	if err := r.Get(ctx, request.NamespacedName, &runtime); err != nil {
 		return ctrl.Result{
 			Requeue: false,
@@ -68,7 +67,7 @@ func (r *RuntimeReconciler) Reconcile(ctx context.Context, request ctrl.Request)
 			ShootClient:   r.ShootClient,
 			EventRecorder: r.EventRecorder,
 		})
-	requCounter++
+
 	return stateFSM.Run(ctx, runtime)
 }
 
