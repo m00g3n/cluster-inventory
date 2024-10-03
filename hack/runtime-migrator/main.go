@@ -88,7 +88,10 @@ func main() {
 			results = appendResult(results, shoot, migrator.StatusFailedToCreateRuntimeCR, runtimeCrErr)
 			continue
 		}
-
+		log.Printf("Runtime CR: %v\n", runtime)
+		log.Printf("===================== \n")
+		log.Printf("Original Shoot: %v\n", shoot)
+		log.Printf("===================== \n")
 		// runtime cr -> shoot
 		converter := gardener_shoot.NewConverter(converterConfig)
 		shootFromConverter, err := converter.ToShoot(runtime)
@@ -96,9 +99,9 @@ func main() {
 			log.Print("Error during converting generated RuntimeCR to Shoot object - ", err)
 			return
 		}
-
+		log.Printf("Converted Shoot: %v\n", shootFromConverter)
 		// compare Gardener shoot with shoot from converter
-		result, err := comparator.CompareShoots(shoot, shootFromConverter)
+		result, err := comparator.CompareShoots(createExpectedShoot(shoot), shootFromConverter)
 		if err != nil {
 			return
 		}
@@ -476,4 +479,30 @@ func getAllRuntimeLabels(ctx context.Context, shoot v1beta1.Shoot, getClient mig
 	enrichedRuntimeLabels[migratorLabel] = "true"
 
 	return enrichedRuntimeLabels, err
+}
+
+func createExpectedShoot(shoot v1beta1.Shoot) v1beta1.Shoot {
+	expectedShoot := shoot.DeepCopy()
+	expectedShoot.Spec.Kubernetes.KubeAPIServer = nil
+	expectedShoot.Spec.Kubernetes.KubeAPIServer = &v1beta1.KubeAPIServerConfig{
+		OIDCConfig: shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig,
+	}
+
+	expectedShoot.Spec.Kubernetes.KubeControllerManager = nil
+	expectedShoot.Spec.Kubernetes.KubeScheduler = nil
+	expectedShoot.Spec.Kubernetes.KubeProxy = nil
+	expectedShoot.Spec.Kubernetes.Kubelet = nil
+	expectedShoot.Spec.Kubernetes.VerticalPodAutoscaler = nil
+
+	expectedShoot.Spec.Addons = nil
+	expectedShoot.Spec.Resources = nil
+	expectedShoot.Spec.SystemComponents = nil
+	expectedShoot.Spec.SchedulerName = nil
+
+	expectedShoot.Spec.Maintenance.TimeWindow = nil
+	expectedShoot.Spec.Networking.ProviderConfig = nil
+	expectedShoot.Spec.Networking.IPFamilies = nil
+
+	expectedShoot.Spec.SeedName = nil
+	return *expectedShoot
 }
