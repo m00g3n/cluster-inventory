@@ -33,6 +33,7 @@ func sFnCreateKubeconfig(ctx context.Context, m *fsm, s *systemState) (stateFn, 
 				"False",
 				err.Error(),
 			)
+			m.Metrics.IncRuntimeFSMStopCounter()
 			return updateStatusAndStop()
 		}
 
@@ -46,6 +47,7 @@ func sFnCreateKubeconfig(ctx context.Context, m *fsm, s *systemState) (stateFn, 
 				"False",
 				err.Error(),
 			)
+			m.Metrics.IncRuntimeFSMStopCounter()
 			return updateStatusAndStop()
 		}
 

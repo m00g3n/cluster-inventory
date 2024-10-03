@@ -33,6 +33,7 @@ type Metrics struct {
 	gardenerClustersStateGaugeVec *prometheus.GaugeVec
 	kubeconfigExpirationGauge     *prometheus.GaugeVec
 	runtimeStateGauge             *prometheus.GaugeVec
+	runtimeFSMUnexpectedStopsCnt  prometheus.Counter
 }
 
 func NewMetrics() Metrics {
@@ -55,9 +56,37 @@ func NewMetrics() Metrics {
 				Name:      RuntimeStateMetricName,
 				Help:      "Exposes current Status.state for Runtime CRs",
 			}, []string{runtimeIDKeyName, shootNameIDKeyName, provider, state}),
+		runtimeFSMUnexpectedStopsCnt: prometheus.NewCounter(
+			prometheus.CounterOpts{
+				Name: "unexpected_stops_total",
+				Help: "Exposes the number of unexpected state machine stop events",
+			}),
 	}
-	ctrlMetrics.Registry.MustRegister(m.gardenerClustersStateGaugeVec, m.kubeconfigExpirationGauge, m.runtimeStateGauge)
+	ctrlMetrics.Registry.MustRegister(m.gardenerClustersStateGaugeVec, m.kubeconfigExpirationGauge, m.runtimeStateGauge, m.runtimeFSMUnexpectedStopsCnt)
 	return m
+}
+
+func (m Metrics) SetRuntimeStates(runtime v1.Runtime) {
+	runtimeID := runtime.GetLabels()[RuntimeIDLabel]
+
+	if runtimeID != "" {
+		// if len(runtime.Status.Conditions) != 0 {
+		// var reason = runtime.Status.Conditions[0].Reason // will change it
+		// first clean the old metric
+		m.CleanUpRuntimeGauge(runtimeID)
+		m.runtimeStateGauge.WithLabelValues(runtimeID, runtime.Spec.Shoot.Name, runtime.Spec.Shoot.Provider.Type, string(runtime.Status.State)).Set(1)
+		//}
+	}
+}
+
+func (m Metrics) CleanUpRuntimeGauge(runtimeID string) {
+	m.runtimeStateGauge.DeletePartialMatch(prometheus.Labels{
+		runtimeIDKeyName: runtimeID,
+	})
+}
+
+func (m Metrics) IncRuntimeFSMStopCounter() {
+	m.runtimeFSMUnexpectedStopsCnt.Inc()
 }
 
 func (m Metrics) SetGardenerClusterStates(cluster v1.GardenerCluster) {
@@ -77,25 +106,6 @@ func (m Metrics) SetGardenerClusterStates(cluster v1.GardenerCluster) {
 
 func (m Metrics) CleanUpGardenerClusterGauge(runtimeID string) {
 	m.gardenerClustersStateGaugeVec.DeletePartialMatch(prometheus.Labels{
-		runtimeIDKeyName: runtimeID,
-	})
-}
-
-func (m Metrics) SetRuntimeStates(runtime v1.Runtime) {
-	runtimeID := runtime.GetLabels()[RuntimeIDLabel]
-
-	if runtimeID != "" {
-		// if len(runtime.Status.Conditions) != 0 {
-		// var reason = runtime.Status.Conditions[0].Reason // will change it
-		// first clean the old metric
-		m.CleanUpRuntimeGauge(runtimeID)
-		m.runtimeStateGauge.WithLabelValues(runtimeID, runtime.Spec.Shoot.Name, runtime.Spec.Shoot.Provider.Type, string(runtime.Status.State)).Set(1)
-		//}
-	}
-}
-
-func (m Metrics) CleanUpRuntimeGauge(runtimeID string) {
-	m.runtimeStateGauge.DeletePartialMatch(prometheus.Labels{
 		runtimeIDKeyName: runtimeID,
 	})
 }

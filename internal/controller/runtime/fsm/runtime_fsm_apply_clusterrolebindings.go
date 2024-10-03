@@ -29,12 +29,14 @@ func sFnApplyClusterRoleBindings(ctx context.Context, m *fsm, s *systemState) (s
 	shootAdminClient, err := GetShootClient(ctx, srscClient, s.shoot)
 	if err != nil {
 		updateCRBApplyFailed(&s.instance)
+		m.Metrics.IncRuntimeFSMStopCounter()
 		return updateStatusAndStopWithError(err)
 	}
 	// list existing cluster role bindings
 	var crbList rbacv1.ClusterRoleBindingList
 	if err := shootAdminClient.List(ctx, &crbList); err != nil {
 		updateCRBApplyFailed(&s.instance)
+		m.Metrics.IncRuntimeFSMStopCounter()
 		return updateStatusAndStopWithError(err)
 	}
 
@@ -47,6 +49,7 @@ func sFnApplyClusterRoleBindings(ctx context.Context, m *fsm, s *systemState) (s
 	} {
 		if err := fn(); err != nil {
 			updateCRBApplyFailed(&s.instance)
+			m.Metrics.IncRuntimeFSMStopCounter()
 			return updateStatusAndStopWithError(err)
 		}
 	}
