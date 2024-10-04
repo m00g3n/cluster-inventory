@@ -3,9 +3,9 @@ package fsm
 import (
 	"context"
 	"fmt"
-
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
@@ -95,7 +95,8 @@ var (
 
 func newFakeFSM(opts ...fakeFSMOpt) (*fsm, error) {
 	fsm := fsm{
-		log: zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)),
+		log:   zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)),
+		RCCfg: RCCfg{Metrics: metrics.NewMetrics()},
 	}
 	// apply opts
 	for _, opt := range opts {
