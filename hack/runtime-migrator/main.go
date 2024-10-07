@@ -101,10 +101,14 @@ func main() {
 		}
 		log.Printf("Converted Shoot: %v\n", shootFromConverter)
 		// compare Gardener shoot with shoot from converter
-		result, err := comparator.CompareShoots(createExpectedShoot(shoot), shootFromConverter)
+		result, err := comparator.CompareShoots(shoot, shootFromConverter)
 		if err != nil {
 			return
 		}
+
+		// create here and save a file in path /tmp/ with contend of shootFromConverter and shoot in separate files. If possbile format the shoot format to more readable way yaml/json.
+		saveShootToFile("/tmp/"+shoot.Name+"/original_shoot.yaml", shoot)
+		saveShootToFile("/tmp/"+shoot.Name+"/converted_shoot.yaml", shootFromConverter)
 
 		// save comparison report with differences
 		resultsDir, err := comparator.SaveComparisonReport(result, cfg.OutputPath, shoot.Name)
@@ -481,28 +485,18 @@ func getAllRuntimeLabels(ctx context.Context, shoot v1beta1.Shoot, getClient mig
 	return enrichedRuntimeLabels, err
 }
 
-func createExpectedShoot(shoot v1beta1.Shoot) v1beta1.Shoot {
-	expectedShoot := shoot.DeepCopy()
-	expectedShoot.Spec.Kubernetes.KubeAPIServer = nil
-	expectedShoot.Spec.Kubernetes.KubeAPIServer = &v1beta1.KubeAPIServerConfig{
-		OIDCConfig: shoot.Spec.Kubernetes.KubeAPIServer.OIDCConfig,
+func saveShootToFile(filePath string, shoot interface{}) {
+	shootAsYaml, err := yaml.Marshal(shoot)
+	if err != nil {
+		log.Printf("Failed to marshal shoot to YAML: %s", err)
+		return
 	}
 
-	expectedShoot.Spec.Kubernetes.KubeControllerManager = nil
-	expectedShoot.Spec.Kubernetes.KubeScheduler = nil
-	expectedShoot.Spec.Kubernetes.KubeProxy = nil
-	expectedShoot.Spec.Kubernetes.Kubelet = nil
-	expectedShoot.Spec.Kubernetes.VerticalPodAutoscaler = nil
+	err = os.WriteFile(filePath, shootAsYaml, 0644)
+	if err != nil {
+		log.Printf("Failed to write shoot to file %s: %s", filePath, err)
+		return
+	}
 
-	expectedShoot.Spec.Addons = nil
-	expectedShoot.Spec.Resources = nil
-	expectedShoot.Spec.SystemComponents = nil
-	expectedShoot.Spec.SchedulerName = nil
-
-	expectedShoot.Spec.Maintenance.TimeWindow = nil
-	expectedShoot.Spec.Networking.ProviderConfig = nil
-	expectedShoot.Spec.Networking.IPFamilies = nil
-
-	expectedShoot.Spec.SeedName = nil
-	return *expectedShoot
+	log.Printf("Shoot has been saved to %s\n", filePath)
 }
