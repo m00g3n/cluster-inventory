@@ -1,8 +1,6 @@
 package extender
 
 import (
-	"slices"
-
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler"
@@ -12,6 +10,7 @@ import (
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/hyperscaler/openstack"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"slices"
 )
 
 func NewProviderExtender(enableIMDSv2 bool, defaultMachineImageName, defaultMachineImageVersion string) func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
@@ -90,11 +89,14 @@ func getZones(workers []gardener.Worker) []string {
 	var zones []string
 
 	for _, worker := range workers {
-		zones = append(zones, worker.Zones...)
+		for _, zone := range worker.Zones {
+			if !slices.Contains(zones, zone) {
+				zones = append(zones, zone)
+			}
+		}
 	}
-	slices.Sort(zones)
 
-	return slices.Compact(zones)
+	return zones
 }
 
 func setWorkerConfig(provider *gardener.Provider, providerType string, enableIMDSv2 bool) error {
