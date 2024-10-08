@@ -97,7 +97,7 @@ func (m metricsImpl) CleanUpRuntimeGauge(runtimeID string) {
 }
 
 func (m metricsImpl) IncRuntimeFSMStopCounter() {
-	// m.runtimeFSMUnexpectedStopsCnt.Inc()
+	m.runtimeFSMUnexpectedStopsCnt.Inc()
 }
 
 func (m metricsImpl) SetGardenerClusterStates(cluster v1.GardenerCluster) {
