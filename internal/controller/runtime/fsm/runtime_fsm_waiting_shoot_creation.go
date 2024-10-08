@@ -61,6 +61,7 @@ func sFnWaitForShootCreation(_ context.Context, m *fsm, s *systemState) (stateFn
 			"False",
 			"Shoot creation failed")
 
+		m.Metrics.IncRuntimeFSMStopCounter()
 		return updateStatusAndStop()
 
 	case gardener.LastOperationStateSucceeded:
@@ -74,8 +75,7 @@ func sFnWaitForShootCreation(_ context.Context, m *fsm, s *systemState) (stateFn
 
 	default:
 		m.log.Info("Unknown shoot operation state, exiting with no retry")
-		m.Metrics.IncRuntimeFSMStopCounter()
-		return stop()
+		return stopWithMetrics(m.Metrics)
 	}
 }
 

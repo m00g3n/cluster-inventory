@@ -44,8 +44,7 @@ func sFnDumpShootSpec(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 	// We use object created by the converter instead (the Provisioner uses the same approach)
 	convertedShoot, err := convertShoot(&s.instance, m.ConverterConfig)
 	if err != nil {
-		m.Metrics.IncRuntimeFSMStopCounter()
-		return updateStatusAndStopWithError(err)
+		return updateStatusAndStopWithError(m.Metrics, err)
 	}
 
 	convertedShoot.ObjectMeta.CreationTimestamp = metav1.Time{
@@ -55,13 +54,11 @@ func sFnDumpShootSpec(_ context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 	runtimeCp := s.instance.DeepCopy()
 
 	if err := persist(paths["shoot"], convertedShoot, m.writerProvider); err != nil {
-		m.Metrics.IncRuntimeFSMStopCounter()
-		return updateStatusAndStopWithError(err)
+		return updateStatusAndStopWithError(m.Metrics, err)
 	}
 
 	if err := persist(paths["runtime"], runtimeCp, m.writerProvider); err != nil {
-		m.Metrics.IncRuntimeFSMStopCounter()
-		return updateStatusAndStopWithError(err)
+		return updateStatusAndStopWithError(m.Metrics, err)
 	}
 	return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 }

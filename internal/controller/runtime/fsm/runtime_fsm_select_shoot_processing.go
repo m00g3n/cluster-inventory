@@ -42,6 +42,5 @@ func sFnSelectShootProcessing(_ context.Context, m *fsm, s *systemState) (stateF
 	}
 
 	m.log.Info("Unknown shoot operation type, exiting with no retry")
-	m.Metrics.IncRuntimeFSMStopCounter()
-	return stop()
+	return stopWithMetrics(m.Metrics)
 }

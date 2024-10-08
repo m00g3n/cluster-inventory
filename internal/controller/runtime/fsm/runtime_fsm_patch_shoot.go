@@ -18,6 +18,7 @@ func sFnPatchExistingShoot(ctx context.Context, m *fsm, s *systemState) (stateFn
 	updatedShoot, err := convertShoot(&s.instance, m.ConverterConfig)
 	if err != nil {
 		m.log.Error(err, "Failed to convert Runtime instance to shoot object, exiting with no retry")
+		m.Metrics.IncRuntimeFSMStopCounter()
 		return updateStatePendingWithErrorAndStop(&s.instance, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonConversionError, "Runtime conversion error")
 	}
 
@@ -30,6 +31,7 @@ func sFnPatchExistingShoot(ctx context.Context, m *fsm, s *systemState) (stateFn
 
 	if err != nil {
 		m.log.Error(err, "Failed to patch shoot object, exiting with no retry")
+		m.Metrics.IncRuntimeFSMStopCounter()
 		return updateStatePendingWithErrorAndStop(&s.instance, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonProcessingErr, "Shoot patch error")
 	}
 

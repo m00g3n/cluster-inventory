@@ -14,6 +14,7 @@ func sFnCreateShoot(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl
 	newShoot, err := convertShoot(&s.instance, m.ConverterConfig)
 	if err != nil {
 		m.log.Error(err, "Failed to convert Runtime instance to shoot object")
+		m.Metrics.IncRuntimeFSMStopCounter()
 		return updateStatePendingWithErrorAndStop(
 			&s.instance,
 			imv1.ConditionTypeRuntimeProvisioned,

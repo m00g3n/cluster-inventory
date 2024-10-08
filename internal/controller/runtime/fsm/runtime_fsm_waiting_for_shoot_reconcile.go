@@ -40,6 +40,7 @@ func sFnWaitForShootReconcile(_ context.Context, m *fsm, s *systemState) (stateF
 			"False",
 			string(reason),
 		)
+		m.Metrics.IncRuntimeFSMStopCounter()
 		return updateStatusAndStop()
 
 	case gardener.LastOperationStateSucceeded:
@@ -53,6 +54,5 @@ func sFnWaitForShootReconcile(_ context.Context, m *fsm, s *systemState) (stateF
 	}
 
 	m.log.Info("Update did not processed, exiting with no retry")
-	m.Metrics.IncRuntimeFSMStopCounter()
-	return stop()
+	return stopWithMetrics(m.Metrics)
 }

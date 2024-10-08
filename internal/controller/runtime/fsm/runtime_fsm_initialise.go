@@ -76,8 +76,7 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 	}
 
 	m.log.Info("noting to reconcile, stopping fsm")
-	m.Metrics.IncRuntimeFSMStopCounter()
-	return stop()
+	return stopWithMetrics(m.Metrics)
 }
 
 func addFinalizerAndRequeue(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
@@ -86,8 +85,7 @@ func addFinalizerAndRequeue(ctx context.Context, m *fsm, s *systemState) (stateF
 
 	err := m.Update(ctx, &s.instance)
 	if err != nil {
-		m.Metrics.IncRuntimeFSMStopCounter()
-		return updateStatusAndStopWithError(err)
+		return updateStatusAndStopWithError(m.Metrics, err)
 	}
 	return requeue()
 }
@@ -98,8 +96,7 @@ func removeFinalizerAndStop(ctx context.Context, m *fsm, s *systemState) (stateF
 	controllerutil.RemoveFinalizer(&s.instance, m.Finalizer)
 	err := m.Update(ctx, &s.instance)
 	if err != nil {
-		m.Metrics.IncRuntimeFSMStopCounter()
-		return updateStatusAndStopWithError(err)
+		return updateStatusAndStopWithError(m.Metrics, err)
 	}
 
 	// remove from metrics
