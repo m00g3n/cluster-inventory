@@ -29,7 +29,18 @@ const (
 	lastSyncAnnotation             = "operator.kyma-project.io/last-sync"
 )
 
-type Metrics struct {
+//go:generate mockery --name=Metrics
+type Metrics interface {
+	SetRuntimeStates(runtime v1.Runtime)
+	CleanUpRuntimeGauge(runtimeID string)
+	IncRuntimeFSMStopCounter()
+	SetGardenerClusterStates(cluster v1.GardenerCluster)
+	CleanUpGardenerClusterGauge(runtimeID string)
+	CleanUpKubeconfigExpiration(runtimeID string)
+	SetKubeconfigExpiration(secret corev1.Secret, rotationPeriod time.Duration, minimalRotationTimeRatio float64)
+}
+
+type metricsImpl struct {
 	gardenerClustersStateGaugeVec *prometheus.GaugeVec
 	kubeconfigExpirationGauge     *prometheus.GaugeVec
 	runtimeStateGauge             *prometheus.GaugeVec
@@ -37,7 +48,7 @@ type Metrics struct {
 }
 
 func NewMetrics() Metrics {
-	m := Metrics{
+	m := &metricsImpl{
 		gardenerClustersStateGaugeVec: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Subsystem: componentName,
@@ -66,7 +77,7 @@ func NewMetrics() Metrics {
 	return m
 }
 
-func (m Metrics) SetRuntimeStates(runtime v1.Runtime) {
+func (m metricsImpl) SetRuntimeStates(runtime v1.Runtime) {
 	runtimeID := runtime.GetLabels()[RuntimeIDLabel]
 
 	if runtimeID != "" {
@@ -79,17 +90,17 @@ func (m Metrics) SetRuntimeStates(runtime v1.Runtime) {
 	}
 }
 
-func (m Metrics) CleanUpRuntimeGauge(runtimeID string) {
+func (m metricsImpl) CleanUpRuntimeGauge(runtimeID string) {
 	m.runtimeStateGauge.DeletePartialMatch(prometheus.Labels{
 		runtimeIDKeyName: runtimeID,
 	})
 }
 
-func (m Metrics) IncRuntimeFSMStopCounter() {
-	m.runtimeFSMUnexpectedStopsCnt.Inc()
+func (m metricsImpl) IncRuntimeFSMStopCounter() {
+	// m.runtimeFSMUnexpectedStopsCnt.Inc()
 }
 
-func (m Metrics) SetGardenerClusterStates(cluster v1.GardenerCluster) {
+func (m metricsImpl) SetGardenerClusterStates(cluster v1.GardenerCluster) {
 	var runtimeID = cluster.GetLabels()[RuntimeIDLabel]
 	var shootName = cluster.GetLabels()[ShootNameLabel]
 
@@ -104,13 +115,13 @@ func (m Metrics) SetGardenerClusterStates(cluster v1.GardenerCluster) {
 	}
 }
 
-func (m Metrics) CleanUpGardenerClusterGauge(runtimeID string) {
+func (m metricsImpl) CleanUpGardenerClusterGauge(runtimeID string) {
 	m.gardenerClustersStateGaugeVec.DeletePartialMatch(prometheus.Labels{
 		runtimeIDKeyName: runtimeID,
 	})
 }
 
-func (m Metrics) CleanUpKubeconfigExpiration(runtimeID string) {
+func (m metricsImpl) CleanUpKubeconfigExpiration(runtimeID string) {
 	m.kubeconfigExpirationGauge.DeletePartialMatch(prometheus.Labels{
 		runtimeIDKeyName: runtimeID,
 	})
@@ -120,7 +131,7 @@ func computeExpirationInSeconds(rotationPeriod time.Duration, minimalRotationTim
 	return rotationPeriod.Seconds() / minimalRotationTimeRatio
 }
 
-func (m Metrics) SetKubeconfigExpiration(secret corev1.Secret, rotationPeriod time.Duration, minimalRotationTimeRatio float64) {
+func (m metricsImpl) SetKubeconfigExpiration(secret corev1.Secret, rotationPeriod time.Duration, minimalRotationTimeRatio float64) {
 	var runtimeID = secret.GetLabels()[RuntimeIDLabel]
 	var shootName = secret.GetLabels()[ShootNameLabel]
 

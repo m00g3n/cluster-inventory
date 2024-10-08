@@ -7,6 +7,7 @@ import (
 	"time"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics/mocks"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm/testing"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
@@ -30,7 +31,10 @@ var _ = Describe("KIM sFnPersist", func() {
 	expectedRuntime.Spec.Shoot.Provider.Type = "aws"
 
 	It("should persist shoot data", func() {
-		next, _, err := sFnDumpShootSpec(testCtx, must(newFakeFSM, withStorageWriter(testWriterGetter), withConverterConfig(shoot.ConverterConfig{})), &systemState{shoot: &testing.ShootNoDNS, instance: *expectedRuntime})
+		next, _, err := sFnDumpShootSpec(testCtx,
+			must(newFakeFSM, withStorageWriter(testWriterGetter), withConverterConfig(shoot.ConverterConfig{}), withMetrics(&mocks.Metrics{})),
+			&systemState{shoot: &testing.ShootNoDNS, instance: *expectedRuntime},
+		)
 		Expect(err).To(BeNil())
 		Expect(next).To(haveName("sFnUpdateStatus"))
 

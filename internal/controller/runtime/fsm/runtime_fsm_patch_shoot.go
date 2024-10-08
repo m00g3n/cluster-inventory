@@ -40,7 +40,7 @@ func sFnPatchExistingShoot(ctx context.Context, m *fsm, s *systemState) (stateFn
 
 	m.log.Info("Gardener shoot for runtime patched successfully", "Name", s.shoot.Name, "Namespace", s.shoot.Namespace)
 
-	s.shoot = updatedShoot.DeepCopy()
+	// s.shoot = updatedShoot.DeepCopy()
 
 	s.instance.UpdateStatePending(
 		imv1.ConditionTypeRuntimeProvisioned,

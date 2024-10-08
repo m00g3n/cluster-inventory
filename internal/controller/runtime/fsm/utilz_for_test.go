@@ -3,6 +3,7 @@ package fsm
 import (
 	"context"
 	"fmt"
+
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
@@ -51,6 +52,13 @@ var (
 		}
 	}
 
+	withMetrics = func(m metrics.Metrics) fakeFSMOpt {
+		return func(fsm *fsm) error {
+			fsm.Metrics = m
+			return nil
+		}
+	}
+
 	withFakedK8sClient = func(
 		scheme *runtime.Scheme,
 		objs ...client.Object) fakeFSMOpt {
@@ -95,8 +103,7 @@ var (
 
 func newFakeFSM(opts ...fakeFSMOpt) (*fsm, error) {
 	fsm := fsm{
-		log:   zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)),
-		RCCfg: RCCfg{Metrics: metrics.NewMetrics()},
+		log: zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)),
 	}
 	// apply opts
 	for _, opt := range opts {

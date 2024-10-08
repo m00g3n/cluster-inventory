@@ -7,8 +7,10 @@ import (
 
 	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics/mocks"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/mock"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,6 +21,13 @@ import (
 var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 
 	var testErr = fmt.Errorf("test error")
+
+	withMockedMetrics := func() fakeFSMOpt {
+		m := &mocks.Metrics{}
+		m.On("SetRuntimeStates", mock.Anything).Return()
+		m.On("IncRuntimeFSMStopCounter").Return()
+		return withMetrics(m)
+	}
 
 	DescribeTable("getMissing",
 		func(tc tcGetCRB) {
@@ -140,6 +149,7 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 				withFakedK8sClient(testScheme, &testRuntimeWithAdmin),
 				withFn(sFnApplyClusterRoleBindingsStateSetup),
 				withFakeEventRecorder(1),
+				withMockedMetrics(),
 			),
 			setup: defaultSetup,
 		}),
@@ -156,6 +166,7 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 				withFakedK8sClient(testScheme, &testRuntime),
 				withFn(sFnApplyClusterRoleBindingsStateSetup),
 				withFakeEventRecorder(1),
+				withMockedMetrics(),
 			),
 			setup: defaultSetup,
 		}),
@@ -171,6 +182,7 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 				withFakedK8sClient(testScheme, &testRuntime),
 				withFn(sFnApplyClusterRoleBindingsStateSetup),
 				withFakeEventRecorder(1),
+				withMockedMetrics(),
 			),
 			setup: func(f *fsm) error {
 				GetShootClient = func(

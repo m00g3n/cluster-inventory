@@ -7,6 +7,7 @@ import (
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics/mocks"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -32,6 +33,12 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 		return func(fsm *fsm) error {
 			return withFakedK8sClient(testScheme, objs...)(fsm)
 		}
+	}
+
+	withMockedMetrics := func() fakeFSMOpt {
+		m := &mocks.Metrics{}
+		m.On("IncRuntimeFSMStopCounter").Return()
+		return withMetrics(m)
 	}
 
 	inputRtWithLabels := makeInputRuntimeWithLabels()
@@ -74,7 +81,7 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 			// and set Runtime state to Pending with condition type ConditionTypeRuntimeKubeconfigReady and reason ConditionReasonGardenerCRCreated
 			"should create GardenCluster CR when it does not existed before",
 			testCtx,
-			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects()),
+			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(), withMockedMetrics()),
 			&systemState{instance: *inputRtWithLabels, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
@@ -85,7 +92,7 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 		Entry(
 			"should remain in waiting state when GardenCluster CR exists and is not ready yet",
 			testCtx,
-			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(testGardenerCRStatePending)),
+			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(testGardenerCRStatePending), withMockedMetrics()),
 			&systemState{instance: *inputRtWithLabels, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
@@ -105,7 +112,7 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 		Entry(
 			"should return sFnUpdateStatus when GardenCluster CR exists and is in ready state and condition is not set",
 			testCtx,
-			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(testGardenerCRStateReady)),
+			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(testGardenerCRStateReady), withMockedMetrics()),
 			&systemState{instance: *inputRtWithLabels, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
