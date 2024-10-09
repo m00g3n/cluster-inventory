@@ -1,7 +1,6 @@
 package shoot
 
 import (
-	"crypto/md5"
 	"fmt"
 	"reflect"
 	"strings"
@@ -64,12 +63,6 @@ func (m *Matcher) Match(actual interface{}) (success bool, err error) {
 	if err != nil {
 		return false, err
 	}
-
-	hashedExpectedControlPlaneConfig := md5.Sum(eShoot.Spec.Provider.ControlPlaneConfig.Raw)
-	hashedActualControlPlaneConfig := md5.Sum(aShoot.Spec.Provider.ControlPlaneConfig.Raw)
-
-	hashedExpectedInfrastructureConfig := md5.Sum(eShoot.Spec.Provider.InfrastructureConfig.Raw)
-	hashedActualInfrastructureConfig := md5.Sum(aShoot.Spec.Provider.InfrastructureConfig.Raw)
 
 	// Note: we define separate matchers for each field to make input more readable
 	// Annotations are not matched as they are not relevant for the comparison ; both KIM, and Provisioner have different set of annotations
@@ -176,13 +169,13 @@ func (m *Matcher) Match(actual interface{}) (success bool, err error) {
 			path:          "spec/Provider.Workers",
 		},
 		{
-			GomegaMatcher: gomega.BeComparableTo(hashedExpectedControlPlaneConfig),
-			expected:      hashedActualControlPlaneConfig,
+			GomegaMatcher: gomega.BeComparableTo(eShoot.Spec.Provider.ControlPlaneConfig),
+			expected:      aShoot.Spec.Provider.ControlPlaneConfig,
 			path:          "spec/Provider.ControlPlaneConfig",
 		},
 		{
-			GomegaMatcher: gomega.BeComparableTo(hashedExpectedInfrastructureConfig),
-			expected:      hashedActualInfrastructureConfig,
+			GomegaMatcher: gomega.BeComparableTo(eShoot.Spec.Provider.InfrastructureConfig),
+			expected:      aShoot.Spec.Provider.InfrastructureConfig,
 			path:          "spec/Provider.InfrastructureConfig",
 		},
 		{
