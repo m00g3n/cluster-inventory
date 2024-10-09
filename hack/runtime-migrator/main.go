@@ -88,10 +88,6 @@ func main() {
 			results = appendResult(results, shoot, migrator.StatusFailedToCreateRuntimeCR, runtimeCrErr)
 			continue
 		}
-		log.Printf("Runtime CR: %v\n", runtime)
-		log.Printf("===================== \n")
-		log.Printf("Original Shoot: %v\n", shoot)
-		log.Printf("===================== \n")
 		// runtime cr -> shoot
 		converter := gardener_shoot.NewConverter(converterConfig)
 		shootFromConverter, err := converter.ToShoot(runtime)
@@ -106,7 +102,6 @@ func main() {
 			return
 		}
 
-		// create here and save a file in path /tmp/ with contend of shootFromConverter and shoot in separate files. If possbile format the shoot format to more readable way yaml/json.
 		saveShootToFile("/tmp/"+shoot.Name+"/original_shoot.yaml", shoot)
 		saveShootToFile("/tmp/"+shoot.Name+"/converted_shoot.yaml", shootFromConverter)
 
