@@ -2,6 +2,7 @@ package fsm
 
 import (
 	"context"
+	"github.com/kyma-project/infrastructure-manager/internal/config"
 	"testing"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -65,7 +66,15 @@ func TestOidcState(t *testing.T) {
 		fsm := &fsm{K8s: K8s{
 			ShootClient: fakeClient,
 			Client:      fakeClient,
-		}}
+		},
+			RCCfg: RCCfg{
+				Config: config.Config{
+					ClusterConfig: config.ClusterConfig{
+						DefaultSharedIASTenant: createConverterOidcConfig("defaut-client-id"),
+					},
+				},
+			},
+		}
 		GetShootClient = func(
 			_ context.Context,
 			_ client.SubResourceClient,
@@ -107,7 +116,8 @@ func TestOidcState(t *testing.T) {
 		err = fakeClient.List(ctx, &openIdConnects)
 		require.NoError(t, err)
 		assert.Len(t, openIdConnects.Items, 1)
-		assert.Equal(t, "kyma-oidc-0", openIdConnects.Items[0].Name)
+
+		assertOIDCCRD(t, "kyma-oidc-0", "defaut-client-id", openIdConnects.Items[0])
 		assertEqualConditions(t, expectedRuntimeConditions, systemState.instance.Status.Conditions)
 	})
 
@@ -135,8 +145,8 @@ func TestOidcState(t *testing.T) {
 
 		runtimeStub := runtimeForTest()
 		additionalOidcConfig := &[]gardener.OIDCConfig{}
-		*additionalOidcConfig = append(*additionalOidcConfig, createOidcConfig("runtime-cr-config0"))
-		*additionalOidcConfig = append(*additionalOidcConfig, createOidcConfig("runtime-cr-config1"))
+		*additionalOidcConfig = append(*additionalOidcConfig, createGardenerOidcConfig("runtime-cr-config0"))
+		*additionalOidcConfig = append(*additionalOidcConfig, createGardenerOidcConfig("runtime-cr-config1"))
 		runtimeStub.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig = additionalOidcConfig
 
 		shootStub := shootForTest()
@@ -172,8 +182,8 @@ func TestOidcState(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, openIdConnects.Items, 2)
 		assert.Equal(t, "kyma-oidc-0", openIdConnects.Items[0].Name)
-		assert.Equal(t, "runtime-cr-config0", openIdConnects.Items[0].Spec.ClientID)
-		assert.Equal(t, "runtime-cr-config1", openIdConnects.Items[1].Spec.ClientID)
+		assertOIDCCRD(t, "kyma-oidc-0", "runtime-cr-config0", openIdConnects.Items[0])
+		assertOIDCCRD(t, "kyma-oidc-1", "runtime-cr-config1", openIdConnects.Items[1])
 		assertEqualConditions(t, expectedRuntimeConditions, systemState.instance.Status.Conditions)
 	})
 
@@ -272,15 +282,15 @@ func newOIDCTestScheme() (*runtime.Scheme, error) {
 }
 
 // sets the time to its zero value for comparison purposes
-func assertEqualConditions(t *testing.T, expectedConditions []metav1.Condition, actualConditions []metav1.Condition, msgAndArgs ...interface{}) bool {
-	for i, _ := range actualConditions {
+func assertEqualConditions(t *testing.T, expectedConditions []metav1.Condition, actualConditions []metav1.Condition) bool {
+	for i := range actualConditions {
 		actualConditions[i].LastTransitionTime = metav1.Time{}
 	}
 
 	return assert.Equal(t, expectedConditions, actualConditions)
 }
 
-func createOidcConfig(clientId string) gardener.OIDCConfig {
+func createGardenerOidcConfig(clientId string) gardener.OIDCConfig {
 	return gardener.OIDCConfig{
 		ClientID:       ptr.To(clientId),
 		GroupsClaim:    ptr.To("groups"),
@@ -291,7 +301,18 @@ func createOidcConfig(clientId string) gardener.OIDCConfig {
 	}
 }
 
-func createOpenIDConnectCR(name, labelKey, labelValue string) *authenticationv1alpha1.OpenIDConnect {
+func createConverterOidcConfig(clientId string) config.OidcProvider {
+	return config.OidcProvider{
+		ClientID:       clientId,
+		GroupsClaim:    "groups",
+		IssuerURL:      "https://my.cool.tokens.com",
+		SigningAlgs:    []string{"RS256"},
+		UsernameClaim:  "sub",
+		UsernamePrefix: "-",
+	}
+}
+
+func createOpenIDConnectCR(name string, labelKey, labelValue string) *authenticationv1alpha1.OpenIDConnect {
 	return &authenticationv1alpha1.OpenIDConnect{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -300,4 +321,20 @@ func createOpenIDConnectCR(name, labelKey, labelValue string) *authenticationv1a
 			},
 		},
 	}
+}
+
+func assertOIDCCRD(t *testing.T, expectedName, expectedClientID string, actual authenticationv1alpha1.OpenIDConnect) {
+	assert.Equal(t, expectedName, actual.Name)
+	assert.Equal(t, expectedClientID, actual.Spec.ClientID)
+	assert.Equal(t, ptr.To("groups"), actual.Spec.GroupsClaim)
+	assert.Nil(t, actual.Spec.GroupsPrefix)
+	assert.Equal(t, "https://my.cool.tokens.com", actual.Spec.IssuerURL)
+	assert.Equal(t, []authenticationv1alpha1.SigningAlgorithm{"RS256"}, actual.Spec.SupportedSigningAlgs)
+	assert.Equal(t, ptr.To("sub"), actual.Spec.UsernameClaim)
+	assert.Equal(t, ptr.To("-"), actual.Spec.UsernamePrefix)
+	assert.Equal(t, map[string]string(nil), actual.Spec.RequiredClaims)
+	assert.Equal(t, 0, len(actual.Spec.ExtraClaims))
+	assert.Equal(t, 0, len(actual.Spec.CABundle))
+	assert.Equal(t, authenticationv1alpha1.JWKSSpec{}, actual.Spec.JWKS)
+	assert.Nil(t, actual.Spec.MaxTokenExpirationSeconds)
 }

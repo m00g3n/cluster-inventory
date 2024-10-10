@@ -109,6 +109,14 @@ func isOidcExtensionEnabled(shoot gardener.Shoot) bool {
 }
 
 func createOpenIDConnectResource(additionalOidcConfig gardener.OIDCConfig, oidcID int) *authenticationv1alpha1.OpenIDConnect {
+	toSupportedSigningAlgs := func(signingAlgs []string) []authenticationv1alpha1.SigningAlgorithm {
+		var supportedSigningAlgs []authenticationv1alpha1.SigningAlgorithm
+		for _, alg := range signingAlgs {
+			supportedSigningAlgs = append(supportedSigningAlgs, authenticationv1alpha1.SigningAlgorithm(alg))
+		}
+		return supportedSigningAlgs
+	}
+
 	cr := &authenticationv1alpha1.OpenIDConnect{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "OpenIDConnect",
@@ -121,13 +129,14 @@ func createOpenIDConnectResource(additionalOidcConfig gardener.OIDCConfig, oidcI
 			},
 		},
 		Spec: authenticationv1alpha1.OIDCAuthenticationSpec{
-			IssuerURL:      *additionalOidcConfig.IssuerURL,
-			ClientID:       *additionalOidcConfig.ClientID,
-			UsernameClaim:  additionalOidcConfig.UsernameClaim,
-			UsernamePrefix: additionalOidcConfig.UsernamePrefix,
-			GroupsClaim:    additionalOidcConfig.GroupsClaim,
-			GroupsPrefix:   additionalOidcConfig.GroupsPrefix,
-			RequiredClaims: additionalOidcConfig.RequiredClaims,
+			IssuerURL:            *additionalOidcConfig.IssuerURL,
+			ClientID:             *additionalOidcConfig.ClientID,
+			UsernameClaim:        additionalOidcConfig.UsernameClaim,
+			UsernamePrefix:       additionalOidcConfig.UsernamePrefix,
+			GroupsClaim:          additionalOidcConfig.GroupsClaim,
+			GroupsPrefix:         additionalOidcConfig.GroupsPrefix,
+			RequiredClaims:       additionalOidcConfig.RequiredClaims,
+			SupportedSigningAlgs: toSupportedSigningAlgs(additionalOidcConfig.SigningAlgs),
 		},
 	}
 

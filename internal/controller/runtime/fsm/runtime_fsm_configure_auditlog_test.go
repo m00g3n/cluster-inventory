@@ -244,7 +244,6 @@ func TestAuditLogState(t *testing.T) {
 		auditLog := &mocks.AuditLogging{}
 		shoot := shootForTest()
 		instance := runtimeForTest()
-		// instance.Spec.Shoot.Kubernetes.KubeAPIServer.AdditionalOidcConfig
 		systemState := &systemState{
 			instance: instance,
 			shoot:    shoot,
