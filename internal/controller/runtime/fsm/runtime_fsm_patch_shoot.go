@@ -51,7 +51,7 @@ func sFnPatchExistingShoot(ctx context.Context, m *fsm, s *systemState) (stateFn
 		"Shoot is pending for update",
 	)
 
-	return updateStatusAndRequeueAfter(gardenerRequeueDuration)
+	return updateStatusAndRequeueAfter(m.RCCfg.GardenerRequeueDuration)
 }
 
 func convertShoot(instance *imv1.Runtime, cfg shoot.ConverterConfig) (gardener.Shoot, error) {

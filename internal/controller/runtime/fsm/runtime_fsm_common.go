@@ -1,9 +1,9 @@
 package fsm
 
 import (
-	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"time"
 
+	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 

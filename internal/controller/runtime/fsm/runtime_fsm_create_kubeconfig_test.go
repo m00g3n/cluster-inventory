@@ -3,6 +3,7 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"github.com/stretchr/testify/mock"
 	"time"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -37,6 +38,8 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 
 	withMockedMetrics := func() fakeFSMOpt {
 		m := &mocks.Metrics{}
+		m.On("SetRuntimeStates", mock.Anything).Return()
+		m.On("CleanUpRuntimeGauge", mock.Anything).Return()
 		m.On("IncRuntimeFSMStopCounter").Return()
 		return withMetrics(m)
 	}
@@ -81,7 +84,7 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 			// and set Runtime state to Pending with condition type ConditionTypeRuntimeKubeconfigReady and reason ConditionReasonGardenerCRCreated
 			"should create GardenCluster CR when it does not existed before",
 			testCtx,
-			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(), withMockedMetrics()),
+			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(), withMockedMetrics(), withDefaultReconcileDuration()),
 			&systemState{instance: *inputRtWithLabels, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
@@ -92,7 +95,7 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 		Entry(
 			"should remain in waiting state when GardenCluster CR exists and is not ready yet",
 			testCtx,
-			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(testGardenerCRStatePending), withMockedMetrics()),
+			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(testGardenerCRStatePending), withMockedMetrics(), withDefaultReconcileDuration()),
 			&systemState{instance: *inputRtWithLabels, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
@@ -102,7 +105,7 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 		Entry(
 			"should return sFnProcessShoot when GardenCluster CR exists and is in ready state",
 			testCtx,
-			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(testGardenerCRStateReady)),
+			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(testGardenerCRStateReady), withMockedMetrics(), withDefaultReconcileDuration()),
 			&systemState{instance: *inputRtWithLabelsAndCondition, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
@@ -112,7 +115,7 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 		Entry(
 			"should return sFnUpdateStatus when GardenCluster CR exists and is in ready state and condition is not set",
 			testCtx,
-			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(testGardenerCRStateReady), withMockedMetrics()),
+			must(newFakeFSM, withTestFinalizer, withTestSchemeAndObjects(testGardenerCRStateReady), withMockedMetrics(), withDefaultReconcileDuration()),
 			&systemState{instance: *inputRtWithLabels, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),

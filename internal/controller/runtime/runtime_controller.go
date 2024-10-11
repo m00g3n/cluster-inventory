@@ -84,6 +84,7 @@ func NewRuntimeReconciler(mgr ctrl.Manager, shootClient client.Client, logger lo
 
 func (r *RuntimeReconciler) UpdateShootClient(client client.Client) {
 	r.ShootClient = client
+	r.Cfg.AuditLogging.UpdateShootClient(client)
 }
 
 // SetupWithManager sets up the controller with the Manager.

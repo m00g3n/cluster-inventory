@@ -21,22 +21,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const (
-	gardenerRequeueDuration     = 15 * time.Second
-	controlPlaneRequeueDuration = 10 * time.Second
-)
-
 type stateFn func(context.Context, *fsm, *systemState) (stateFn, *ctrl.Result, error)
 type writerGetter = func(filePath string) (io.Writer, error)
 
 // runtime reconciler specific configuration
 type RCCfg struct {
-	Finalizer         string
-	PVCPath           string
-	ShootNamesapace   string
-	AuditLogMandatory bool
-	Metrics           metrics.Metrics
-	AuditLogging      auditlogging.AuditLogging
+	GardenerRequeueDuration     time.Duration
+	ControlPlaneRequeueDuration time.Duration
+	Finalizer                   string
+	PVCPath                     string
+	ShootNamesapace             string
+	AuditLogMandatory           bool
+	Metrics                     metrics.Metrics
+	AuditLogging                auditlogging.AuditLogging
 	shoot.ConverterConfig
 }
 

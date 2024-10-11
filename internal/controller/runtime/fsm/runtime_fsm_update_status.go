@@ -24,7 +24,7 @@ func sFnUpdateStatus(result *ctrl.Result, err error) stateFn {
 			return nil, nil, err
 		}
 
-		m.Metrics.SetRuntimeStates(s.instance)
+		// m.Metrics.SetRuntimeStates(s.instance)
 		next := sFnEmmitEventfunc(nil, result, err)
 		return next, nil, nil
 	}

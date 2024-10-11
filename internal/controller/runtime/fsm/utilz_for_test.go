@@ -3,6 +3,7 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"time"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -20,6 +21,9 @@ import (
 )
 
 type fakeFSMOpt func(*fsm) error
+
+const defaultControlPlaneRequeueDuration = 10 * time.Second
+const defaultGardenerRequeueDuration = 15 * time.Second
 
 var (
 	errFailedToCreateFakeFSM = fmt.Errorf("failed to create fake FSM")
@@ -55,6 +59,14 @@ var (
 	withMetrics = func(m metrics.Metrics) fakeFSMOpt {
 		return func(fsm *fsm) error {
 			fsm.Metrics = m
+			return nil
+		}
+	}
+
+	withDefaultReconcileDuration = func() fakeFSMOpt {
+		return func(fsm *fsm) error {
+			fsm.ControlPlaneRequeueDuration = defaultControlPlaneRequeueDuration
+			fsm.GardenerRequeueDuration = defaultGardenerRequeueDuration
 			return nil
 		}
 	}
@@ -126,6 +138,9 @@ type stubAuditLogging struct {
 
 func (s *stubAuditLogging) Enable(ctx context.Context, shoot *gardener.Shoot) (bool, error) {
 	return s.isEnabled, s.err
+}
+
+func (s *stubAuditLogging) UpdateShootClient(client client.Client) {
 }
 
 func newSetupStateForTest(sfn stateFn, opts ...func(*systemState) error) stateFn {

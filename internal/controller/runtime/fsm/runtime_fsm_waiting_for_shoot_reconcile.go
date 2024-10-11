@@ -22,7 +22,7 @@ func sFnWaitForShootReconcile(_ context.Context, m *fsm, s *systemState) (stateF
 			"Unknown",
 			"Shoot update is in progress")
 
-		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
+		return updateStatusAndRequeueAfter(m.RCCfg.GardenerRequeueDuration)
 
 	case gardener.LastOperationStateFailed:
 		var reason ErrReason

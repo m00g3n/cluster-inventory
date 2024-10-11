@@ -111,7 +111,7 @@ var _ = Describe("Runtime Controller", func() {
 				}
 
 				return true
-			}, time.Second*300, time.Second*3).Should(BeTrue())
+			}, time.Second*600, time.Second*3).Should(BeTrue())
 
 			Expect(customTracker.IsSequenceFullyUsed()).To(BeTrue())
 

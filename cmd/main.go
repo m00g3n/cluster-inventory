@@ -64,6 +64,8 @@ func init() {
 const defaultMinimalRotationTimeRatio = 0.6
 const defaultExpirationTime = 24 * time.Hour
 const defaultGardenerRequestTimeout = 60 * time.Second
+const defaultControlPlaneRequeueDuration = 10 * time.Second
+const defaultGardenerRequeueDuration = 15 * time.Second
 
 func main() {
 	var metricsAddr string
@@ -179,12 +181,14 @@ func main() {
 	}
 
 	cfg := fsm.RCCfg{
-		Finalizer:         infrastructuremanagerv1.Finalizer,
-		ShootNamesapace:   gardenerNamespace,
-		ConverterConfig:   converterConfig,
-		AuditLogMandatory: auditLogMandatory,
-		Metrics:           metrics,
-		AuditLogging:      auditlogging.NewAuditLogging(converterConfig.AuditLog.TenantConfigPath, converterConfig.AuditLog.PolicyConfigMapName, gardenerClient),
+		GardenerRequeueDuration:     defaultGardenerRequeueDuration,
+		ControlPlaneRequeueDuration: defaultControlPlaneRequeueDuration,
+		Finalizer:                   infrastructuremanagerv1.Finalizer,
+		ShootNamesapace:             gardenerNamespace,
+		ConverterConfig:             converterConfig,
+		AuditLogMandatory:           auditLogMandatory,
+		Metrics:                     metrics,
+		AuditLogging:                auditlogging.NewAuditLogging(converterConfig.AuditLog.TenantConfigPath, converterConfig.AuditLog.PolicyConfigMapName, gardenerClient),
 	}
 	if shootSpecDumpEnabled {
 		cfg.PVCPath = "/testdata/kim"

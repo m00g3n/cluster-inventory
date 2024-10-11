@@ -17,14 +17,14 @@ func sFnSelectShootProcessing(_ context.Context, m *fsm, s *systemState) (stateF
 	if s.shoot.Spec.DNS == nil || s.shoot.Spec.DNS.Domain == nil {
 		msg := fmt.Sprintf("DNS Domain is not set yet for shoot: %s, scheduling for retry", s.shoot.Name)
 		m.log.Info(msg)
-		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
+		return updateStatusAndRequeueAfter(m.RCCfg.GardenerRequeueDuration)
 	}
 
 	lastOperation := s.shoot.Status.LastOperation
 	if lastOperation == nil {
 		msg := fmt.Sprintf("Last operation is nil for shoot: %s, scheduling for retry", s.shoot.Name)
 		m.log.Info(msg)
-		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
+		return updateStatusAndRequeueAfter(m.RCCfg.GardenerRequeueDuration)
 	}
 
 	if s.instance.Status.State == imv1.RuntimeStateReady && lastOperation.State == gardener.LastOperationStateSucceeded {

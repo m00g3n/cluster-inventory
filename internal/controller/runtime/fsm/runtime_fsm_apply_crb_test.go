@@ -25,6 +25,7 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 	withMockedMetrics := func() fakeFSMOpt {
 		m := &mocks.Metrics{}
 		m.On("SetRuntimeStates", mock.Anything).Return()
+		m.On("CleanUpRuntimeGauge", mock.Anything).Return()
 		m.On("IncRuntimeFSMStopCounter").Return()
 		return withMetrics(m)
 	}
@@ -119,7 +120,7 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 		return nil
 	}
 
-	DescribeTable("sFnAppluClusterRoleBindings",
+	DescribeTable("sFnApplyClusterRoleBindings",
 		func(tc tcApplySfn) {
 			// initialize test data if required
 			Expect(tc.init()).ShouldNot(HaveOccurred())
@@ -150,6 +151,7 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 				withFn(sFnApplyClusterRoleBindingsStateSetup),
 				withFakeEventRecorder(1),
 				withMockedMetrics(),
+				withDefaultReconcileDuration(),
 			),
 			setup: defaultSetup,
 		}),
@@ -167,6 +169,7 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 				withFn(sFnApplyClusterRoleBindingsStateSetup),
 				withFakeEventRecorder(1),
 				withMockedMetrics(),
+				withDefaultReconcileDuration(),
 			),
 			setup: defaultSetup,
 		}),
@@ -183,6 +186,7 @@ var _ = Describe(`runtime_fsm_apply_crb`, Label("applyCRB"), func() {
 				withFn(sFnApplyClusterRoleBindingsStateSetup),
 				withFakeEventRecorder(1),
 				withMockedMetrics(),
+				withDefaultReconcileDuration(),
 			),
 			setup: func(f *fsm) error {
 				GetShootClient = func(

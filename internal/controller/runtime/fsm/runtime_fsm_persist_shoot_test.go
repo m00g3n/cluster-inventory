@@ -3,6 +3,7 @@ package fsm
 import (
 	"bytes"
 	"context"
+	"github.com/stretchr/testify/mock"
 	"io"
 	"time"
 
@@ -24,6 +25,14 @@ var _ = Describe("KIM sFnPersist", func() {
 		}
 	}()
 
+	withMockedMetrics := func() fakeFSMOpt {
+		m := &mocks.Metrics{}
+		m.On("SetRuntimeStates", mock.Anything).Return()
+		m.On("CleanUpRuntimeGauge", mock.Anything).Return()
+		m.On("IncRuntimeFSMStopCounter").Return()
+		return withMetrics(m)
+	}
+
 	testCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
@@ -32,7 +41,7 @@ var _ = Describe("KIM sFnPersist", func() {
 
 	It("should persist shoot data", func() {
 		next, _, err := sFnDumpShootSpec(testCtx,
-			must(newFakeFSM, withStorageWriter(testWriterGetter), withConverterConfig(shoot.ConverterConfig{}), withMetrics(&mocks.Metrics{})),
+			must(newFakeFSM, withStorageWriter(testWriterGetter), withConverterConfig(shoot.ConverterConfig{}), withMockedMetrics(), withDefaultReconcileDuration()),
 			&systemState{shoot: &testing.ShootNoDNS, instance: *expectedRuntime},
 		)
 		Expect(err).To(BeNil())
