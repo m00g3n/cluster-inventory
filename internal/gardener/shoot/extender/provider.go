@@ -90,11 +90,14 @@ func getZones(workers []gardener.Worker) []string {
 	var zones []string
 
 	for _, worker := range workers {
-		zones = append(zones, worker.Zones...)
+		for _, zone := range worker.Zones {
+			if !slices.Contains(zones, zone) {
+				zones = append(zones, zone)
+			}
+		}
 	}
-	slices.Sort(zones)
 
-	return slices.Compact(zones)
+	return zones
 }
 
 func setWorkerConfig(provider *gardener.Provider, providerType string, enableIMDSv2 bool) error {
