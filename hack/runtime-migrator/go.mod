@@ -4,8 +4,8 @@ go 1.23.1
 
 require (
 	github.com/gardener/gardener v1.100.0
-	github.com/kyma-project/infrastructure-manager v0.0.0-20241009045946-e3051118000c
-	github.com/onsi/gomega v1.34.1
+	github.com/kyma-project/infrastructure-manager v0.0.0-20241010165136-c9d296aadebd
+	github.com/kyma-project/infrastructure-manager/hack/shoot-comparator v0.0.0-20241010165136-c9d296aadebd
 	github.com/pkg/errors v0.9.1
 	k8s.io/api v0.31.1
 	k8s.io/apimachinery v0.31.1
@@ -39,6 +39,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/onsi/gomega v1.34.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect

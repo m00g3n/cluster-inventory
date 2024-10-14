@@ -2,7 +2,7 @@ package comparator
 
 import (
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-project/infrastructure-manager/hack/runtime-migrator-app/internal/shoot"
+	"github.com/kyma-project/infrastructure-manager/hack/shoot-comparator/pkg/shoot"
 )
 
 type Result struct {
