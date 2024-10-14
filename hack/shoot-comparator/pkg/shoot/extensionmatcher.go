@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/kyma-project/infrastructure-manager/hack/shoot-comparator/pkg/errors"
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 )
@@ -45,7 +46,7 @@ func getExtension(i interface{}) ([]v1beta1.Extension, error) {
 		return v, nil
 
 	default:
-		return []v1beta1.Extension{}, fmt.Errorf(`%w: %s`, errInvalidType, reflect.TypeOf(v))
+		return []v1beta1.Extension{}, fmt.Errorf(`%w: %s`, errors.ErrInvalidType, reflect.TypeOf(v))
 	}
 }
 
