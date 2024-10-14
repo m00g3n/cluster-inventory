@@ -86,7 +86,7 @@ func (m metricsImpl) SetRuntimeStates(runtime v1.Runtime) {
 
 		var reason = "No value"
 		if size > 0 {
-			reason = runtime.Status.Conditions[size-1].Reason
+			reason = runtime.Status.Conditions[size-1].Message
 		}
 
 		m.CleanUpRuntimeGauge(runtimeID)
