@@ -93,13 +93,14 @@ func main() {
 		shootFromConverter, err := converter.ToShoot(runtime)
 		if err != nil {
 			log.Print("Error during converting generated RuntimeCR to Shoot object - ", err)
-			return
+			continue
 		}
-		log.Printf("Converted Shoot: %v\n", shootFromConverter)
+
 		// compare Gardener shoot with shoot from converter
 		result, err := comparator.CompareShoots(shoot, shootFromConverter)
 		if err != nil {
-			return
+			log.Print("Error during comparing shoots - ", err)
+			continue
 		}
 
 		saveShootToFile("/tmp/"+shoot.Name+"/original_shoot.yaml", shoot)
@@ -109,13 +110,14 @@ func main() {
 		resultsDir, err := comparator.SaveComparisonReport(result, cfg.OutputPath, shoot.Name)
 		if err != nil {
 			log.Print("Failed to save comparison report - ", err.Error())
+			continue
 		} else {
 			log.Printf("Results stored in %q", resultsDir)
 		}
 
 		if !result.Equal {
 			log.Print("Generated Shoot and Shoot from converter are not equal, stopping migration of shoot: ", shoot.Name)
-			return
+			continue
 		}
 
 		err = saveRuntime(migratorContext, cfg, runtime, kcpClient)
