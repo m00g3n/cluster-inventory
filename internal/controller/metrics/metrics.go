@@ -68,11 +68,11 @@ func NewMetrics() Metrics {
 				Name:      RuntimeStateMetricName,
 				Help:      "Exposes current Status.state for Runtime CRs",
 			}, []string{runtimeIDKeyName, shootNameIDKeyName, provider, state}),
-		//runtimeFSMUnexpectedStopsCnt: prometheus.NewCounter(
-		//	prometheus.CounterOpts{
-		//		Name: RuntimeFSMStopMetricName,
-		//		Help: "Exposes the number of unexpected state machine stop events",
-		//	}),
+		runtimeFSMUnexpectedStopsCnt: prometheus.NewCounter(
+			prometheus.CounterOpts{
+				Name: RuntimeFSMStopMetricName,
+				Help: "Exposes the number of unexpected state machine stop events",
+			}),
 	}
 	ctrlMetrics.Registry.MustRegister(m.gardenerClustersStateGaugeVec, m.kubeconfigExpirationGauge, m.runtimeStateGauge, m.runtimeFSMUnexpectedStopsCnt)
 	return m
@@ -98,7 +98,7 @@ func (m metricsImpl) CleanUpRuntimeGauge(runtimeID string) {
 }
 
 func (m metricsImpl) IncRuntimeFSMStopCounter() {
-	//m.runtimeFSMUnexpectedStopsCnt.Inc()
+	m.runtimeFSMUnexpectedStopsCnt.Inc()
 }
 
 func (m metricsImpl) SetGardenerClusterStates(cluster v1.GardenerCluster) {
