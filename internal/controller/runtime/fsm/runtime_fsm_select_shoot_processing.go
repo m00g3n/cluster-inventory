@@ -3,6 +3,8 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/extender"
+	"strconv"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
@@ -27,7 +29,14 @@ func sFnSelectShootProcessing(_ context.Context, m *fsm, s *systemState) (stateF
 		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 	}
 
-	if s.instance.Status.State == imv1.RuntimeStateReady && lastOperation.State == gardener.LastOperationStateSucceeded {
+	patchShoot, err := shouldPatchShoot(s.instance, *s.shoot)
+	if err != nil {
+		msg := fmt.Sprintf("Failed to get applied generation for shoot: %s, scheduling for retry", s.shoot.Name)
+		m.log.Error(err, msg)
+		return updateStatusAndStop()
+	}
+
+	if patchShoot {
 		// only allow to patch if full previous cycle was completed
 		m.log.Info("Gardener shoot already exists, updating")
 		return switchState(sFnPatchExistingShoot)
@@ -43,4 +52,20 @@ func sFnSelectShootProcessing(_ context.Context, m *fsm, s *systemState) (stateF
 
 	m.log.Info("Unknown shoot operation type, exiting with no retry")
 	return stop()
+}
+
+func shouldPatchShoot(runtime imv1.Runtime, shoot gardener.Shoot) (bool, error) {
+	runtimeGeneration := runtime.GetGeneration()
+	appliedGenerationString, found := shoot.GetAnnotations()[extender.ShootRuntimeGenerationAnnotaion]
+
+	if !found {
+		return true, nil
+	}
+
+	appliedGeneration, err := strconv.ParseInt(appliedGenerationString, 10, 64)
+	if err != nil {
+		return false, err
+	}
+
+	return appliedGeneration < runtimeGeneration, nil
 }
