@@ -56,7 +56,7 @@ func sFnSelectShootProcessing(_ context.Context, m *fsm, s *systemState) (stateF
 
 func shouldPatchShoot(runtime imv1.Runtime, shoot gardener.Shoot) (bool, error) {
 	runtimeGeneration := runtime.GetGeneration()
-	appliedGenerationString, found := shoot.GetAnnotations()[extender.ShootRuntimeGenerationAnnotaion]
+	appliedGenerationString, found := shoot.GetAnnotations()[extender.ShootRuntimeGenerationAnnotation]
 
 	if !found {
 		return true, nil
