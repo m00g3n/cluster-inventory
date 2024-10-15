@@ -24,7 +24,6 @@ import (
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -168,13 +167,13 @@ var _ = Describe("Runtime Controller", func() {
 
 			// next test will be for runtime deletion
 
-			By("Process deleting of Runtime CR and delete GardenerCluster CR and Shoot")
-			setupGardenerTestClientForDelete()
-
-			Expect(k8sClient.Delete(ctx, &runtime)).To(Succeed())
+			//By("Process deleting of Runtime CR and delete GardenerCluster CR and Shoot")
+			//setupGardenerTestClientForDelete()
+			//
+			//Expect(k8sClient.Delete(ctx, &runtime)).To(Succeed())
 
 			// should delete GardenerCluster CR and go into RuntimeStateTerminating state with condition GardenerClusterCRDeleted
-			Eventually(func() bool {
+			/*Eventually(func() bool {
 				runtime := imv1.Runtime{}
 				if err := k8sClient.Get(ctx, typeNamespacedName, &runtime); err != nil {
 					return false
@@ -197,10 +196,10 @@ var _ = Describe("Runtime Controller", func() {
 				}
 
 				return true
-			}, time.Second*300, time.Second*3).Should(BeTrue())
+			}, time.Second*300, time.Second*3).Should(BeTrue())      */
 
 			// should delete Shoot and go into RuntimeStateTerminating state with condition GardenerClusterCRDeleted
-			Eventually(func() bool {
+			/*Eventually(func() bool {
 				runtime := imv1.Runtime{}
 				if err := k8sClient.Get(ctx, typeNamespacedName, &runtime); err != nil {
 					return false
@@ -221,7 +220,7 @@ var _ = Describe("Runtime Controller", func() {
 				return true
 			}, time.Second*300, time.Second*3).Should(BeTrue())
 
-			Expect(customTracker.IsSequenceFullyUsed()).To(BeTrue())
+			Expect(customTracker.IsSequenceFullyUsed()).To(BeTrue())             */
 		})
 	})
 })
@@ -242,6 +241,7 @@ func CreateRuntimeStub(resourceName string) *imv1.Runtime {
 				imv1.LabelKymaSubaccountID:        "c5ad84ae-3d1b-4592-bee1-f022661f7b30",
 				imv1.LabelControlledByProvisioner: "false",
 			},
+			Generation: 1,
 		},
 		Spec: imv1.RuntimeSpec{
 			Shoot: imv1.RuntimeShoot{

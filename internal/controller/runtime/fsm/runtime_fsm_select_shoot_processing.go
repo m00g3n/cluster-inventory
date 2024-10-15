@@ -37,7 +37,6 @@ func sFnSelectShootProcessing(_ context.Context, m *fsm, s *systemState) (stateF
 	}
 
 	if patchShoot {
-		// only allow to patch if full previous cycle was completed
 		m.log.Info("Gardener shoot already exists, updating")
 		return switchState(sFnPatchExistingShoot)
 	}

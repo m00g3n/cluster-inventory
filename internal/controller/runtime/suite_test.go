@@ -224,6 +224,7 @@ func fixShootsSequenceForProvisioning(shoot *gardener_api.Shoot) []*gardener_api
 
 func fixShootsSequenceForUpdate(shoot *gardener_api.Shoot) []*gardener_api.Shoot {
 	pendingShoot := shoot.DeepCopy()
+	pendingShoot.Generation++
 
 	addAuditLogConfigToShoot(pendingShoot)
 
