@@ -3,6 +3,7 @@ package extender
 import (
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/config"
 	"k8s.io/utils/ptr"
 )
 
@@ -10,26 +11,35 @@ const (
 	OidcExtensionType = "shoot-oidc-service"
 )
 
-func ExtendWithOIDC(runtime imv1.Runtime, shoot *gardener.Shoot) error {
-	oidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig
+func shouldDefaultOidcConfig(config gardener.OIDCConfig) bool {
+	return config.ClientID == nil && config.IssuerURL == nil
+}
 
-	if CanEnableExtension(runtime) {
-		setOIDCExtension(shoot)
+func NewOidcExtender(oidcProvider config.OidcProvider) func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
+	return func(runtime imv1.Runtime, shoot *gardener.Shoot) error {
+		if CanEnableExtension(runtime) {
+			setOIDCExtension(shoot)
+		}
+
+		oidcConfig := runtime.Spec.Shoot.Kubernetes.KubeAPIServer.OidcConfig
+		if shouldDefaultOidcConfig(oidcConfig) {
+			oidcConfig = gardener.OIDCConfig{
+				ClientID:       &oidcProvider.ClientID,
+				GroupsClaim:    &oidcProvider.GroupsClaim,
+				IssuerURL:      &oidcProvider.IssuerURL,
+				SigningAlgs:    oidcProvider.SigningAlgs,
+				UsernameClaim:  &oidcProvider.UsernameClaim,
+				UsernamePrefix: &oidcProvider.UsernamePrefix,
+			}
+		}
+		setKubeAPIServerOIDCConfig(shoot, oidcConfig)
+
+		return nil
 	}
-	setKubeAPIServerOIDCConfig(shoot, oidcConfig)
-
-	return nil
 }
 
 func CanEnableExtension(runtime imv1.Runtime) bool {
-	canEnable := true
-	createdByMigrator := runtime.Labels["operator.kyma-project.io/created-by-migrator"]
-
-	if createdByMigrator == "true" {
-		canEnable = false
-	}
-
-	return canEnable
+	return runtime.Labels["operator.kyma-project.io/created-by-migrator"] != "true"
 }
 
 func setOIDCExtension(shoot *gardener.Shoot) {
