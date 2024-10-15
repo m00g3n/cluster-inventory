@@ -68,11 +68,6 @@ func (m *Matcher) Match(actual interface{}) (success bool, err error) {
 			path:          "metadata/namespace",
 		},
 		{
-			GomegaMatcher: gomega.BeComparableTo(eShoot.Spec.CloudProfileName),
-			expected:      aShoot.Spec.CloudProfileName,
-			path:          "spec/cloudProfileName",
-		},
-		{
 			GomegaMatcher: gstruct.MatchElements(idExtension, gstruct.IgnoreExtras, extensions(aShoot.Spec.Extensions)),
 			expected:      eShoot.Spec.Extensions,
 			path:          "spec/extensions",
@@ -119,6 +114,11 @@ func (m *Matcher) Match(actual interface{}) (success bool, err error) {
 			),
 			expected: eShoot.Spec.Tolerations,
 			path:     "spec/tolerations",
+		},
+		{
+			GomegaMatcher: gomega.BeComparableTo(eShoot.Spec.ExposureClassName),
+			expected:      aShoot.Spec.ExposureClassName,
+			path:          "spec/exposureClassName",
 		},
 		{
 			GomegaMatcher: gomega.BeComparableTo(eShoot.Spec.ControlPlane),

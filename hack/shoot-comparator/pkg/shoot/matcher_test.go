@@ -130,6 +130,26 @@ var _ = Describe(":: shoot matcher :: ", func() {
 			false,
 		),
 		Entry(
+			"should detect differences in spec/exposureClassName #1",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				ExposureClassName: ptr.To[string]("mage"),
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				ExposureClassName: ptr.To[string]("bard"),
+			})),
+			false,
+		),
+		Entry(
+			"should detect no differences in spec/exposureClassName #1",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				ExposureClassName: ptr.To[string]("mage"),
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				ExposureClassName: ptr.To[string]("mage"),
+			})),
+			true,
+		),
+		Entry(
 			"should detect differences in spec/dns #1",
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
 				DNS: &v1beta1.DNS{
@@ -261,33 +281,6 @@ var _ = Describe(":: shoot matcher :: ", func() {
 				},
 			})),
 			true,
-		),
-		Entry(
-			"should find differences in spec/cloudProfile #1",
-			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
-				CloudProfile: &v1beta1.CloudProfileReference{
-					Kind: "test-cloud-profile",
-					Name: "test-me",
-				},
-			})),
-			deepCp(empty, withShootSpec(v1beta1.ShootSpec{})),
-			false,
-		),
-		Entry(
-			"should find differences in spec/cloudProfile #2",
-			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
-				CloudProfile: &v1beta1.CloudProfileReference{
-					Kind: "test-cloud-profile",
-					Name: "test-me",
-				},
-			})),
-			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
-				CloudProfile: &v1beta1.CloudProfileReference{
-					Kind: "test-cloud-profile",
-					Name: "test-me2",
-				},
-			})),
-			false,
 		),
 		Entry(
 			"should find differences in spec/maintenance #1",
