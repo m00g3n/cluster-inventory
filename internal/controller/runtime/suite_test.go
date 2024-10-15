@@ -19,7 +19,10 @@ package runtime
 import (
 	"context"
 	"encoding/json"
+	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"path/filepath"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"testing"
 	"time"
 
@@ -167,7 +170,20 @@ func setupGardenerClientWithSequence(shoots []*gardener_api.Shoot, seeds []*gard
 
 	tracker := clienttesting.NewObjectTracker(clientScheme, serializer.NewCodecFactory(clientScheme).UniversalDecoder())
 	customTracker = NewCustomTracker(tracker, shoots, seeds)
-	gardenerTestClient = fake.NewClientBuilder().WithScheme(clientScheme).WithObjectTracker(customTracker).Build()
+	gardenerTestClient = fake.NewClientBuilder().WithScheme(clientScheme).WithObjectTracker(customTracker).
+		WithInterceptorFuncs(interceptor.Funcs{Patch: func(ctx context.Context, clnt client.WithWatch, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
+			// Apply patches are supposed to upsert, but fake client fails if the object doesn't exist,
+			// Update the generation to simulate the object being updated using interceptor function.
+			if patch.Type() != types.ApplyPatchType {
+				return clnt.Patch(ctx, obj, patch, opts...)
+			}
+			shoot, ok := obj.(*gardener_api.Shoot)
+			if !ok {
+				return errors.New("failed to cast object to shoot")
+			}
+			shoot.Generation++
+			return nil
+		}}).Build()
 	runtimeReconciler.UpdateShootClient(gardenerTestClient)
 }
 
@@ -223,23 +239,27 @@ func fixShootsSequenceForProvisioning(shoot *gardener_api.Shoot) []*gardener_api
 }
 
 func fixShootsSequenceForUpdate(shoot *gardener_api.Shoot) []*gardener_api.Shoot {
-	pendingShoot := shoot.DeepCopy()
-	pendingShoot.Generation++
+	existingShoot := shoot.DeepCopy()
+	existingShoot.Spec.SeedName = ptr.To("test-seed")
 
-	addAuditLogConfigToShoot(pendingShoot)
-
-	pendingShoot.Spec.DNS = &gardener_api.DNS{
-		Domain: ptr.To("test.domain"),
-	}
-
-	pendingShoot.Status = gardener_api.ShootStatus{
+	existingShoot.Status = gardener_api.ShootStatus{
 		LastOperation: &gardener_api.LastOperation{
 			Type:  gardener_api.LastOperationTypeReconcile,
-			State: gardener_api.LastOperationStatePending,
+			State: gardener_api.LastOperationStateSucceeded,
 		},
 	}
 
-	pendingShoot.Spec.SeedName = ptr.To("test-seed")
+	existingShoot.Spec.DNS = &gardener_api.DNS{
+		Domain: ptr.To("test.domain"),
+	}
+
+	addAuditLogConfigToShoot(existingShoot)
+
+	pendingShoot := existingShoot.DeepCopy()
+
+	pendingShoot.ObjectMeta.Annotations["infrastructuremanager.kyma-project.io/runtime-generation"] = "2"
+
+	pendingShoot.Status.LastOperation.State = gardener_api.LastOperationStatePending
 
 	processingShoot := pendingShoot.DeepCopy()
 
@@ -251,7 +271,7 @@ func fixShootsSequenceForUpdate(shoot *gardener_api.Shoot) []*gardener_api.Shoot
 
 	// processedShoot := processingShoot.DeepCopy() // will add specific data later
 
-	return []*gardener_api.Shoot{pendingShoot, processingShoot, readyShoot, readyShoot}
+	return []*gardener_api.Shoot{existingShoot, pendingShoot, processingShoot, readyShoot, readyShoot}
 }
 
 func fixShootsSequenceForDelete(shoot *gardener_api.Shoot) []*gardener_api.Shoot {

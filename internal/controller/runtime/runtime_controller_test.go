@@ -18,6 +18,7 @@ package runtime
 
 import (
 	"context"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"time"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -166,14 +167,13 @@ var _ = Describe("Runtime Controller", func() {
 			Expect(customTracker.IsSequenceFullyUsed()).To(BeTrue())
 
 			// next test will be for runtime deletion
+			By("Process deleting of Runtime CR and delete GardenerCluster CR and Shoot")
+			setupGardenerTestClientForDelete()
 
-			//By("Process deleting of Runtime CR and delete GardenerCluster CR and Shoot")
-			//setupGardenerTestClientForDelete()
-			//
-			//Expect(k8sClient.Delete(ctx, &runtime)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, &runtime)).To(Succeed())
 
 			// should delete GardenerCluster CR and go into RuntimeStateTerminating state with condition GardenerClusterCRDeleted
-			/*Eventually(func() bool {
+			Eventually(func() bool {
 				runtime := imv1.Runtime{}
 				if err := k8sClient.Get(ctx, typeNamespacedName, &runtime); err != nil {
 					return false
@@ -196,10 +196,10 @@ var _ = Describe("Runtime Controller", func() {
 				}
 
 				return true
-			}, time.Second*300, time.Second*3).Should(BeTrue())      */
+			}, time.Second*300, time.Second*3).Should(BeTrue())
 
 			// should delete Shoot and go into RuntimeStateTerminating state with condition GardenerClusterCRDeleted
-			/*Eventually(func() bool {
+			Eventually(func() bool {
 				runtime := imv1.Runtime{}
 				if err := k8sClient.Get(ctx, typeNamespacedName, &runtime); err != nil {
 					return false
@@ -220,7 +220,7 @@ var _ = Describe("Runtime Controller", func() {
 				return true
 			}, time.Second*300, time.Second*3).Should(BeTrue())
 
-			Expect(customTracker.IsSequenceFullyUsed()).To(BeTrue())             */
+			Expect(customTracker.IsSequenceFullyUsed()).To(BeTrue())
 		})
 	})
 })
