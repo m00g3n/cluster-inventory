@@ -29,7 +29,7 @@ func sFnSelectShootProcessing(_ context.Context, m *fsm, s *systemState) (stateF
 		return updateStatusAndRequeueAfter(gardenerRequeueDuration)
 	}
 
-	patchShoot, err := shouldPatchShoot(s.instance, *s.shoot)
+	patchShoot, err := shouldPatchShoot(&s.instance, s.shoot)
 	if err != nil {
 		msg := fmt.Sprintf("Failed to get applied generation for shoot: %s, scheduling for retry", s.shoot.Name)
 		m.log.Error(err, msg)
@@ -54,7 +54,7 @@ func sFnSelectShootProcessing(_ context.Context, m *fsm, s *systemState) (stateF
 	return stop()
 }
 
-func shouldPatchShoot(runtime imv1.Runtime, shoot gardener.Shoot) (bool, error) {
+func shouldPatchShoot(runtime *imv1.Runtime, shoot *gardener.Shoot) (bool, error) {
 	runtimeGeneration := runtime.GetGeneration()
 	appliedGenerationString, found := shoot.GetAnnotations()[extender.ShootRuntimeGenerationAnnotation]
 
