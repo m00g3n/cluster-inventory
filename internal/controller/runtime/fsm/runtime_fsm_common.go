@@ -21,8 +21,7 @@ func updateStatusAndStop() (stateFn, *ctrl.Result, error) {
 	return sFnUpdateStatus(nil, nil), nil, nil
 }
 
-func updateStatusAndStopWithError(metrics metrics.Metrics, err error) (stateFn, *ctrl.Result, error) {
-	metrics.IncRuntimeFSMStopCounter()
+func updateStatusAndStopWithError(err error) (stateFn, *ctrl.Result, error) {
 	return sFnUpdateStatus(nil, err), nil, nil
 }
 

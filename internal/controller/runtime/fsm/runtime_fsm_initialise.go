@@ -85,7 +85,7 @@ func addFinalizerAndRequeue(ctx context.Context, m *fsm, s *systemState) (stateF
 
 	err := m.Update(ctx, &s.instance)
 	if err != nil {
-		return updateStatusAndStopWithError(m.Metrics, err)
+		return updateStatusAndStopWithError(err)
 	}
 	return requeue()
 }
@@ -96,7 +96,7 @@ func removeFinalizerAndStop(ctx context.Context, m *fsm, s *systemState) (stateF
 	controllerutil.RemoveFinalizer(&s.instance, m.Finalizer)
 	err := m.Update(ctx, &s.instance)
 	if err != nil {
-		return updateStatusAndStopWithError(m.Metrics, err)
+		return updateStatusAndStopWithError(err)
 	}
 
 	// remove from metrics

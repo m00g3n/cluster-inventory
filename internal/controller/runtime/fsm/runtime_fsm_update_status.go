@@ -9,6 +9,10 @@ import (
 
 func sFnUpdateStatus(result *ctrl.Result, err error) stateFn {
 	return func(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
+		if err != nil {
+			m.Metrics.IncRuntimeFSMStopCounter()
+		}
+
 		// make sure there is a change in status
 		if reflect.DeepEqual(s.instance.Status, s.snapshot) {
 			return nil, result, err
