@@ -3,6 +3,7 @@ package comparator
 import (
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/kyma-project/infrastructure-manager/hack/shoot-comparator/pkg/shoot"
+	"github.com/pkg/errors"
 )
 
 type Result struct {
@@ -42,8 +43,11 @@ func compare(leftShoot, rightShoot v1beta1.Shoot) ([]Difference, error) {
 	}
 
 	if !equal {
+		if leftShoot.Name != rightShoot.Name {
+			return nil, errors.New("shoot names are different, stopping comparison")
+		}
 		diff := Difference{
-			ShootName:  leftShoot.Name, // assumption that leftShoot and rightShoot have the same name
+			ShootName:  leftShoot.Name,
 			LeftShoot:  leftShoot,
 			RightShoot: rightShoot,
 			Message:    matcher.FailureMessage(nil),
