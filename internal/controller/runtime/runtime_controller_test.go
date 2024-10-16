@@ -18,13 +18,13 @@ package runtime
 
 import (
 	"context"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"time"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
@@ -178,7 +178,6 @@ var _ = Describe("Runtime Controller", func() {
 			Expect(customTracker.IsSequenceFullyUsed()).To(BeTrue())
 
 			// next test will be for runtime deletion
-
 			By("Process deleting of Runtime CR and delete GardenerCluster CR and Shoot")
 			setupGardenerTestClientForDelete()
 
@@ -253,6 +252,7 @@ func CreateRuntimeStub(resourceName string) *imv1.Runtime {
 				imv1.LabelKymaSubaccountID:        "c5ad84ae-3d1b-4592-bee1-f022661f7b30",
 				imv1.LabelControlledByProvisioner: "false",
 			},
+			Generation: 1,
 		},
 		Spec: imv1.RuntimeSpec{
 			Shoot: imv1.RuntimeShoot{
