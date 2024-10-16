@@ -58,7 +58,7 @@ func testInvalidArgs(actual, expected interface{}) {
 func testResults(actual, expected interface{}, expectedMatch bool) {
 	matcher := NewMatcher(expected)
 	actualMatch, err := matcher.Match(actual)
-	Expect(err).ShouldNot(HaveOccurred())
+	Expect(err).ShouldNot(HaveOccurred(), err)
 	Expect(actualMatch).Should(Equal(expectedMatch), matcher.FailureMessage(actual))
 }
 
@@ -922,6 +922,112 @@ var _ = Describe(":: shoot matcher :: ", func() {
 			false,
 		),
 		Entry(
+			"should find differences in spec/provider/workers #3",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					Workers: []v1beta1.Worker{
+						{
+							Name: "iTwurkz",
+							Annotations: map[string]string{
+								"test":   "me",
+								"dżułel": "wuz@here",
+							},
+						},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					Workers: []v1beta1.Worker{
+						{
+							Name: "iTwurkz",
+							Annotations: map[string]string{
+								"test": "me",
+							},
+						},
+					},
+				},
+			})),
+			false,
+		),
+		Entry(
+			"should find differences in spec/provider/workers #4",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					Workers: []v1beta1.Worker{
+						{
+							Name: "iTwurkz",
+						},
+						{
+							Name: "iTwurkz2",
+						},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					Workers: []v1beta1.Worker{
+						{
+							Name: "iTwurkz",
+						},
+					},
+				},
+			})),
+			false,
+		),
+		Entry(
+			"should find differences in spec/provider/workers #5",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					Workers: []v1beta1.Worker{
+						{
+							Name: "iTwurkz",
+							Labels: map[string]string{
+								"test":   "me",
+								"dżułel": "wuz@here",
+							},
+						},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					Workers: []v1beta1.Worker{
+						{
+							Name: "iTwurkz",
+							Labels: map[string]string{
+								"test": "me",
+							},
+						},
+					},
+				},
+			})),
+			false,
+		),
+		Entry(
+			"should find differences in spec/provider/workers #6",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					Workers: []v1beta1.Worker{
+						{
+							Name:     "iTwurkz",
+							CABundle: ptr.To[string]("cabundle"),
+						},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					Workers: []v1beta1.Worker{
+						{
+							Name: "iTwurkz",
+						},
+					},
+				},
+			})),
+			false,
+		),
+		Entry(
 			"should find no differences in spec/provider/workers #1",
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
 				Provider: v1beta1.Provider{
@@ -935,6 +1041,13 @@ var _ = Describe(":: shoot matcher :: ", func() {
 									Version: ptr.To[string]("123"),
 								},
 							},
+							Labels: map[string]string{
+								"test": "me",
+							},
+							Annotations: map[string]string{
+								"test": "me",
+							},
+							CABundle: ptr.To[string]("testme"),
 							ProviderConfig: &runtime.RawExtension{
 								Raw: []byte("raw stuff here 1"),
 							},
@@ -954,8 +1067,28 @@ var _ = Describe(":: shoot matcher :: ", func() {
 									Version: ptr.To[string]("123"),
 								},
 							},
+							Labels: map[string]string{
+								"test": "me",
+							},
+							Annotations: map[string]string{
+								"test": "me",
+							},
+							CABundle: ptr.To[string]("testme"),
 							ProviderConfig: &runtime.RawExtension{
 								Raw: []byte("raw stuff here 1"),
+							},
+						},
+						{
+							Name: "iTwurkz2",
+							Machine: v1beta1.Machine{
+								Type: "rtype",
+								Image: &v1beta1.ShootMachineImage{
+									Name:    "image2",
+									Version: ptr.To[string]("456"),
+								},
+							},
+							ProviderConfig: &runtime.RawExtension{
+								Raw: []byte("raw stuff here 2"),
 							},
 						},
 					},
