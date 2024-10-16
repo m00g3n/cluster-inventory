@@ -34,7 +34,7 @@ func sFnConfigureOidc(ctx context.Context, m *fsm, s *systemState) (stateFn, *ct
 	if err != nil {
 		m.log.Error(err, "Failed to create OpenIDConnect resource")
 		updateConditionFailed(&s.instance)
-		return updateStatusAndStopWithError(err)
+		return updateStatusAndStopWithError(m.Metrics, err)
 	}
 
 	s.instance.UpdateStateReady(

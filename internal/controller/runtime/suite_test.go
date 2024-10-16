@@ -27,8 +27,8 @@ import (
 	gardener_oidc "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
-	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics/mocks"
 	"github.com/kyma-project/infrastructure-manager/internal/config"
+	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics/mocks"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
@@ -112,8 +112,6 @@ var _ = BeforeSuite(func() {
 	gardenerTestClient = fake.NewClientBuilder().WithScheme(clientScheme).WithObjectTracker(customTracker).Build()
 
 	convConfig := fixConverterConfigForTests()
-	runtimeReconciler = NewRuntimeReconciler(mgr, gardenerTestClient, logger, fsm.RCCfg{Finalizer: infrastructuremanagerv1.Finalizer, Config: fixConverterConfigForTests()})
-	auditLogging := auditlogging.NewAuditLogging(convConfig.AuditLog.TenantConfigPath, convConfig.AuditLog.PolicyConfigMapName, gardenerTestClient)
 
 	mm := &mocks.Metrics{}
 	mm.On("SetRuntimeStates", mock.Anything).Return()
@@ -122,9 +120,9 @@ var _ = BeforeSuite(func() {
 
 	fsmCfg := fsm.RCCfg{
 		Finalizer:                   infrastructuremanagerv1.Finalizer,
-		Config:             convConfig,
+		Config:                      convConfig,
 		Metrics:                     mm,
-		AuditLogging:                auditLogging,
+		AuditLogging:                auditlogging.NewAuditLogging(convConfig.ConverterConfig.AuditLog.TenantConfigPath, convConfig.ConverterConfig.AuditLog.PolicyConfigMapName, gardenerTestClient),
 		GardenerRequeueDuration:     3 * time.Second,
 		ControlPlaneRequeueDuration: 3 * time.Second,
 	}

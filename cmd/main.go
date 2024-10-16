@@ -164,19 +164,19 @@ func main() {
 	getReader := func() (io.Reader, error) {
 		return os.Open(converterConfigFilepath)
 	}
-	var converterConfig config.Config
-	if err = converterConfig.Load(getReader); err != nil {
+	var config config.Config
+	if err = config.Load(getReader); err != nil {
 		setupLog.Error(err, "unable to load converter configuration")
 		os.Exit(1)
 	}
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
-	if err = validate.Struct(converterConfig); err != nil {
+	if err = validate.Struct(config); err != nil {
 		setupLog.Error(err, "invalid converter configuration")
 		os.Exit(1)
 	}
 
-	err = validateAuditLogConfiguration(converterConfig.ConverterConfig.AuditLog.TenantConfigPath)
+	err = validateAuditLogConfiguration(config.ConverterConfig.AuditLog.TenantConfigPath)
 	if err != nil {
 		setupLog.Error(err, "invalid Audit Log configuration")
 		os.Exit(1)
@@ -187,10 +187,10 @@ func main() {
 		ControlPlaneRequeueDuration: defaultControlPlaneRequeueDuration,
 		Finalizer:                   infrastructuremanagerv1.Finalizer,
 		ShootNamesapace:             gardenerNamespace,
-		Config:                      converterConfig,
+		Config:                      config,
 		AuditLogMandatory:           auditLogMandatory,
 		Metrics:                     metrics,
-		AuditLogging:                auditlogging.NewAuditLogging(converterConfig.AuditLog.TenantConfigPath, converterConfig.AuditLog.PolicyConfigMapName, gardenerClient),
+		AuditLogging:                auditlogging.NewAuditLogging(config.ConverterConfig.AuditLog.TenantConfigPath, config.ConverterConfig.AuditLog.PolicyConfigMapName, gardenerClient),
 	}
 	if shootSpecDumpEnabled {
 		cfg.PVCPath = "/testdata/kim"
