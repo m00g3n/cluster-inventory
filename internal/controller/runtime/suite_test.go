@@ -27,8 +27,10 @@ import (
 	"time"
 
 	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardener_oidc "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
+	"github.com/kyma-project/infrastructure-manager/internal/config"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
@@ -110,7 +112,7 @@ var _ = BeforeSuite(func() {
 	customTracker = NewCustomTracker(tracker, []*gardener_api.Shoot{}, []*gardener_api.Seed{})
 	gardenerTestClient = fake.NewClientBuilder().WithScheme(clientScheme).WithObjectTracker(customTracker).Build()
 
-	runtimeReconciler = NewRuntimeReconciler(mgr, gardenerTestClient, logger, fsm.RCCfg{Finalizer: infrastructuremanagerv1.Finalizer, ConverterConfig: fixConverterConfigForTests()})
+	runtimeReconciler = NewRuntimeReconciler(mgr, gardenerTestClient, logger, fsm.RCCfg{Finalizer: infrastructuremanagerv1.Finalizer, Config: fixConverterConfigForTests()})
 	Expect(runtimeReconciler).NotTo(BeNil())
 	err = runtimeReconciler.SetupWithManager(mgr)
 	Expect(err).To(BeNil())
@@ -122,6 +124,7 @@ var _ = BeforeSuite(func() {
 
 	shootClientScheme := runtime.NewScheme()
 	_ = rbacv1.AddToScheme(shootClientScheme)
+	err = gardener_oidc.AddToScheme(shootClientScheme)
 	k8sFakeClientRoleBindings = fake.NewClientBuilder().WithScheme(shootClientScheme).Build()
 
 	fsm.GetShootClient = func(_ context.Context, _ client.SubResourceClient, _ *gardener_api.Shoot) (client.Client, error) {
@@ -189,8 +192,8 @@ func setupGardenerClientWithSequence(shoots []*gardener_api.Shoot, seeds []*gard
 
 func getBaseShootForTestingSequence() gardener_api.Shoot {
 	runtimeStub := CreateRuntimeStub("test-resource")
-	converterConfig := fixConverterConfigForTests()
-	converter := gardener_shoot.NewConverter(converterConfig)
+	infrastructureManagerConfig := fixConverterConfigForTests()
+	converter := gardener_shoot.NewConverter(infrastructureManagerConfig.ConverterConfig)
 	convertedShoot, err := converter.ToShoot(*runtimeStub)
 	if err != nil {
 		panic(err)
@@ -350,28 +353,30 @@ func setupSeedObjectOnCluster(client client.Client) error {
 	return client.Create(context.Background(), seed)
 }
 
-func fixConverterConfigForTests() gardener_shoot.ConverterConfig {
-	return gardener_shoot.ConverterConfig{
-		Kubernetes: gardener_shoot.KubernetesConfig{
-			DefaultVersion: "1.29",
-		},
-
-		DNS: gardener_shoot.DNSConfig{
-			SecretName:   "aws-route53-secret-dev",
-			DomainPrefix: "dev.kyma.ondemand.com",
-			ProviderType: "aws-route53",
-		},
-		Provider: gardener_shoot.ProviderConfig{
-			AWS: gardener_shoot.AWSConfig{
-				EnableIMDSv2: true,
+func fixConverterConfigForTests() config.Config {
+	return config.Config{
+		ConverterConfig: config.ConverterConfig{
+			Kubernetes: config.KubernetesConfig{
+				DefaultVersion: "1.29",
 			},
-		},
-		Gardener: gardener_shoot.GardenerConfig{
-			ProjectName: "kyma-dev",
-		},
-		AuditLog: gardener_shoot.AuditLogConfig{
-			PolicyConfigMapName: "policy-config-map",
-			TenantConfigPath:    filepath.Join("testdata", "auditConfig.json"),
+
+			DNS: config.DNSConfig{
+				SecretName:   "aws-route53-secret-dev",
+				DomainPrefix: "dev.kyma.ondemand.com",
+				ProviderType: "aws-route53",
+			},
+			Provider: config.ProviderConfig{
+				AWS: config.AWSConfig{
+					EnableIMDSv2: true,
+				},
+			},
+			Gardener: config.GardenerConfig{
+				ProjectName: "kyma-dev",
+			},
+			AuditLog: config.AuditLogConfig{
+				PolicyConfigMapName: "policy-config-map",
+				TenantConfigPath:    filepath.Join("testdata", "auditConfig.json"),
+			},
 		},
 	}
 }

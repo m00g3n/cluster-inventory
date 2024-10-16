@@ -27,6 +27,7 @@ import (
 	. "github.com/onsi/gomega"    //nolint:revive
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -106,9 +107,19 @@ var _ = Describe("Runtime Controller", func() {
 					return false
 				}
 
+				if !runtime.IsConditionSet(imv1.ConditionTypeOidcConfigured, imv1.ConditionReasonOidcConfigured) {
+					return false
+				}
+
+				if !runtime.IsConditionSetWithStatus(imv1.ConditionTypeOidcConfigured, imv1.ConditionReasonOidcConfigured, metav1.ConditionTrue) {
+					return false
+				}
+
 				if !runtime.IsConditionSet(imv1.ConditionTypeAuditLogConfigured, imv1.ConditionReasonAuditLogConfigured) {
 					return false
 				}
+
+				//TODO: condition should be 'TRUE'
 
 				return true
 			}, time.Second*300, time.Second*3).Should(BeTrue())
@@ -257,6 +268,18 @@ func CreateRuntimeStub(resourceName string) *imv1.Runtime {
 					},
 				},
 				Region: "eu-central-1",
+				Kubernetes: imv1.Kubernetes{
+					KubeAPIServer: imv1.APIServer{
+						OidcConfig: gardener.OIDCConfig{
+							ClientID:       ptr.To("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+							GroupsClaim:    ptr.To("groups"),
+							IssuerURL:      ptr.To("https://example.com"),
+							SigningAlgs:    []string{"RSA256"},
+							UsernameClaim:  ptr.To("sub"),
+							UsernamePrefix: ptr.To("-"),
+						},
+					},
+				},
 			},
 			Security: imv1.Security{
 				Administrators: []string{

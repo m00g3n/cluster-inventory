@@ -1,12 +1,11 @@
 package shoot
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/internal/config"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/extender"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -15,70 +14,17 @@ type Extend func(imv1.Runtime, *gardener.Shoot) error
 
 type Converter struct {
 	extenders []Extend
-	config    ConverterConfig
+	config    config.ConverterConfig
 }
 
-type ProviderConfig struct {
-	AWS AWSConfig `json:"aws"`
-}
-
-type AWSConfig struct {
-	EnableIMDSv2 bool `json:"enableIMDSv2"`
-}
-
-type DNSConfig struct {
-	SecretName   string `json:"secretName" validate:"required"`
-	DomainPrefix string `json:"domainPrefix" validate:"required"`
-	ProviderType string `json:"providerType" validate:"required"`
-}
-
-type KubernetesConfig struct {
-	DefaultVersion                      string `json:"defaultVersion" validate:"required"`
-	EnableKubernetesVersionAutoUpdate   bool   `json:"enableKubernetesVersionAutoUpdate"`
-	EnableMachineImageVersionAutoUpdate bool   `json:"enableMachineImageVersionVersionAutoUpdate"`
-}
-
-type AuditLogConfig struct {
-	PolicyConfigMapName string `json:"policyConfigMapName" validate:"required"`
-	TenantConfigPath    string `json:"tenantConfigPath" validate:"required"`
-}
-
-type ReaderGetter = func() (io.Reader, error)
-
-type ConverterConfig struct {
-	Kubernetes   KubernetesConfig   `json:"kubernetes" validate:"required"`
-	DNS          DNSConfig          `json:"dns" validate:"required"`
-	Provider     ProviderConfig     `json:"provider"`
-	MachineImage MachineImageConfig `json:"machineImage" validate:"required"`
-	Gardener     GardenerConfig     `json:"gardener" validate:"required"`
-	AuditLog     AuditLogConfig     `json:"auditLogging" validate:"required"`
-}
-
-func (c *ConverterConfig) Load(f ReaderGetter) error {
-	r, err := f()
-	if err != nil {
-		return err
-	}
-	return json.NewDecoder(r).Decode(c)
-}
-
-type GardenerConfig struct {
-	ProjectName string `json:"projectName" validate:"required"`
-}
-
-type MachineImageConfig struct {
-	DefaultName    string `json:"defaultName" validate:"required"`
-	DefaultVersion string `json:"defaultVersion" validate:"required"`
-}
-
-func NewConverter(config ConverterConfig) Converter {
+func NewConverter(config config.ConverterConfig) Converter {
 	extenders := []Extend{
 		extender.ExtendWithAnnotations,
 		extender.ExtendWithLabels,
 		extender.NewKubernetesExtender(config.Kubernetes.DefaultVersion),
 		extender.NewProviderExtender(config.Provider.AWS.EnableIMDSv2, config.MachineImage.DefaultName, config.MachineImage.DefaultVersion),
 		extender.NewDNSExtender(config.DNS.SecretName, config.DNS.DomainPrefix, config.DNS.ProviderType),
-		extender.ExtendWithOIDC,
+		extender.NewOidcExtender(config.Kubernetes.DefaultOperatorOidc),
 		extender.ExtendWithCloudProfile,
 		extender.ExtendWithNetworkFilter,
 		extender.ExtendWithCertConfig,
