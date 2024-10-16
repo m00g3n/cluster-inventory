@@ -28,6 +28,12 @@ func withLabels(labels map[string]string) deepCpOpts {
 	}
 }
 
+func withAnnotations(annotations map[string]string) deepCpOpts {
+	return func(s *v1beta1.Shoot) {
+		s.Annotations = annotations
+	}
+}
+
 func withShootSpec(spec v1beta1.ShootSpec) deepCpOpts {
 	return func(s *v1beta1.Shoot) {
 		s.Spec = spec
@@ -91,6 +97,21 @@ var _ = Describe(":: shoot matcher :: ", func() {
 			"should detect namespace difference",
 			deepCp(empty, withNamespace("test1")),
 			deepCp(empty, withNamespace("test2")),
+			false,
+		),
+		Entry(
+			"should skip extra metadata/annotations",
+			deepCp(empty, withAnnotations(map[string]string{"test": "me"})),
+			deepCp(empty, withAnnotations(map[string]string{
+				"test":   "me",
+				"dżułel": "wuz@here",
+			})),
+			true,
+		),
+		Entry(
+			"should detect difference in metadata/annotations",
+			deepCp(empty, withAnnotations(map[string]string{"test": "me"})),
+			deepCp(empty, withAnnotations(map[string]string{})),
 			false,
 		),
 		Entry(

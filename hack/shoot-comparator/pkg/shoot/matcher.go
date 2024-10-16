@@ -107,6 +107,11 @@ func (m *Matcher) Match(actual interface{}) (success bool, err error) {
 			path:          "spec/secretBindingName",
 		},
 		{
+			GomegaMatcher: newDNSMatcher(aShoot.Spec.DNS),
+			path:          "spec/dns",
+			expected:      eShoot.Spec.DNS,
+		},
+		{
 			GomegaMatcher: gstruct.MatchElements(
 				idToleration,
 				gstruct.IgnoreExtras,
@@ -135,13 +140,17 @@ func (m *Matcher) Match(actual interface{}) (success bool, err error) {
 			expected:      aShoot.Spec.Provider,
 			path:          "spec/provider",
 		},
+		{
+			GomegaMatcher: gomega.SatisfyAll(mapMatchers(aShoot.Labels)...),
+			expected:      eShoot.Labels,
+			path:          "metadata/labels",
+		},
+		{
+			GomegaMatcher: gomega.SatisfyAll(mapMatchers(aShoot.Annotations)...),
+			expected:      eShoot.Annotations,
+			path:          "metadata/annotations",
+		},
 	}
-
-	// metadata
-	addLabelsMatcher(eShoot.Labels, aShoot.Labels, &matchers)
-	addAnnotationsMatcher(eShoot.Labels, aShoot.Labels, &matchers)
-	// spec
-	addDNSMatcher(eShoot.Spec, aShoot.Spec, &matchers)
 
 	for _, matcher := range matchers {
 		ok, err := matcher.Match(matcher.expected)
@@ -169,32 +178,22 @@ func (m *Matcher) FailureMessage(_ interface{}) string {
 	return strings.Join(m.fails, "\n")
 }
 
-func addLabelsMatcher(e, a map[string]string, m *[]propertyMatcher) {
-	for key, val := range a {
-		*m = append(*m, propertyMatcher{
-			path:          fmt.Sprintf("metadata/labels/%s", key),
-			expected:      e,
-			GomegaMatcher: gomega.HaveKeyWithValue(key, val),
-		})
+func mapMatchers(m map[string]string) []types.GomegaMatcher {
+	mLen := len(m)
+	if mLen == 0 {
+		return []types.GomegaMatcher{
+			gomega.BeEmpty(),
+		}
 	}
-}
 
-func addAnnotationsMatcher(e, a map[string]string, m *[]propertyMatcher) {
-	for key, val := range a {
-		*m = append(*m, propertyMatcher{
-			path:          fmt.Sprintf("metadata/annotations/%s", key),
-			expected:      e,
-			GomegaMatcher: gomega.HaveKeyWithValue(key, val),
-		})
+	out := make([]types.GomegaMatcher, mLen)
+	index := 0
+	for key, val := range m {
+		matcher := gomega.HaveKeyWithValue(key, val)
+		out[index] = matcher
+		index++
 	}
-}
-
-func addDNSMatcher(e, a v1beta1.ShootSpec, m *[]propertyMatcher) {
-	*m = append(*m, propertyMatcher{
-		path:          "spec/dns",
-		expected:      e.DNS,
-		GomegaMatcher: newDNSMatcher(a),
-	})
+	return out
 }
 
 func val(v interface{}) string {
@@ -264,15 +263,15 @@ func providers(ps []v1beta1.DNSProvider) gstruct.Elements {
 	return out
 }
 
-func newDNSMatcher(spec v1beta1.ShootSpec) types.GomegaMatcher {
-	if spec.DNS == nil {
+func newDNSMatcher(dns *v1beta1.DNS) types.GomegaMatcher {
+	if dns == nil {
 		return gomega.BeNil()
 	}
 
 	return gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-		"Domain": gomega.BeComparableTo(spec.DNS.Domain),
+		"Domain": gomega.BeComparableTo(dns.Domain),
 		"Providers": gstruct.MatchElements(idProvider, gstruct.IgnoreExtras,
-			providers(spec.DNS.Providers)),
+			providers(dns.Providers)),
 	}))
 }
 

@@ -120,6 +120,7 @@ func workers(ws []v1beta1.Worker) gstruct.Elements {
 			"Machine": gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 				"Image": newShootMachineImageMatcher(w.Machine.Image),
 			}),
+			"Annotations": gomega.SatisfyAll(mapMatchers(w.Annotations)...),
 		})
 	}
 	return out
