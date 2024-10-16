@@ -119,7 +119,7 @@ func workers(ws []v1beta1.Worker) gstruct.Elements {
 			"Annotations": gomega.SatisfyAll(mapMatchers(w.Annotations)...),
 			"CABundle":    gomega.BeComparableTo(w.CABundle),
 			"CRI":         newCRIMatcher(w.CRI),
-			"Kubernetes":  gstruct.Ignore(), //TODO implement
+			"Kubernetes":  gstruct.Ignore(),
 			"Labels":      gomega.SatisfyAll(mapMatchers(w.Labels)...),
 			"Name":        gomega.BeComparableTo(w.Name),
 			"Machine": gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
@@ -131,15 +131,15 @@ func workers(ws []v1beta1.Worker) gstruct.Elements {
 			"MaxSurge":                         gomega.BeComparableTo(w.MaxSurge),
 			"MaxUnavailable":                   gomega.BeComparableTo(w.MaxSurge),
 			"ProviderConfig":                   runtime.NewRawExtensionMatcher(w.ProviderConfig),
-			"Taints":                           gstruct.Ignore(), //TODO implement
-			"Volume":                           gstruct.Ignore(), //TODO implement
-			"DataVolumes":                      gstruct.Ignore(), //TODO implement
-			"KubeletDataVolumeName":            gstruct.Ignore(), //TODO implement
-			"Zones":                            gstruct.Ignore(), //TODO implement
-			"SystemComponents":                 gstruct.Ignore(), //TODO implement
-			"MachineControllerManagerSettings": gstruct.Ignore(), //TODO implement
-			"Sysctls":                          gstruct.Ignore(), //TODO implement
-			"ClusterAutoscaler":                gstruct.Ignore(), //TODO implement
+			"Taints":                           gstruct.Ignore(),
+			"Volume":                           gstruct.Ignore(),
+			"DataVolumes":                      gstruct.Ignore(),
+			"KubeletDataVolumeName":            gomega.BeComparableTo(w.KubeletDataVolumeName),
+			"Zones":                            gomega.ContainElements(w.Zones),
+			"SystemComponents":                 gstruct.Ignore(),
+			"MachineControllerManagerSettings": gstruct.Ignore(),
+			"Sysctls":                          gomega.SatisfyAll(mapMatchers(w.Sysctls)...),
+			"ClusterAutoscaler":                gstruct.Ignore(),
 		})
 	}
 	return out
