@@ -695,6 +695,122 @@ var _ = Describe(":: shoot matcher :: ", func() {
 			false,
 		),
 		Entry(
+			"should find no differences in spec/provider/workerSettings #1",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					WorkersSettings: &v1beta1.WorkersSettings{
+						SSHAccess: &v1beta1.SSHAccess{
+							Enabled: true,
+						},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					WorkersSettings: &v1beta1.WorkersSettings{
+						SSHAccess: &v1beta1.SSHAccess{
+							Enabled: true,
+						},
+					},
+				},
+			})),
+			true,
+		),
+		Entry(
+			"should find differences in spec/provider/workerSettings #1",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					WorkersSettings: &v1beta1.WorkersSettings{
+						SSHAccess: &v1beta1.SSHAccess{
+							Enabled: false,
+						},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					WorkersSettings: &v1beta1.WorkersSettings{
+						SSHAccess: &v1beta1.SSHAccess{
+							Enabled: true,
+						},
+					},
+				},
+			})),
+			false,
+		),
+		Entry(
+			"should find differences in spec/provider/workerSettings #2",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					WorkersSettings: &v1beta1.WorkersSettings{
+						SSHAccess: &v1beta1.SSHAccess{
+							Enabled: true,
+						},
+					},
+				},
+			})),
+			false,
+		),
+		Entry(
+			"should find differences in spec/provider/workerSettings #3",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					WorkersSettings: &v1beta1.WorkersSettings{
+						SSHAccess: &v1beta1.SSHAccess{
+							Enabled: true,
+						},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{},
+			})),
+			false,
+		),
+		Entry(
+			"should find differences in spec/provider/workerSettings #2",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					WorkersSettings: &v1beta1.WorkersSettings{},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					WorkersSettings: &v1beta1.WorkersSettings{
+						SSHAccess: &v1beta1.SSHAccess{
+							Enabled: true,
+						},
+					},
+				},
+			})),
+			false,
+		),
+		Entry(
+			"should find no differences in spec/provider/workerSettings #1",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					WorkersSettings: &v1beta1.WorkersSettings{
+						SSHAccess: &v1beta1.SSHAccess{
+							Enabled: true,
+						},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Provider: v1beta1.Provider{
+					WorkersSettings: &v1beta1.WorkersSettings{
+						SSHAccess: &v1beta1.SSHAccess{
+							Enabled: true,
+						},
+					},
+				},
+			})),
+			true,
+		),
+		Entry(
 			"should find differences in spec/provider/type",
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
 				Provider: v1beta1.Provider{

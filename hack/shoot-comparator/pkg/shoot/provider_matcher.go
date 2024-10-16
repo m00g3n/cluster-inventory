@@ -61,6 +61,11 @@ func (m *ProviderMatcher) Match(actual interface{}) (success bool, err error) {
 			GomegaMatcher: runtime.NewRawExtensionMatcher(eProvider.InfrastructureConfig),
 			expected:      aProvider.InfrastructureConfig,
 		},
+		{
+			path:          m.getPath("workerSettings"),
+			GomegaMatcher: newWorkerSettingsMatcher(eProvider.WorkersSettings),
+			expected:      aProvider.WorkersSettings,
+		},
 	} {
 		ok, err := matcher.Match(matcher.expected)
 		if err != nil {
@@ -128,5 +133,17 @@ func newShootMachineImageMatcher(i *v1beta1.ShootMachineImage) types.GomegaMatch
 	return gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 		"Name":    gomega.BeComparableTo(i.Name),
 		"Version": gomega.BeComparableTo(i.Version),
+	}))
+}
+
+func newWorkerSettingsMatcher(s *v1beta1.WorkersSettings) types.GomegaMatcher {
+	if s == nil || s.SSHAccess == nil {
+		return gomega.BeNil()
+	}
+
+	return gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+		"SSHAccess": gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+			"Enabled": gomega.BeComparableTo(s.SSHAccess.Enabled),
+		})),
 	}))
 }
