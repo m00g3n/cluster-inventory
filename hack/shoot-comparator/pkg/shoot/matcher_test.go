@@ -5,6 +5,7 @@ import (
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 )
 
@@ -1051,6 +1052,16 @@ var _ = Describe(":: shoot matcher :: ", func() {
 							ProviderConfig: &runtime.RawExtension{
 								Raw: []byte("raw stuff here 1"),
 							},
+							Sysctls: map[string]string{
+								"test": "me",
+							},
+							Maximum:  5,
+							Minimum:  -5,
+							MaxSurge: ptr.To[intstr.IntOrString](intstr.FromInt(10)),
+							Volume: &v1beta1.Volume{
+								VolumeSize: "big",
+								Type:       ptr.To[string]("boi"),
+							},
 						},
 					},
 				},
@@ -1077,6 +1088,16 @@ var _ = Describe(":: shoot matcher :: ", func() {
 							ProviderConfig: &runtime.RawExtension{
 								Raw: []byte("raw stuff here 1"),
 							},
+							Sysctls: map[string]string{
+								"test": "me",
+							},
+							Maximum:  5,
+							Minimum:  -5,
+							MaxSurge: ptr.To[intstr.IntOrString](intstr.FromInt(10)),
+							Volume: &v1beta1.Volume{
+								VolumeSize: "big",
+								Type:       ptr.To[string]("boi"),
+							},
 						},
 						{
 							Name: "iTwurkz2",
@@ -1090,6 +1111,9 @@ var _ = Describe(":: shoot matcher :: ", func() {
 							ProviderConfig: &runtime.RawExtension{
 								Raw: []byte("raw stuff here 2"),
 							},
+							Maximum:  10,
+							Minimum:  -10,
+							MaxSurge: ptr.To[intstr.IntOrString](intstr.FromString("100")),
 						},
 					},
 				},
