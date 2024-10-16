@@ -26,16 +26,17 @@ import (
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_apis "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
+	gardener_oidc "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
 	"github.com/go-playground/validator/v10"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
+	"github.com/kyma-project/infrastructure-manager/internal/config"
 	kubeconfig_controller "github.com/kyma-project/infrastructure-manager/internal/controller/kubeconfig"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	runtime_controller "github.com/kyma-project/infrastructure-manager/internal/controller/runtime"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/kubeconfig"
-	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	"github.com/pkg/errors"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -58,6 +59,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(infrastructuremanagerv1.AddToScheme(scheme))
 	utilruntime.Must(rbacv1.AddToScheme(scheme))
+	utilruntime.Must(gardener_oidc.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -162,7 +164,7 @@ func main() {
 	getReader := func() (io.Reader, error) {
 		return os.Open(converterConfigFilepath)
 	}
-	var converterConfig shoot.ConverterConfig
+	var converterConfig config.Config
 	if err = converterConfig.Load(getReader); err != nil {
 		setupLog.Error(err, "unable to load converter configuration")
 		os.Exit(1)
@@ -174,7 +176,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = validateAuditLogConfiguration(converterConfig.AuditLog.TenantConfigPath)
+	err = validateAuditLogConfiguration(converterConfig.ConverterConfig.AuditLog.TenantConfigPath)
 	if err != nil {
 		setupLog.Error(err, "invalid Audit Log configuration")
 		os.Exit(1)
@@ -185,7 +187,7 @@ func main() {
 		ControlPlaneRequeueDuration: defaultControlPlaneRequeueDuration,
 		Finalizer:                   infrastructuremanagerv1.Finalizer,
 		ShootNamesapace:             gardenerNamespace,
-		ConverterConfig:             converterConfig,
+		Config:                      converterConfig,
 		AuditLogMandatory:           auditLogMandatory,
 		Metrics:                     metrics,
 		AuditLogging:                auditlogging.NewAuditLogging(converterConfig.AuditLog.TenantConfigPath, converterConfig.AuditLog.PolicyConfigMapName, gardenerClient),
@@ -241,13 +243,19 @@ func initGardenerClients(kubeconfigPath string, namespace string) (client.Client
 		return nil, nil, nil, err
 	}
 
-	shootClient := gardenerClientSet.Shoots(namespace)
-	dynamicKubeconfigAPI := gardenerClient.SubResource("adminkubeconfig")
-
 	err = v1beta1.AddToScheme(gardenerClient.Scheme())
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to register Gardener schema")
 	}
+
+	err = gardener_oidc.AddToScheme(gardenerClient.Scheme())
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "failed to register Gardener schema")
+	}
+
+	shootClient := gardenerClientSet.Shoots(namespace)
+	dynamicKubeconfigAPI := gardenerClient.SubResource("adminkubeconfig")
+
 	return gardenerClient, shootClient, dynamicKubeconfigAPI, nil
 }
 

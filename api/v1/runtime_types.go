@@ -64,6 +64,7 @@ const (
 	ConditionTypeRuntimeProvisioned       RuntimeConditionType = "Provisioned"
 	ConditionTypeRuntimeProvisionedDryRun RuntimeConditionType = "ProvisionedDryRun"
 	ConditionTypeRuntimeKubeconfigReady   RuntimeConditionType = "KubeconfigReady"
+	ConditionTypeOidcConfigured           RuntimeConditionType = "OidcConfigured"
 	ConditionTypeRuntimeConfigured        RuntimeConditionType = "Configured"
 	ConditionTypeAuditLogConfigured       RuntimeConditionType = "AuditlogConfigured"
 	ConditionTypeRuntimeDeprovisioned     RuntimeConditionType = "Deprovisioned"
@@ -100,6 +101,8 @@ const (
 	ConditionReasonAuditLogConfigured           = RuntimeConditionReason("AuditLogConfigured")
 	ConditionReasonAuditLogError                = RuntimeConditionReason("AuditLogErr")
 	ConditionReasonAuditLogMissingRegionMapping = RuntimeConditionReason("AuditLogMissingRegionMappingErr")
+	ConditionReasonOidcConfigured               = RuntimeConditionReason("OidcConfigured")
+	ConditionReasonOidcError                    = RuntimeConditionReason("OidcConfigurationErr")
 )
 
 //+kubebuilder:object:root=true
@@ -164,7 +167,7 @@ type Kubernetes struct {
 }
 
 type APIServer struct {
-	OidcConfig           gardener.OIDCConfig    `json:"oidcConfig"`
+	OidcConfig           gardener.OIDCConfig    `json:"oidcConfig,omitempty"`
 	AdditionalOidcConfig *[]gardener.OIDCConfig `json:"additionalOidcConfig,omitempty"`
 }
 

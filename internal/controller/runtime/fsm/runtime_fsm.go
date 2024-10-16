@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
+	"github.com/kyma-project/infrastructure-manager/internal/config"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,7 +35,7 @@ type RCCfg struct {
 	AuditLogMandatory           bool
 	Metrics                     metrics.Metrics
 	AuditLogging                auditlogging.AuditLogging
-	shoot.ConverterConfig
+	config.Config
 }
 
 func (f stateFn) String() string {
