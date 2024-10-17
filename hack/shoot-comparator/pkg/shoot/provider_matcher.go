@@ -30,12 +30,12 @@ func (m *ProviderMatcher) getPath(p string) string {
 }
 
 func (m *ProviderMatcher) Match(actual interface{}) (success bool, err error) {
-	aProvider, err := utilz.Get[v1beta1.Provider](actual)
+	providerActual, err := utilz.Get[v1beta1.Provider](actual)
 	if err != nil {
 		return false, err
 	}
 
-	eProvider, err := utilz.Get[v1beta1.Provider](m.toMatch)
+	providerToMatch, err := utilz.Get[v1beta1.Provider](m.toMatch)
 	if err != nil {
 		return false, err
 	}
@@ -43,28 +43,32 @@ func (m *ProviderMatcher) Match(actual interface{}) (success bool, err error) {
 	for _, matcher := range []propertyMatcher{
 		{
 			path:          m.getPath("type"),
-			GomegaMatcher: gomega.BeComparableTo(eProvider.Type),
-			actual:      aProvider.Type,
+			GomegaMatcher: gomega.BeComparableTo(providerToMatch.Type),
+			actual:        providerActual.Type,
 		},
 		{
-			path:          m.getPath("workers"),
-			GomegaMatcher: gstruct.MatchElements(idWorker, gstruct.IgnoreExtras, workers(aProvider.Workers)),
-			actual:      eProvider.Workers,
+			path: m.getPath("workers"),
+			GomegaMatcher: gstruct.MatchElements(
+				idWorker,
+				gstruct.IgnoreMissing,
+				workers(providerToMatch.Workers),
+			),
+			actual: providerActual.Workers,
 		},
 		{
 			path:          m.getPath("controlPlaneConfig"),
-			GomegaMatcher: runtime.NewRawExtensionMatcher(eProvider.ControlPlaneConfig),
-			actual:      aProvider.ControlPlaneConfig,
+			GomegaMatcher: runtime.NewRawExtensionMatcher(providerToMatch.ControlPlaneConfig),
+			actual:        providerActual.ControlPlaneConfig,
 		},
 		{
 			path:          m.getPath("infrastructureConfig"),
-			GomegaMatcher: runtime.NewRawExtensionMatcher(eProvider.InfrastructureConfig),
-			actual:      aProvider.InfrastructureConfig,
+			GomegaMatcher: runtime.NewRawExtensionMatcher(providerToMatch.InfrastructureConfig),
+			actual:        providerActual.InfrastructureConfig,
 		},
 		{
 			path:          m.getPath("workerSettings"),
-			GomegaMatcher: newWorkerSettingsMatcher(eProvider.WorkersSettings),
-			actual:      aProvider.WorkersSettings,
+			GomegaMatcher: newWorkerSettingsMatcher(providerToMatch.WorkersSettings),
+			actual:        providerActual.WorkersSettings,
 		},
 	} {
 		ok, err := matcher.Match(matcher.actual)
@@ -94,7 +98,7 @@ func (m *ProviderMatcher) FailureMessage(_ interface{}) string {
 
 type propertyMatcher = struct {
 	types.GomegaMatcher
-	path     string
+	path   string
 	actual interface{}
 }
 
@@ -122,10 +126,13 @@ func workers(ws []v1beta1.Worker) gstruct.Elements {
 			"Kubernetes":  gstruct.Ignore(),
 			"Labels":      gomega.SatisfyAll(mapMatchers(w.Labels)...),
 			"Name":        gomega.BeComparableTo(w.Name),
-			"Machine": gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-				"Type":  gomega.BeComparableTo(w.Machine.Type),
-				"Image": newShootMachineImageMatcher(w.Machine.Image),
-			}),
+			"Machine": gstruct.MatchFields(
+				gstruct.IgnoreMissing,
+				gstruct.Fields{
+					"Type":         gomega.BeComparableTo(w.Machine.Type),
+					"Image":        newShootMachineImageMatcher(w.Machine.Image),
+					"Architecture": gstruct.Ignore(),
+				}),
 			"Maximum":                          gomega.BeComparableTo(w.Maximum),
 			"Minimum":                          gomega.BeComparableTo(w.Minimum),
 			"MaxSurge":                         gomega.BeComparableTo(w.MaxSurge),
@@ -150,10 +157,14 @@ func newShootMachineImageMatcher(i *v1beta1.ShootMachineImage) types.GomegaMatch
 		return gomega.BeNil()
 	}
 
-	return gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-		"Name":    gomega.BeComparableTo(i.Name),
-		"Version": gomega.BeComparableTo(i.Version),
-	}))
+	return gstruct.PointTo(
+		gstruct.MatchFields(
+			gstruct.IgnoreMissing,
+			gstruct.Fields{
+				"Name":           gomega.BeComparableTo(i.Name),
+				"Version":        gomega.BeComparableTo(i.Version),
+				"ProviderConfig": gstruct.Ignore(),
+			}))
 }
 
 func newWorkerSettingsMatcher(s *v1beta1.WorkersSettings) types.GomegaMatcher {
@@ -186,9 +197,11 @@ func newCRIMatcher(cri *v1beta1.CRI) types.GomegaMatcher {
 		return gomega.BeNil()
 	}
 
-	return gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+	return gstruct.MatchFields(gstruct.IgnoreMissing, gstruct.Fields{
 		"Name": gomega.BeComparableTo(cri.Name),
-		"ContainerRuntimes": gstruct.MatchElements(idContainerRuntime, gstruct.IgnoreExtras,
+		"ContainerRuntimes": gstruct.MatchElements(
+			idContainerRuntime,
+			gstruct.IgnoreMissing,
 			containerRuntimes(cri.ContainerRuntimes)),
 	})
 }

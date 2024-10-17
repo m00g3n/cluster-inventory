@@ -68,22 +68,28 @@ func (m *Matcher) Match(actual interface{}) (success bool, err error) {
 			path:          "metadata/namespace",
 		},
 		{
-			GomegaMatcher: gstruct.MatchElements(idExtension, gstruct.IgnoreExtras, extensions(shootActual.Spec.Extensions)),
-			actual:        shootToMatch.Spec.Extensions,
+			GomegaMatcher: gstruct.MatchElements(idExtension, gstruct.IgnoreMissing, extensions(shootToMatch.Spec.Extensions)),
+			actual:        shootActual.Spec.Extensions,
 			path:          "spec/extensions",
 		},
 		{
-			GomegaMatcher: gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-				"Version":                     gomega.BeComparableTo(shootActual.Spec.Kubernetes.Version),
-				"EnableStaticTokenKubeconfig": gomega.BeComparableTo(shootActual.Spec.Kubernetes.EnableStaticTokenKubeconfig),
-				"KubeAPIServer":               newKubeAPIServerMatcher(shootActual.Spec.Kubernetes),
+			GomegaMatcher: gstruct.MatchFields(gstruct.IgnoreMissing, gstruct.Fields{
+				"ClusterAutoscaler":           gstruct.Ignore(),
+				"KubeAPIServer":               newKubeAPIServerMatcher(shootToMatch.Spec.Kubernetes),
+				"KubeControllerManager":       gstruct.Ignore(),
+				"KubeScheduler":               gstruct.Ignore(),
+				"KubeProxy":                   gstruct.Ignore(),
+				"Kubelet":                     gstruct.Ignore(),
+				"Version":                     gomega.BeComparableTo(shootToMatch.Spec.Kubernetes.Version),
+				"VerticalPodAutoscaler":       gstruct.Ignore(),
+				"EnableStaticTokenKubeconfig": gomega.BeComparableTo(shootToMatch.Spec.Kubernetes.EnableStaticTokenKubeconfig),
 			}),
-			actual: shootToMatch.Spec.Kubernetes,
+			actual: shootActual.Spec.Kubernetes,
 			path:   "spec/kubernetes",
 		},
 		{
-			GomegaMatcher: newNetworkingMatcher(shootActual.Spec),
-			actual:        shootToMatch.Spec.Networking,
+			GomegaMatcher: newNetworkingMatcher(shootToMatch.Spec),
+			actual:        shootActual.Spec.Networking,
 			path:          "spec/networking",
 		},
 		{
@@ -107,17 +113,17 @@ func (m *Matcher) Match(actual interface{}) (success bool, err error) {
 			path:          "spec/secretBindingName",
 		},
 		{
-			GomegaMatcher: newDNSMatcher(shootActual.Spec.DNS),
+			GomegaMatcher: newDNSMatcher(shootToMatch.Spec.DNS),
 			path:          "spec/dns",
-			actual:        shootToMatch.Spec.DNS,
+			actual:        shootActual.Spec.DNS,
 		},
 		{
 			GomegaMatcher: gstruct.MatchElements(
 				idToleration,
-				gstruct.IgnoreExtras,
-				tolerations(shootActual.Spec.Tolerations),
+				gstruct.IgnoreMissing,
+				tolerations(shootToMatch.Spec.Tolerations),
 			),
-			actual: shootToMatch.Spec.Tolerations,
+			actual: shootActual.Spec.Tolerations,
 			path:   "spec/tolerations",
 		},
 		{
@@ -141,8 +147,8 @@ func (m *Matcher) Match(actual interface{}) (success bool, err error) {
 			path:          "spec/provider",
 		},
 		{
-			GomegaMatcher: gomega.SatisfyAll(mapMatchers(shootActual.Labels)...),
-			actual:        shootToMatch.Labels,
+			GomegaMatcher: gomega.SatisfyAll(mapMatchers(shootToMatch.Labels)...),
+			actual:        shootActual.Labels,
 			path:          "metadata/labels",
 		},
 		{
@@ -244,20 +250,25 @@ func providers(ps []v1beta1.DNSProvider) gstruct.Elements {
 	out := map[string]types.GomegaMatcher{}
 	for _, p := range ps {
 		ID := idProvider(p)
-
 		domainsMatcher := gomega.BeNil()
 		if p.Domains != nil {
-			domainsMatcher = gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-				"Include": gomega.ContainElements(p.Domains.Include),
-			}))
+			domainsMatcher = gstruct.PointTo(
+				gstruct.MatchFields(
+					gstruct.IgnoreMissing,
+					gstruct.Fields{
+						"Include": gomega.ContainElements(p.Domains.Include),
+					}))
 		}
 
-		out[ID] = gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-			"Primary":    gomega.Equal(p.Primary),
-			"SecretName": gomega.Equal(p.SecretName),
-			"Type":       gomega.Equal(p.Type),
-			"Domains":    domainsMatcher,
-		})
+		out[ID] = gstruct.MatchFields(
+			gstruct.IgnoreMissing,
+			gstruct.Fields{
+				"Primary":    gomega.Equal(p.Primary),
+				"SecretName": gomega.Equal(p.SecretName),
+				"Type":       gomega.Equal(p.Type),
+				"Domains":    domainsMatcher,
+				"Zones":      gstruct.Ignore(),
+			})
 	}
 
 	return out
@@ -268,11 +279,15 @@ func newDNSMatcher(dns *v1beta1.DNS) types.GomegaMatcher {
 		return gomega.BeNil()
 	}
 
-	return gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-		"Domain": gomega.BeComparableTo(dns.Domain),
-		"Providers": gstruct.MatchElements(idProvider, gstruct.IgnoreExtras,
-			providers(dns.Providers)),
-	}))
+	return gstruct.PointTo(gstruct.MatchFields(
+		gstruct.IgnoreMissing,
+		gstruct.Fields{
+			"Domain": gomega.BeComparableTo(dns.Domain),
+			"Providers": gstruct.MatchElements(
+				idProvider,
+				gstruct.IgnoreMissing,
+				providers(dns.Providers)),
+		}))
 }
 
 func newMaintenanceMatcher(spec v1beta1.ShootSpec) types.GomegaMatcher {
@@ -290,12 +305,17 @@ func newNetworkingMatcher(spec v1beta1.ShootSpec) types.GomegaMatcher {
 		return gomega.BeNil()
 	}
 
-	return gstruct.PointTo(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-		"Type":     gomega.BeComparableTo(spec.Networking.Type),
-		"Nodes":    gomega.BeComparableTo(spec.Networking.Nodes),
-		"Pods":     gomega.BeComparableTo(spec.Networking.Pods),
-		"Services": gomega.BeComparableTo(spec.Networking.Services),
-	}))
+	return gstruct.PointTo(
+		gstruct.MatchFields(
+			gstruct.IgnoreMissing,
+			gstruct.Fields{
+				"Type":           gomega.BeComparableTo(spec.Networking.Type),
+				"Nodes":          gomega.BeComparableTo(spec.Networking.Nodes),
+				"Pods":           gomega.BeComparableTo(spec.Networking.Pods),
+				"Services":       gomega.BeComparableTo(spec.Networking.Services),
+				"ProviderConfig": gstruct.Ignore(),
+				"IPFamilies":     gstruct.Ignore(),
+			}))
 }
 
 func newKubeAPIServerMatcher(k v1beta1.Kubernetes) types.GomegaMatcher {
@@ -304,9 +324,23 @@ func newKubeAPIServerMatcher(k v1beta1.Kubernetes) types.GomegaMatcher {
 	}
 
 	return gstruct.PointTo(gstruct.MatchFields(
-		gstruct.IgnoreExtras,
+		gstruct.IgnoreMissing,
 		gstruct.Fields{
-			"OIDCConfig": newOIDCConfigMatcher(k.KubeAPIServer),
+			"OIDCConfig":                          newOIDCConfigMatcher(k.KubeAPIServer),
+			"KubernetesConfig":                    gstruct.Ignore(),
+			"AdmissionPlugins":                    gstruct.Ignore(),
+			"APIAudiences":                        gstruct.Ignore(),
+			"AuditConfig":                         gstruct.Ignore(),
+			"RuntimeConfig":                       gstruct.Ignore(),
+			"ServiceAccountConfig":                gstruct.Ignore(),
+			"WatchCacheSizes":                     gstruct.Ignore(),
+			"Requests":                            gstruct.Ignore(),
+			"EnableAnonymousAuthentication":       gstruct.Ignore(),
+			"EventTTL":                            gstruct.Ignore(),
+			"Logging":                             gstruct.Ignore(),
+			"DefaultNotReadyTolerationSeconds":    gstruct.Ignore(),
+			"DefaultUnreachableTolerationSeconds": gstruct.Ignore(),
+			"EncryptionConfig":                    gstruct.Ignore(),
 		},
 	))
 }
@@ -317,17 +351,18 @@ func newOIDCConfigMatcher(c *v1beta1.KubeAPIServerConfig) types.GomegaMatcher {
 	}
 
 	return gstruct.PointTo(gstruct.MatchFields(
-		gstruct.IgnoreExtras,
+		gstruct.IgnoreMissing,
 		gstruct.Fields{
-			"CABundle":       gomega.BeComparableTo(c.OIDCConfig.CABundle),
-			"ClientID":       gomega.BeComparableTo(c.OIDCConfig.ClientID),
-			"GroupsClaim":    gomega.BeComparableTo(c.OIDCConfig.GroupsClaim),
-			"GroupsPrefix":   gomega.BeComparableTo(c.OIDCConfig.GroupsPrefix),
-			"IssuerURL":      gomega.BeComparableTo(c.OIDCConfig.IssuerURL),
-			"RequiredClaims": gomega.BeComparableTo(c.OIDCConfig.RequiredClaims),
-			"SigningAlgs":    gomega.ContainElements(c.OIDCConfig.SigningAlgs),
-			"UsernameClaim":  gomega.BeComparableTo(c.OIDCConfig.UsernameClaim),
-			"UsernamePrefix": gomega.BeComparableTo(c.OIDCConfig.UsernamePrefix),
+			"CABundle":             gomega.BeComparableTo(c.OIDCConfig.CABundle),
+			"ClientID":             gomega.BeComparableTo(c.OIDCConfig.ClientID),
+			"GroupsClaim":          gomega.BeComparableTo(c.OIDCConfig.GroupsClaim),
+			"GroupsPrefix":         gomega.BeComparableTo(c.OIDCConfig.GroupsPrefix),
+			"IssuerURL":            gomega.BeComparableTo(c.OIDCConfig.IssuerURL),
+			"RequiredClaims":       gomega.BeComparableTo(c.OIDCConfig.RequiredClaims),
+			"SigningAlgs":          gomega.ContainElements(c.OIDCConfig.SigningAlgs),
+			"UsernameClaim":        gomega.BeComparableTo(c.OIDCConfig.UsernameClaim),
+			"UsernamePrefix":       gomega.BeComparableTo(c.OIDCConfig.UsernamePrefix),
+			"ClientAuthentication": gstruct.Ignore(),
 		},
 	))
 }

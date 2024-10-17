@@ -103,10 +103,7 @@ var _ = Describe(":: shoot matcher :: ", func() {
 		Entry(
 			"should skip extra metadata/annotations",
 			deepCp(empty, withAnnotations(map[string]string{"test": "me"})),
-			deepCp(empty, withAnnotations(map[string]string{
-				"test":   "me",
-				"dżułel": "wuz@here",
-			})),
+			deepCp(empty, withAnnotations(map[string]string{"test": "me", "dżułel": "wuz@here"})),
 			true,
 		),
 		Entry(
@@ -117,11 +114,8 @@ var _ = Describe(":: shoot matcher :: ", func() {
 		),
 		Entry(
 			"should skip extra labels",
+			deepCp(empty, withLabels(map[string]string{"test": "me", "dżułel": "wuz@here"})),
 			deepCp(empty, withLabels(map[string]string{"test": "me"})),
-			deepCp(empty, withLabels(map[string]string{
-				"test":   "me",
-				"dżułel": "wuz@here",
-			})),
 			true,
 		),
 		Entry(
@@ -833,6 +827,7 @@ var _ = Describe(":: shoot matcher :: ", func() {
 			true,
 		),
 		Entry(
+
 			"should find differences in spec/provider/type",
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
 				Provider: v1beta1.Provider{
@@ -930,8 +925,7 @@ var _ = Describe(":: shoot matcher :: ", func() {
 						{
 							Name: "iTwurkz",
 							Annotations: map[string]string{
-								"test":   "me",
-								"dżułel": "wuz@here",
+								"test": "me",
 							},
 						},
 					},
@@ -943,7 +937,8 @@ var _ = Describe(":: shoot matcher :: ", func() {
 						{
 							Name: "iTwurkz",
 							Annotations: map[string]string{
-								"test": "me",
+								"test":   "me",
+								"dżułel": "wuz@here",
 							},
 						},
 					},
@@ -984,8 +979,7 @@ var _ = Describe(":: shoot matcher :: ", func() {
 						{
 							Name: "iTwurkz",
 							Labels: map[string]string{
-								"test":   "me",
-								"dżułel": "wuz@here",
+								"test": "me",
 							},
 						},
 					},
@@ -997,7 +991,8 @@ var _ = Describe(":: shoot matcher :: ", func() {
 						{
 							Name: "iTwurkz",
 							Labels: map[string]string{
-								"test": "me",
+								"test":   "me",
+								"dżułel": "wuz@here",
 							},
 						},
 					},
