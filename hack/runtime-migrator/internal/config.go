@@ -3,7 +3,10 @@ package internal
 import (
 	"flag"
 	"fmt"
+	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
+	"io"
 	"log"
+	"os"
 
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -19,6 +22,7 @@ type Config struct {
 	OutputPath             string
 	IsDryRun               bool
 	InputType              string
+	ConverterConfigPath    string
 }
 
 const (
@@ -44,6 +48,7 @@ func NewConfig() Config {
 	flag.StringVar(&result.OutputPath, "output-path", "/tmp/", "Path where generated yamls will be saved. Directory has to exist.")
 	flag.BoolVar(&result.IsDryRun, "dry-run", true, "Dry-run flag. Has to be set to 'false' otherwise it will not apply the Custom Resources on the KCP cluster.")
 	flag.StringVar(&result.InputType, "input-type", InputTypeJSON, "Type of input to be used. Possible values: **all** (will migrate all gardener shoots), and **json** (will migrate only cluster whose runtimeIds were passed as an input, see the example hack/runtime-migrator/input/runtimeids_sample.json).")
+	flag.StringVar(&result.ConverterConfigPath, "converter-config-filepath", "/path/to/converter_config.json", "A file path to the Gardener Shoot converter configuration.")
 
 	flag.Parse()
 
@@ -98,4 +103,16 @@ func CreateKcpClient(cfg *Config) (client.Client, error) {
 	})
 
 	return k8sClient, nil
+}
+
+func LoadConverterConfig(cfg Config) (gardener_shoot.ConverterConfig, error) {
+	getReader := func() (io.Reader, error) {
+		return os.Open(cfg.ConverterConfigPath)
+	}
+	var converterConfig gardener_shoot.ConverterConfig
+	if err := converterConfig.Load(getReader); err != nil {
+		log.Print(err, "unable to load converter configuration")
+		return gardener_shoot.ConverterConfig{}, err
+	}
+	return converterConfig, nil
 }

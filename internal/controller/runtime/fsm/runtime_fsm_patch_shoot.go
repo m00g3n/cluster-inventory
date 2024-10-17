@@ -7,6 +7,7 @@ import (
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/config"
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,6 +30,11 @@ func sFnPatchExistingShoot(ctx context.Context, m *fsm, s *systemState) (stateFn
 	})
 
 	if err != nil {
+		if k8serrors.IsConflict(err) {
+			m.log.Info("Gardener shoot for runtime is outdated, retrying", "Name", s.shoot.Name, "Namespace", s.shoot.Namespace)
+			return updateStatusAndRequeueAfter(gardenerRequeueDuration)
+		}
+
 		m.log.Error(err, "Failed to patch shoot object, exiting with no retry")
 		return updateStatePendingWithErrorAndStop(&s.instance, imv1.ConditionTypeRuntimeProvisioned, imv1.ConditionReasonProcessingErr, "Shoot patch error")
 	}
@@ -39,8 +45,6 @@ func sFnPatchExistingShoot(ctx context.Context, m *fsm, s *systemState) (stateFn
 	}
 
 	m.log.Info("Gardener shoot for runtime patched successfully", "Name", s.shoot.Name, "Namespace", s.shoot.Namespace)
-
-	s.shoot = updatedShoot.DeepCopy()
 
 	s.instance.UpdateStatePending(
 		imv1.ConditionTypeRuntimeProvisioned,
