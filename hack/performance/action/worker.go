@@ -2,9 +2,10 @@ package action
 
 import (
 	"context"
+	"math/rand"
+
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"k8s.io/client-go/tools/clientcmd"
-	"math/rand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -75,7 +76,6 @@ func (w WorkerData) Delete() error {
 
 func (w WorkerData) prepareRuntimeBatch() imv1.RuntimeList {
 
-	//shoot name pobieramy z templatki runtime cr'a, a jak nie ma to generujemy (kazdy z batcha odwoluje sie do tej samej nazwy shoota)
 	baseRuntime := w.rtTemplate.DeepCopy()
 	baseRuntime.Name = ""
 	baseRuntime.GenerateName = w.namePrefix + "-"

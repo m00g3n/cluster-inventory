@@ -3,11 +3,12 @@ package cmd
 import (
 	"flag"
 	"fmt"
+	"io"
+	"os"
+
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/hack/performance/action"
-	"io"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"os"
 )
 
 type OperationType int
