@@ -44,36 +44,36 @@ func (m *ProviderMatcher) Match(actual interface{}) (success bool, err error) {
 		{
 			path:          m.getPath("type"),
 			GomegaMatcher: gomega.BeComparableTo(eProvider.Type),
-			expected:      aProvider.Type,
+			actual:      aProvider.Type,
 		},
 		{
 			path:          m.getPath("workers"),
 			GomegaMatcher: gstruct.MatchElements(idWorker, gstruct.IgnoreExtras, workers(aProvider.Workers)),
-			expected:      eProvider.Workers,
+			actual:      eProvider.Workers,
 		},
 		{
 			path:          m.getPath("controlPlaneConfig"),
 			GomegaMatcher: runtime.NewRawExtensionMatcher(eProvider.ControlPlaneConfig),
-			expected:      aProvider.ControlPlaneConfig,
+			actual:      aProvider.ControlPlaneConfig,
 		},
 		{
 			path:          m.getPath("infrastructureConfig"),
 			GomegaMatcher: runtime.NewRawExtensionMatcher(eProvider.InfrastructureConfig),
-			expected:      aProvider.InfrastructureConfig,
+			actual:      aProvider.InfrastructureConfig,
 		},
 		{
 			path:          m.getPath("workerSettings"),
 			GomegaMatcher: newWorkerSettingsMatcher(eProvider.WorkersSettings),
-			expected:      aProvider.WorkersSettings,
+			actual:      aProvider.WorkersSettings,
 		},
 	} {
-		ok, err := matcher.Match(matcher.expected)
+		ok, err := matcher.Match(matcher.actual)
 		if err != nil {
 			return false, err
 		}
 
 		if !ok {
-			msg := matcher.FailureMessage(matcher.expected)
+			msg := matcher.FailureMessage(matcher.actual)
 			if matcher.path != "" {
 				msg = fmt.Sprintf("%s: %s", matcher.path, msg)
 			}
@@ -95,7 +95,7 @@ func (m *ProviderMatcher) FailureMessage(_ interface{}) string {
 type propertyMatcher = struct {
 	types.GomegaMatcher
 	path     string
-	expected interface{}
+	actual interface{}
 }
 
 func idWorker(v interface{}) string {

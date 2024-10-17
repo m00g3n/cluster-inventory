@@ -46,120 +46,120 @@ func getShoot(i interface{}) (shoot v1beta1.Shoot, err error) {
 }
 
 func (m *Matcher) Match(actual interface{}) (success bool, err error) {
-	aShoot, err := getShoot(actual)
+	shootActual, err := getShoot(actual)
 	if err != nil {
 		return false, err
 	}
 
-	eShoot, err := getShoot(m.toMatch)
+	shootToMatch, err := getShoot(m.toMatch)
 	if err != nil {
 		return false, err
 	}
 
 	matchers := []propertyMatcher{
 		{
-			GomegaMatcher: gomega.BeComparableTo(eShoot.Name),
-			expected:      aShoot.Name,
+			GomegaMatcher: gomega.BeComparableTo(shootToMatch.Name),
+			actual:        shootActual.Name,
 			path:          "metadata/name",
 		},
 		{
-			GomegaMatcher: gomega.BeComparableTo(eShoot.Namespace),
-			expected:      aShoot.Namespace,
+			GomegaMatcher: gomega.BeComparableTo(shootToMatch.Namespace),
+			actual:        shootActual.Namespace,
 			path:          "metadata/namespace",
 		},
 		{
-			GomegaMatcher: gstruct.MatchElements(idExtension, gstruct.IgnoreExtras, extensions(aShoot.Spec.Extensions)),
-			expected:      eShoot.Spec.Extensions,
+			GomegaMatcher: gstruct.MatchElements(idExtension, gstruct.IgnoreExtras, extensions(shootActual.Spec.Extensions)),
+			actual:        shootToMatch.Spec.Extensions,
 			path:          "spec/extensions",
 		},
 		{
 			GomegaMatcher: gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-				"Version":                     gomega.BeComparableTo(aShoot.Spec.Kubernetes.Version),
-				"EnableStaticTokenKubeconfig": gomega.BeComparableTo(aShoot.Spec.Kubernetes.EnableStaticTokenKubeconfig),
-				"KubeAPIServer":               newKubeAPIServerMatcher(aShoot.Spec.Kubernetes),
+				"Version":                     gomega.BeComparableTo(shootActual.Spec.Kubernetes.Version),
+				"EnableStaticTokenKubeconfig": gomega.BeComparableTo(shootActual.Spec.Kubernetes.EnableStaticTokenKubeconfig),
+				"KubeAPIServer":               newKubeAPIServerMatcher(shootActual.Spec.Kubernetes),
 			}),
-			expected: eShoot.Spec.Kubernetes,
-			path:     "spec/kubernetes",
+			actual: shootToMatch.Spec.Kubernetes,
+			path:   "spec/kubernetes",
 		},
 		{
-			GomegaMatcher: newNetworkingMatcher(aShoot.Spec),
-			expected:      eShoot.Spec.Networking,
+			GomegaMatcher: newNetworkingMatcher(shootActual.Spec),
+			actual:        shootToMatch.Spec.Networking,
 			path:          "spec/networking",
 		},
 		{
-			GomegaMatcher: newMaintenanceMatcher(eShoot.Spec),
-			expected:      aShoot.Spec.Maintenance,
+			GomegaMatcher: newMaintenanceMatcher(shootToMatch.Spec),
+			actual:        shootActual.Spec.Maintenance,
 			path:          "spec/maintenance",
 		},
 		{
-			GomegaMatcher: gomega.BeComparableTo(eShoot.Spec.Purpose),
-			expected:      aShoot.Spec.Purpose,
+			GomegaMatcher: gomega.BeComparableTo(shootToMatch.Spec.Purpose),
+			actual:        shootActual.Spec.Purpose,
 			path:          "spec/purpose",
 		},
 		{
-			GomegaMatcher: gomega.BeComparableTo(eShoot.Spec.Region),
-			expected:      aShoot.Spec.Region,
+			GomegaMatcher: gomega.BeComparableTo(shootToMatch.Spec.Region),
+			actual:        shootActual.Spec.Region,
 			path:          "spec/region",
 		},
 		{
-			GomegaMatcher: gomega.BeComparableTo(eShoot.Spec.SecretBindingName),
-			expected:      aShoot.Spec.SecretBindingName,
+			GomegaMatcher: gomega.BeComparableTo(shootToMatch.Spec.SecretBindingName),
+			actual:        shootActual.Spec.SecretBindingName,
 			path:          "spec/secretBindingName",
 		},
 		{
-			GomegaMatcher: newDNSMatcher(aShoot.Spec.DNS),
+			GomegaMatcher: newDNSMatcher(shootActual.Spec.DNS),
 			path:          "spec/dns",
-			expected:      eShoot.Spec.DNS,
+			actual:        shootToMatch.Spec.DNS,
 		},
 		{
 			GomegaMatcher: gstruct.MatchElements(
 				idToleration,
 				gstruct.IgnoreExtras,
-				tolerations(aShoot.Spec.Tolerations),
+				tolerations(shootActual.Spec.Tolerations),
 			),
-			expected: eShoot.Spec.Tolerations,
-			path:     "spec/tolerations",
+			actual: shootToMatch.Spec.Tolerations,
+			path:   "spec/tolerations",
 		},
 		{
-			GomegaMatcher: gomega.BeComparableTo(eShoot.Spec.ExposureClassName),
-			expected:      aShoot.Spec.ExposureClassName,
+			GomegaMatcher: gomega.BeComparableTo(shootToMatch.Spec.ExposureClassName),
+			actual:        shootActual.Spec.ExposureClassName,
 			path:          "spec/exposureClassName",
 		},
 		{
-			GomegaMatcher: gomega.BeComparableTo(eShoot.Spec.ControlPlane),
-			expected:      aShoot.Spec.ControlPlane,
+			GomegaMatcher: gomega.BeComparableTo(shootToMatch.Spec.ControlPlane),
+			actual:        shootActual.Spec.ControlPlane,
 			path:          "spec/controlPlane",
 		},
 		{
-			GomegaMatcher: gomega.BeComparableTo(eShoot.Spec.CloudProfile),
-			expected:      aShoot.Spec.CloudProfile,
+			GomegaMatcher: gomega.BeComparableTo(shootToMatch.Spec.CloudProfile),
+			actual:        shootActual.Spec.CloudProfile,
 			path:          "spec/cloudProfile",
 		},
 		{
-			GomegaMatcher: NewProviderMatcher(eShoot.Spec.Provider, "spec/provider"),
-			expected:      aShoot.Spec.Provider,
+			GomegaMatcher: NewProviderMatcher(shootToMatch.Spec.Provider, "spec/provider"),
+			actual:        shootActual.Spec.Provider,
 			path:          "spec/provider",
 		},
 		{
-			GomegaMatcher: gomega.SatisfyAll(mapMatchers(aShoot.Labels)...),
-			expected:      eShoot.Labels,
+			GomegaMatcher: gomega.SatisfyAll(mapMatchers(shootActual.Labels)...),
+			actual:        shootToMatch.Labels,
 			path:          "metadata/labels",
 		},
 		{
-			GomegaMatcher: gomega.SatisfyAll(mapMatchers(aShoot.Annotations)...),
-			expected:      eShoot.Annotations,
+			GomegaMatcher: gomega.SatisfyAll(mapMatchers(shootActual.Annotations)...),
+			actual:        shootToMatch.Annotations,
 			path:          "metadata/annotations",
 		},
 	}
 
 	for _, matcher := range matchers {
-		ok, err := matcher.Match(matcher.expected)
+		ok, err := matcher.Match(matcher.actual)
 		if err != nil {
 			return false, err
 		}
 
 		if !ok {
-			msg := matcher.FailureMessage(matcher.expected)
+			msg := matcher.FailureMessage(matcher.actual)
 			if matcher.path != "" {
 				msg = fmt.Sprintf("%s: %s", matcher.path, msg)
 			}
