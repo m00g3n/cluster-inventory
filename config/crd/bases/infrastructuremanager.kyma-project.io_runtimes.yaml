@@ -279,8 +279,6 @@ spec:
                                   the value '-'.
                                 type: string
                             type: object
-                        required:
-                        - oidcConfig
                         type: object
                       version:
                         type: string

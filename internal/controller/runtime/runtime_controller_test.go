@@ -18,15 +18,16 @@ package runtime
 
 import (
 	"context"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"time"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -106,9 +107,19 @@ var _ = Describe("Runtime Controller", func() {
 					return false
 				}
 
+				if !runtime.IsConditionSet(imv1.ConditionTypeOidcConfigured, imv1.ConditionReasonOidcConfigured) {
+					return false
+				}
+
+				if !runtime.IsConditionSetWithStatus(imv1.ConditionTypeOidcConfigured, imv1.ConditionReasonOidcConfigured, metav1.ConditionTrue) {
+					return false
+				}
+
 				if !runtime.IsConditionSet(imv1.ConditionTypeAuditLogConfigured, imv1.ConditionReasonAuditLogConfigured) {
 					return false
 				}
+
+				//TODO: condition should be 'TRUE'
 
 				return true
 			}, time.Second*300, time.Second*3).Should(BeTrue())
@@ -167,7 +178,6 @@ var _ = Describe("Runtime Controller", func() {
 			Expect(customTracker.IsSequenceFullyUsed()).To(BeTrue())
 
 			// next test will be for runtime deletion
-
 			By("Process deleting of Runtime CR and delete GardenerCluster CR and Shoot")
 			setupGardenerTestClientForDelete()
 
@@ -242,6 +252,7 @@ func CreateRuntimeStub(resourceName string) *imv1.Runtime {
 				imv1.LabelKymaSubaccountID:        "c5ad84ae-3d1b-4592-bee1-f022661f7b30",
 				imv1.LabelControlledByProvisioner: "false",
 			},
+			Generation: 1,
 		},
 		Spec: imv1.RuntimeSpec{
 			Shoot: imv1.RuntimeShoot{
@@ -257,6 +268,18 @@ func CreateRuntimeStub(resourceName string) *imv1.Runtime {
 					},
 				},
 				Region: "eu-central-1",
+				Kubernetes: imv1.Kubernetes{
+					KubeAPIServer: imv1.APIServer{
+						OidcConfig: gardener.OIDCConfig{
+							ClientID:       ptr.To("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+							GroupsClaim:    ptr.To("groups"),
+							IssuerURL:      ptr.To("https://example.com"),
+							SigningAlgs:    []string{"RSA256"},
+							UsernameClaim:  ptr.To("sub"),
+							UsernamePrefix: ptr.To("-"),
+						},
+					},
+				},
 			},
 			Security: imv1.Security{
 				Administrators: []string{

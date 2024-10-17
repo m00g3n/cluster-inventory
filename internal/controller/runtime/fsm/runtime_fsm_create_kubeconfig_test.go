@@ -99,7 +99,7 @@ var _ = Describe("KIM sFnCreateKubeconfig", func() {
 			&systemState{instance: *inputRtWithLabelsAndCondition, shoot: &testShoot},
 			testOpts{
 				MatchExpectedErr: BeNil(),
-				MatchNextFnState: haveName("sFnApplyClusterRoleBindings"),
+				MatchNextFnState: haveName("sFnConfigureOidc"),
 			},
 		),
 		Entry(

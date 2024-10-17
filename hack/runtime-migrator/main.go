@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/hack/runtime-migrator-app/internal/comparator"
+	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
 	"log"
 	"os"
 	"slices"
@@ -12,7 +14,7 @@ import (
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_types "github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1beta1"
 	v1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	migrator "github.com/kyma-project/infrastructure-manager/hack/runtime-migrator/internal"
+	migrator "github.com/kyma-project/infrastructure-manager/hack/runtime-migrator-app/internal"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener"
 	"github.com/kyma-project/infrastructure-manager/internal/gardener/kubeconfig"
 	"github.com/pkg/errors"
@@ -38,6 +40,12 @@ func main() {
 	cfg := migrator.NewConfig()
 	migratorContext, cancel := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancel()
+
+	converterConfig, err := migrator.LoadConverterConfig(cfg)
+	if err != nil {
+		log.Print("failed to read converterConfig file - ", err)
+		return
+	}
 
 	runtimeIDs := getRuntimeIDsFromStdin(cfg)
 	gardenerNamespace := fmt.Sprintf("garden-%s", cfg.GardenerProjectName)
@@ -80,8 +88,39 @@ func main() {
 			results = appendResult(results, shoot, migrator.StatusFailedToCreateRuntimeCR, runtimeCrErr)
 			continue
 		}
+		// runtime cr -> shoot
+		converter := gardener_shoot.NewConverter(converterConfig)
+		shootFromConverter, err := converter.ToShoot(runtime)
+		if err != nil {
+			log.Print("Error during converting generated RuntimeCR to Shoot object - ", err)
+			continue
+		}
 
-		err := saveRuntime(migratorContext, cfg, runtime, kcpClient)
+		// compare Gardener shoot with shoot from converter
+		result, err := comparator.CompareShoots(shoot, shootFromConverter)
+		if err != nil {
+			log.Print("Error during comparing shoots - ", err)
+			continue
+		}
+
+		saveShootToFile("/tmp/"+shoot.Name+"/original_shoot.yaml", shoot)
+		saveShootToFile("/tmp/"+shoot.Name+"/converted_shoot.yaml", shootFromConverter)
+
+		// save comparison report with differences
+		resultsDir, err := comparator.SaveComparisonReport(result, cfg.OutputPath, shoot.Name)
+		if err != nil {
+			log.Print("Failed to save comparison report - ", err.Error())
+			continue
+		} else {
+			log.Printf("Results stored in %q", resultsDir)
+		}
+
+		if !result.Equal {
+			log.Print("Generated Shoot and Shoot from converter are not equal, stopping migration of shoot: ", shoot.Name)
+			continue
+		}
+
+		err = saveRuntime(migratorContext, cfg, runtime, kcpClient)
 		if err != nil {
 			log.Printf("Failed to apply runtime CR, %s\n", err)
 
@@ -435,10 +474,26 @@ func getAllRuntimeLabels(ctx context.Context, shoot v1beta1.Shoot, getClient mig
 	enrichedRuntimeLabels["kyma-project.io/region"] = gardenerCluster.Labels["kyma-project.io/region"]
 	enrichedRuntimeLabels["kyma-project.io/shoot-name"] = gardenerCluster.Labels["kyma-project.io/shoot-name"]
 	enrichedRuntimeLabels["operator.kyma-project.io/kyma-name"] = gardenerCluster.Labels["operator.kyma-project.io/kyma-name"]
-	// The runtime CR should be controlled by the KIM
-	enrichedRuntimeLabels["kyma-project.io/controlled-by-provisioner"] = "false"
+	// The runtime CR should be controlled by the KIM in dry-run mode
+	enrichedRuntimeLabels["kyma-project.io/controlled-by-provisioner"] = "true"
 	// add custom label for the migrator
 	enrichedRuntimeLabels[migratorLabel] = "true"
 
 	return enrichedRuntimeLabels, err
+}
+
+func saveShootToFile(filePath string, shoot interface{}) {
+	shootAsYaml, err := yaml.Marshal(shoot)
+	if err != nil {
+		log.Printf("Failed to marshal shoot to YAML: %s", err)
+		return
+	}
+
+	err = os.WriteFile(filePath, shootAsYaml, 0644)
+	if err != nil {
+		log.Printf("Failed to write shoot to file %s: %s", filePath, err)
+		return
+	}
+
+	log.Printf("Shoot has been saved to %s\n", filePath)
 }
