@@ -120,11 +120,11 @@ func workers(ws []v1beta1.Worker) gstruct.Elements {
 	for _, w := range ws {
 		ID := idWorker(w)
 		out[ID] = gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-			"Annotations": gomega.SatisfyAll(mapMatchers(w.Annotations)...),
-			"CABundle":    gomega.BeComparableTo(w.CABundle),
-			"CRI":         newCRIMatcher(w.CRI),
+			"Annotations": gstruct.Ignore(),
+			"CABundle":    gstruct.Ignore(),
+			"CRI":         gstruct.Ignore(),
 			"Kubernetes":  gstruct.Ignore(),
-			"Labels":      gomega.SatisfyAll(mapMatchers(w.Labels)...),
+			"Labels":      gstruct.Ignore(),
 			"Name":        gomega.BeComparableTo(w.Name),
 			"Machine": gstruct.MatchFields(
 				gstruct.IgnoreMissing,
@@ -141,11 +141,11 @@ func workers(ws []v1beta1.Worker) gstruct.Elements {
 			"Taints":                           gstruct.Ignore(),
 			"Volume":                           gomega.BeComparableTo(w.Volume),
 			"DataVolumes":                      gstruct.Ignore(),
-			"KubeletDataVolumeName":            gomega.BeComparableTo(w.KubeletDataVolumeName),
+			"KubeletDataVolumeName":            gstruct.Ignore(),
 			"Zones":                            gomega.ContainElements(w.Zones),
 			"SystemComponents":                 gstruct.Ignore(),
 			"MachineControllerManagerSettings": gstruct.Ignore(),
-			"Sysctls":                          gomega.SatisfyAll(mapMatchers(w.Sysctls)...),
+			"Sysctls":                          gstruct.Ignore(),
 			"ClusterAutoscaler":                gstruct.Ignore(),
 		})
 	}

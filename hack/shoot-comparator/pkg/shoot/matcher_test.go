@@ -101,7 +101,7 @@ var _ = Describe(":: shoot matcher :: ", func() {
 			false,
 		),
 		Entry(
-			"should skip extra metadata/annotations",
+			"should skip missing metadata/annotations",
 			deepCp(empty, withAnnotations(map[string]string{"test": "me"})),
 			deepCp(empty, withAnnotations(map[string]string{"test": "me", "dżułel": "wuz@here"})),
 			true,
@@ -113,7 +113,7 @@ var _ = Describe(":: shoot matcher :: ", func() {
 			false,
 		),
 		Entry(
-			"should skip extra labels",
+			"should skip missing labels",
 			deepCp(empty, withLabels(map[string]string{"test": "me", "dżułel": "wuz@here"})),
 			deepCp(empty, withLabels(map[string]string{"test": "me"})),
 			true,
@@ -220,7 +220,7 @@ var _ = Describe(":: shoot matcher :: ", func() {
 			false,
 		),
 		Entry(
-			"should detect no differences in spec/exposureClassName #1",
+			"should detect no differences in spec/exposureClassName #2",
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
 				ExposureClassName: ptr.To[string]("mage"),
 			})),
@@ -430,7 +430,7 @@ var _ = Describe(":: shoot matcher :: ", func() {
 			true,
 		),
 		Entry(
-			"should skip extra items in spec/tolerantions",
+			"should skip missing items in spec/tolerantions",
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{})),
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
 				Tolerations: []v1beta1.Toleration{
@@ -1294,90 +1294,9 @@ var _ = Describe(":: shoot matcher :: ", func() {
 					Workers: []v1beta1.Worker{
 						{
 							Name: "iTwurkz",
-							Annotations: map[string]string{
-								"test": "me",
-							},
-						},
-					},
-				},
-			})),
-			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
-				Provider: v1beta1.Provider{
-					Workers: []v1beta1.Worker{
-						{
-							Name: "iTwurkz",
-							Annotations: map[string]string{
-								"test":   "me",
-								"dżułel": "wuz@here",
-							},
-						},
-					},
-				},
-			})),
-			false,
-		),
-		Entry(
-			"should find differences in spec/provider/workers #4",
-			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
-				Provider: v1beta1.Provider{
-					Workers: []v1beta1.Worker{
-						{
-							Name: "iTwurkz",
 						},
 						{
 							Name: "iTwurkz2",
-						},
-					},
-				},
-			})),
-			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
-				Provider: v1beta1.Provider{
-					Workers: []v1beta1.Worker{
-						{
-							Name: "iTwurkz",
-						},
-					},
-				},
-			})),
-			false,
-		),
-		Entry(
-			"should find differences in spec/provider/workers #5",
-			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
-				Provider: v1beta1.Provider{
-					Workers: []v1beta1.Worker{
-						{
-							Name: "iTwurkz",
-							Labels: map[string]string{
-								"test": "me",
-							},
-						},
-					},
-				},
-			})),
-			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
-				Provider: v1beta1.Provider{
-					Workers: []v1beta1.Worker{
-						{
-							Name: "iTwurkz",
-							Labels: map[string]string{
-								"test":   "me",
-								"dżułel": "wuz@here",
-							},
-						},
-					},
-				},
-			})),
-			false,
-		),
-		Entry(
-			"should find differences in spec/provider/workers #6",
-			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
-				Provider: v1beta1.Provider{
-					Workers: []v1beta1.Worker{
-						{
-							Name:     "iTwurkz",
-							CABundle: ptr.To[string]("cabundle"),
 						},
 					},
 				},
@@ -1410,10 +1329,6 @@ var _ = Describe(":: shoot matcher :: ", func() {
 							Labels: map[string]string{
 								"test": "me",
 							},
-							Annotations: map[string]string{
-								"test": "me",
-							},
-							CABundle: ptr.To[string]("testme"),
 							ProviderConfig: &runtime.RawExtension{
 								Raw: []byte("raw stuff here 1"),
 							},
@@ -1442,9 +1357,6 @@ var _ = Describe(":: shoot matcher :: ", func() {
 									Name:    "image1",
 									Version: ptr.To[string]("123"),
 								},
-							},
-							Labels: map[string]string{
-								"test": "me",
 							},
 							Annotations: map[string]string{
 								"test": "me",
