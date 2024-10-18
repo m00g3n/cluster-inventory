@@ -50,7 +50,7 @@ func sFnSelectShootProcessing(_ context.Context, m *fsm, s *systemState) (stateF
 	}
 
 	m.log.Info("Unknown shoot operation type, exiting with no retry")
-	return stopWithMetrics(m.Metrics)
+	return stopWithMetrics()
 }
 
 func shouldPatchShoot(runtime *imv1.Runtime, shoot *gardener.Shoot) (bool, error) {

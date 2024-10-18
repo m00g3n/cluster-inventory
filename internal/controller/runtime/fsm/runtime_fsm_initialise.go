@@ -76,7 +76,7 @@ func sFnInitialize(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.
 	}
 
 	m.log.Info("noting to reconcile, stopping fsm")
-	return stopWithMetrics(m.Metrics)
+	return stopWithMetrics()
 }
 
 func addFinalizerAndRequeue(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {

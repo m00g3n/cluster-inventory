@@ -1,9 +1,9 @@
 package fsm
 
 import (
+	"context"
 	"time"
 
-	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -41,7 +41,9 @@ func switchState(fn stateFn) (stateFn, *ctrl.Result, error) {
 	return fn, nil, nil
 }
 
-func stopWithMetrics(metrics metrics.Metrics) (stateFn, *ctrl.Result, error) {
-	metrics.IncRuntimeFSMStopCounter()
-	return nil, nil, nil
+func stopWithMetrics() (stateFn, *ctrl.Result, error) {
+	return func(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
+		m.Metrics.IncRuntimeFSMStopCounter()
+		return stop()
+	}, nil, nil
 }

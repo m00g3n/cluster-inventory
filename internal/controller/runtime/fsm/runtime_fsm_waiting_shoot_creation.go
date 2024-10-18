@@ -75,7 +75,7 @@ func sFnWaitForShootCreation(_ context.Context, m *fsm, s *systemState) (stateFn
 
 	default:
 		m.log.Info("Unknown shoot operation state, exiting with no retry")
-		return stopWithMetrics(m.Metrics)
+		return stopWithMetrics()
 	}
 }
 

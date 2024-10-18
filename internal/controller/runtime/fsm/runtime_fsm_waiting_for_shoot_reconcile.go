@@ -54,5 +54,5 @@ func sFnWaitForShootReconcile(_ context.Context, m *fsm, s *systemState) (stateF
 	}
 
 	m.log.Info("Update did not processed, exiting with no retry")
-	return stopWithMetrics(m.Metrics)
+	return stopWithMetrics()
 }
