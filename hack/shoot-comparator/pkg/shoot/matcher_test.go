@@ -125,6 +125,70 @@ var _ = Describe(":: shoot matcher :: ", func() {
 			false,
 		),
 		Entry(
+			"should detect differences in spec/secretBindingName #1",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				SecretBindingName: ptr.To[string]("test-1"),
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				SecretBindingName: ptr.To[string]("test-2"),
+			})),
+			false,
+		),
+		Entry(
+			"should detect differences in spec/secretBindingName #2",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				SecretBindingName: ptr.To[string]("test-1"),
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{})),
+			false,
+		),
+		Entry(
+			"should detect differences in spec/secretBindingName #3",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				SecretBindingName: ptr.To[string]("test-1"),
+			})),
+			false,
+		),
+		Entry(
+			"should find no differences in spec #1",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				SecretBindingName: ptr.To[string]("test-1"),
+				Purpose:           ptr.To[v1beta1.ShootPurpose]("test-1"),
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				SecretBindingName: ptr.To[string]("test-1"),
+				Purpose:           ptr.To[v1beta1.ShootPurpose]("test-1"),
+			})),
+			true,
+		),
+		Entry(
+			"should detect differences in spec/purpose #1",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Purpose: ptr.To[v1beta1.ShootPurpose]("test-1"),
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Purpose: ptr.To[v1beta1.ShootPurpose]("test-2"),
+			})),
+			false,
+		),
+		Entry(
+			"should detect differences in spec/purpose #2",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Purpose: ptr.To[v1beta1.ShootPurpose]("test-1"),
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{})),
+			false,
+		),
+		Entry(
+			"should detect differences in spec/purpose #3",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Purpose: ptr.To[v1beta1.ShootPurpose]("test-1"),
+			})),
+			false,
+		),
+		Entry(
 			"should detect differences in spec #1",
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
 				Region: "test1",
@@ -166,7 +230,15 @@ var _ = Describe(":: shoot matcher :: ", func() {
 			true,
 		),
 		Entry(
-			"should detect differences in spec/dns #1",
+			"should detect differences in spec/dns #1 (nil check)",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				DNS: &v1beta1.DNS{},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{})),
+			false,
+		),
+		Entry(
+			"should detect differences in spec/dns #2",
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
 				DNS: &v1beta1.DNS{
 					Domain: ptr.To[string]("test"),
@@ -182,7 +254,7 @@ var _ = Describe(":: shoot matcher :: ", func() {
 			false,
 		),
 		Entry(
-			"should detect differences in spec/dns/providers",
+			"should detect differences in spec/dns/providers #1",
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
 				DNS: &v1beta1.DNS{
 					Domain: ptr.To[string]("test"),
@@ -194,13 +266,72 @@ var _ = Describe(":: shoot matcher :: ", func() {
 						},
 					},
 				},
-				Region: "test1",
 			})),
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
 				DNS: &v1beta1.DNS{
 					Domain: ptr.To[string]("test"),
 				},
-				Region: "test1",
+			})),
+			false,
+		),
+		Entry(
+			"should detect differences in spec/dns/providers #2",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				DNS: &v1beta1.DNS{
+					Providers: []v1beta1.DNSProvider{
+						{
+							Type:       ptr.To[string]("test1"),
+							Primary:    ptr.To[bool](true),
+							SecretName: ptr.To[string]("test"),
+							Domains: &v1beta1.DNSIncludeExclude{
+								Include: []string{"1", "2"},
+							},
+						},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				DNS: &v1beta1.DNS{
+					Providers: []v1beta1.DNSProvider{
+						{
+							Type:       ptr.To[string]("test1"),
+							Primary:    ptr.To[bool](true),
+							SecretName: ptr.To[string]("test"),
+						},
+					},
+				},
+			})),
+			false,
+		),
+		Entry(
+			"should detect differences in spec/dns/providers #3",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				DNS: &v1beta1.DNS{
+					Providers: []v1beta1.DNSProvider{
+						{
+							Type:       ptr.To[string]("test1"),
+							Primary:    ptr.To[bool](true),
+							SecretName: ptr.To[string]("test"),
+							Domains: &v1beta1.DNSIncludeExclude{
+								Include: []string{"1", "2"},
+							},
+						},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				DNS: &v1beta1.DNS{
+					Providers: []v1beta1.DNSProvider{
+						{
+							Type:       ptr.To[string]("test1"),
+							Primary:    ptr.To[bool](true),
+							SecretName: ptr.To[string]("test"),
+							Domains: &v1beta1.DNSIncludeExclude{
+								Include: []string{"1"},
+							},
+						},
+					},
+				},
 			})),
 			false,
 		),
@@ -214,6 +345,14 @@ var _ = Describe(":: shoot matcher :: ", func() {
 							Type:       ptr.To[string]("test1"),
 							Primary:    ptr.To[bool](true),
 							SecretName: ptr.To[string]("test"),
+							Domains: &v1beta1.DNSIncludeExclude{
+								Include: []string{"1"},
+								Exclude: []string{"1", "2"},
+							},
+							Zones: &v1beta1.DNSIncludeExclude{
+								Include: []string{"11"},
+								Exclude: []string{"12", "13"},
+							},
 						},
 					},
 				},
@@ -227,6 +366,10 @@ var _ = Describe(":: shoot matcher :: ", func() {
 							Type:       ptr.To[string]("test1"),
 							Primary:    ptr.To[bool](true),
 							SecretName: ptr.To[string]("test"),
+							Domains: &v1beta1.DNSIncludeExclude{
+								Include: []string{"1"},
+								Exclude: []string{"3", "4"},
+							},
 						},
 					},
 				},
@@ -333,6 +476,7 @@ var _ = Describe(":: shoot matcher :: ", func() {
 						KubernetesVersion:   true,
 						MachineImageVersion: ptr.To[bool](true),
 					},
+					TimeWindow: &v1beta1.MaintenanceTimeWindow{},
 				},
 			})),
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
@@ -341,6 +485,7 @@ var _ = Describe(":: shoot matcher :: ", func() {
 						KubernetesVersion:   true,
 						MachineImageVersion: ptr.To[bool](true),
 					},
+					ConfineSpecUpdateRollout: ptr.To[bool](true),
 				},
 			})),
 			true,
@@ -399,6 +544,9 @@ var _ = Describe(":: shoot matcher :: ", func() {
 					Pods:     ptr.To[string]("pods"),
 					ProviderConfig: &runtime.RawExtension{
 						Raw: []byte("this is"),
+					},
+					IPFamilies: []v1beta1.IPFamily{
+						"ipFamilyGuy",
 					},
 				},
 			})),
@@ -462,18 +610,42 @@ var _ = Describe(":: shoot matcher :: ", func() {
 			"should find no differences in spec/kubernetes/kubeAPIServer #1",
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
 				Kubernetes: v1beta1.Kubernetes{
-					KubeAPIServer: &v1beta1.KubeAPIServerConfig{},
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{
+							CABundle:       ptr.To[string]("test"),
+							ClientID:       ptr.To[string]("test"),
+							GroupsClaim:    ptr.To[string]("test"),
+							SigningAlgs:    []string{"1", "2", "3"},
+							GroupsPrefix:   ptr.To[string]("test"),
+							IssuerURL:      ptr.To[string]("test"),
+							RequiredClaims: map[string]string{"test": "me"},
+							UsernameClaim:  ptr.To[string]("test"),
+							UsernamePrefix: ptr.To[string]("test"),
+						},
+					},
 				},
 			})),
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
 				Kubernetes: v1beta1.Kubernetes{
-					KubeAPIServer: &v1beta1.KubeAPIServerConfig{},
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{
+							CABundle:       ptr.To[string]("test"),
+							ClientID:       ptr.To[string]("test"),
+							GroupsClaim:    ptr.To[string]("test"),
+							SigningAlgs:    []string{"3", "1", "2"},
+							GroupsPrefix:   ptr.To[string]("test"),
+							IssuerURL:      ptr.To[string]("test"),
+							RequiredClaims: map[string]string{"test": "me"},
+							UsernameClaim:  ptr.To[string]("test"),
+							UsernamePrefix: ptr.To[string]("test"),
+						},
+					},
 				},
 			})),
 			true,
 		),
 		Entry(
-			"should find no differences in spec/kubernetes/kubeAPIServer #2",
+			"should find differences in spec/kubernetes/kubeAPIServer #1",
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
 				Kubernetes: v1beta1.Kubernetes{
 					KubeAPIServer: &v1beta1.KubeAPIServerConfig{},
@@ -491,7 +663,7 @@ var _ = Describe(":: shoot matcher :: ", func() {
 			false,
 		),
 		Entry(
-			"should find no differences in spec/kubernetes/kubeAPIServer #3",
+			"should find differences in spec/kubernetes/kubeAPIServer #2",
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
 				Kubernetes: v1beta1.Kubernetes{
 					KubeAPIServer: &v1beta1.KubeAPIServerConfig{},
@@ -509,15 +681,12 @@ var _ = Describe(":: shoot matcher :: ", func() {
 			false,
 		),
 		Entry(
-			"should find no differences in spec/kubernetes/kubeAPIServer #4",
+			"should detect differences in spec/kubernetes/kubeAPIServer #3",
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
 				Kubernetes: v1beta1.Kubernetes{
 					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
 						OIDCConfig: &v1beta1.OIDCConfig{
-							CABundle:    ptr.To[string]("test"),
-							ClientID:    ptr.To[string]("test"),
-							GroupsClaim: ptr.To[string]("test"),
-							SigningAlgs: []string{"1", "2", "3"},
+							GroupsPrefix: ptr.To[string]("test"),
 						},
 					},
 				},
@@ -526,15 +695,216 @@ var _ = Describe(":: shoot matcher :: ", func() {
 				Kubernetes: v1beta1.Kubernetes{
 					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
 						OIDCConfig: &v1beta1.OIDCConfig{
-							CABundle:    ptr.To[string]("test"),
-							ClientID:    ptr.To[string]("test"),
-							GroupsClaim: ptr.To[string]("test"),
-							SigningAlgs: []string{"3", "1", "2"},
+							GroupsPrefix: ptr.To[string]("me"),
 						},
 					},
 				},
 			})),
-			true,
+			false,
+		),
+		Entry(
+			"should detect differences in spec/kubernetes/kubeAPIServer #4",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{
+							IssuerURL: ptr.To[string]("test"),
+						},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{
+							IssuerURL: ptr.To[string]("me"),
+						},
+					},
+				},
+			})),
+			false,
+		),
+		Entry(
+			"should detect differences in spec/kubernetes/kubeAPIServer #5",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{
+							RequiredClaims: map[string]string{"im": "not"},
+						},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{
+							RequiredClaims: map[string]string{"im": "here"},
+						},
+					},
+				},
+			})),
+			false,
+		),
+		Entry(
+			"should detect differences in spec/kubernetes/kubeAPIServer #6",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{
+							RequiredClaims: map[string]string{"im": "alone"},
+						},
+					},
+				},
+			})),
+			false,
+		),
+		Entry(
+			"should detect differences in spec/kubernetes/kubeAPIServer #7",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{
+							RequiredClaims: map[string]string{"im": "alone"},
+						},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{},
+				},
+			})),
+			false,
+		),
+		Entry(
+			"should detect differences in spec/kubernetes/kubeAPIServer #8",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{
+							UsernameClaim: ptr.To[string]("test me"),
+						},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{},
+				},
+			})),
+			false,
+		),
+		Entry(
+			"should detect differences in spec/kubernetes/kubeAPIServer #9",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{
+							UsernameClaim: ptr.To[string]("test me"),
+						},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{
+							UsernameClaim: ptr.To[string]("test me ... not"),
+						},
+					},
+				},
+			})),
+			false,
+		),
+		Entry(
+			"should detect differences in spec/kubernetes/kubeAPIServer #10",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{
+							UsernamePrefix: ptr.To[string]("a"),
+						},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{
+							UsernamePrefix: ptr.To[string]("b"),
+						},
+					},
+				},
+			})),
+			false,
+		),
+		Entry(
+			"should detect differences in spec/kubernetes/kubeAPIServer #11",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{
+							UsernamePrefix: ptr.To[string]("a"),
+						},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{},
+					},
+				},
+			})),
+			false,
+		),
+		Entry(
+			"should detect differences in spec/kubernetes/kubeAPIServer #12",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{
+							UsernamePrefix: ptr.To[string]("a"),
+						},
+					},
+				},
+			})),
+			false,
+		),
+		Entry(
+			"should detect differences in spec/kubernetes/kubeAPIServer #13",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{},
+					},
+				},
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				Kubernetes: v1beta1.Kubernetes{
+					KubeAPIServer: &v1beta1.KubeAPIServerConfig{
+						OIDCConfig: &v1beta1.OIDCConfig{
+							UsernamePrefix: ptr.To[string]("a"),
+						},
+					},
+				},
+			})),
+			false,
 		),
 		Entry(
 			"should find no differences in spec/extensions #1",

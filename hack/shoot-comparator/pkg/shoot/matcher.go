@@ -256,7 +256,8 @@ func providers(ps []v1beta1.DNSProvider) gstruct.Elements {
 				gstruct.MatchFields(
 					gstruct.IgnoreMissing,
 					gstruct.Fields{
-						"Include": gomega.ContainElements(p.Domains.Include),
+						"Include": gomega.BeComparableTo(p.Domains.Include),
+						"Exclude": gstruct.Ignore(),
 					}))
 		}
 
