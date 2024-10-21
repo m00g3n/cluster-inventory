@@ -2,12 +2,12 @@ package extender
 
 import (
 	"encoding/json"
-	"github.com/kyma-project/infrastructure-manager/pkg/gardener/shoot/hyperscaler"
 	"testing"
 
 	"github.com/gardener/gardener-extension-provider-aws/pkg/apis/aws/v1alpha1"
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
+	"github.com/kyma-project/infrastructure-manager/pkg/gardener/shoot/hyperscaler"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
