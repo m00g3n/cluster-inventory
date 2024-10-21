@@ -84,7 +84,7 @@ func Execute() (OperationType, action.Worker, error) {
 			deleteCmd.Usage()
 			os.Exit(1)
 		}
-		fmt.Printf("Deleting load with ID: %s, Kubeconfig: %s\n", *loadIDDelete, *kubeconfig)
+		fmt.Printf("Deleting load with ID: %s, Kubeconfig: %s\n", *loadIDDelete, *kubeconfigDelete)
 		worker, err := action.NewWorker(*loadIDDelete, "", *kubeconfigDelete, 0, imv1.Runtime{})
 		return Delete, worker, err
 	default:
