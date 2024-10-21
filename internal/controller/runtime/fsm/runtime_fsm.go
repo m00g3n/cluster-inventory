@@ -3,6 +3,7 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/pkg/config"
 	"io"
 	"reflect"
 	"runtime"
@@ -11,7 +12,6 @@ import (
 	"github.com/go-logr/logr"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
-	"github.com/kyma-project/infrastructure-manager/internal/config"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"

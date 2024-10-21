@@ -19,6 +19,7 @@ package runtime
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-project/infrastructure-manager/pkg/config"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"path/filepath"
@@ -30,7 +31,6 @@ import (
 	gardener_oidc "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
 	infrastructuremanagerv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/auditlogging"
-	"github.com/kyma-project/infrastructure-manager/internal/config"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics/mocks"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
 	gardener_shoot "github.com/kyma-project/infrastructure-manager/pkg/gardener/shoot"

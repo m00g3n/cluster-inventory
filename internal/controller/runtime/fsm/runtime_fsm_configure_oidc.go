@@ -3,11 +3,11 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/pkg/config"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	authenticationv1alpha1 "github.com/gardener/oidc-webhook-authenticator/apis/authentication/v1alpha1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	"github.com/kyma-project/infrastructure-manager/internal/config"
 	"github.com/kyma-project/infrastructure-manager/pkg/gardener/shoot/extender"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"

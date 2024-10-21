@@ -3,11 +3,11 @@ package fsm
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-project/infrastructure-manager/pkg/config"
 	"time"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	gardener_api "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/kyma-project/infrastructure-manager/internal/config"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
