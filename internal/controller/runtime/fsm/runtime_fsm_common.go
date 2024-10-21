@@ -42,7 +42,7 @@ func switchState(fn stateFn) (stateFn, *ctrl.Result, error) {
 }
 
 func stopWithMetrics() (stateFn, *ctrl.Result, error) {
-	return func(ctx context.Context, m *fsm, s *systemState) (stateFn, *ctrl.Result, error) {
+	return func(_ context.Context, m *fsm, _ *systemState) (stateFn, *ctrl.Result, error) {
 		m.Metrics.IncRuntimeFSMStopCounter()
 		return stop()
 	}, nil, nil
