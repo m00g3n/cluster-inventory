@@ -2,11 +2,11 @@ package shoot
 
 import (
 	"fmt"
+	extender2 "github.com/kyma-project/infrastructure-manager/pkg/gardener/shoot/extender"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
 	"github.com/kyma-project/infrastructure-manager/internal/config"
-	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/extender"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -19,18 +19,18 @@ type Converter struct {
 
 func NewConverter(config config.ConverterConfig) Converter {
 	extenders := []Extend{
-		extender.ExtendWithAnnotations,
-		extender.ExtendWithLabels,
-		extender.NewKubernetesExtender(config.Kubernetes.DefaultVersion),
-		extender.NewProviderExtender(config.Provider.AWS.EnableIMDSv2, config.MachineImage.DefaultName, config.MachineImage.DefaultVersion),
-		extender.NewDNSExtender(config.DNS.SecretName, config.DNS.DomainPrefix, config.DNS.ProviderType),
-		extender.NewOidcExtender(config.Kubernetes.DefaultOperatorOidc),
-		extender.ExtendWithCloudProfile,
-		extender.ExtendWithNetworkFilter,
-		extender.ExtendWithCertConfig,
-		extender.ExtendWithExposureClassName,
-		extender.ExtendWithTolerations,
-		extender.NewMaintenanceExtender(config.Kubernetes.EnableKubernetesVersionAutoUpdate, config.Kubernetes.EnableMachineImageVersionAutoUpdate),
+		extender2.ExtendWithAnnotations,
+		extender2.ExtendWithLabels,
+		extender2.NewKubernetesExtender(config.Kubernetes.DefaultVersion),
+		extender2.NewProviderExtender(config.Provider.AWS.EnableIMDSv2, config.MachineImage.DefaultName, config.MachineImage.DefaultVersion),
+		extender2.NewDNSExtender(config.DNS.SecretName, config.DNS.DomainPrefix, config.DNS.ProviderType),
+		extender2.NewOidcExtender(config.Kubernetes.DefaultOperatorOidc),
+		extender2.ExtendWithCloudProfile,
+		extender2.ExtendWithNetworkFilter,
+		extender2.ExtendWithCertConfig,
+		extender2.ExtendWithExposureClassName,
+		extender2.ExtendWithTolerations,
+		extender2.NewMaintenanceExtender(config.Kubernetes.EnableKubernetesVersionAutoUpdate, config.Kubernetes.EnableMachineImageVersionAutoUpdate),
 	}
 
 	return Converter{
