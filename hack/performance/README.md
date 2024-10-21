@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `rt-load` program is used to generate performance test loads by creating or deleting Runtime resources in a Kubernetes cluster. All of the Runtime Custom Resources created by this program will be linked to the same Gardener cluster.
+The `rt-load` program generates performance test loads by creating or deleting runtime resources in a Kubernetes cluster. All of the runtime custom resources created by this program are linked to the same Gardener cluster.
 
 ## Building the Binary
 
