@@ -30,7 +30,7 @@ func Execute() (OperationType, action.Worker, error) {
 	kubeconfig := createCmd.String("kubeconfig", "", "the path to the kubeconfig file (required)")
 	rtNumber := createCmd.Int("rt-number", 0, "the number of the runtimes to be created (required)")
 	templatePath := createCmd.String("rt-template", "", "the path to the yaml file with the runtime template (required)")
-	runOnCi := createCmd.String("run-on-ci", "false", "identifies if the load is running on CI")
+	runOnCi := createCmd.Bool("run-on-ci", false, "identifies if the load is running on CI")
 
 	loadIDDelete := deleteCmd.String("load-id", "", "the identifier (label) of the created load (required)")
 	kubeconfigDelete := deleteCmd.String("kubeconfig", "", "the path to the kubeconfig file (required)")
@@ -43,31 +43,29 @@ func Execute() (OperationType, action.Worker, error) {
 	switch os.Args[1] {
 	case "create":
 		createCmd.Parse(os.Args[2:])
-		if *loadID == "" || *namePrefix == "" || *kubeconfig == "" || *rtNumber == 0 {
-			fmt.Println("all flags --load-id, --name-prefix, --kubeconfig and --rt-number are required")
+		if *loadID == "" || *namePrefix == "" || *kubeconfig == "" || *rtNumber == 0 || *templatePath == "" {
+			fmt.Println("all flags --load-id, --name-prefix, --kubeconfig, --template-path and --rt-number are required")
 			createCmd.Usage()
 			os.Exit(1)
 		}
 
-		if *templatePath != "" {
-			file, err := os.Open(*templatePath)
+		file, err := os.Open(*templatePath)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "error opening file:", err)
+			return Unknown, nil, err
+		}
+		defer func(file *os.File) {
+			err = file.Close()
 			if err != nil {
-				fmt.Fprintln(os.Stderr, "error opening file:", err)
-				return Unknown, nil, err
+				fmt.Fprintln(os.Stderr, "error closing file:", err)
 			}
-			defer func(file *os.File) {
-				err = file.Close()
-				if err != nil {
-					fmt.Fprintln(os.Stderr, "error closing file:", err)
-				}
-			}(file)
-			parsedRuntime, err = readFromSource(file)
-			if err != nil {
-				return Unknown, nil, err
-			}
+		}(file)
+		parsedRuntime, err = readFromSource(file)
+		if err != nil {
+			return Unknown, nil, err
 		}
 
-		if *runOnCi == "false" {
+		if *runOnCi == false {
 			var response string
 			fmt.Printf("Do you want to create %d runtimes? [y/n]: ", *rtNumber)
 			fmt.Scanln(&response)
@@ -98,6 +96,10 @@ func Execute() (OperationType, action.Worker, error) {
 
 func readFromSource(reader io.Reader) (imv1.Runtime, error) {
 	data, err := io.ReadAll(reader)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error reading file:", err)
+		return imv1.Runtime{}, err
+	}
 	runtime, err := parseInputToRuntime(data)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error parsing input:", err)

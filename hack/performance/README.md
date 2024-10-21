@@ -34,7 +34,7 @@ Creates a specified number of Runtime resources.
 - `--kubeconfig <STRING>`: The path to the Kubeconfig file (**required**).
 - `--rt-number <INT>`: The number of the runtimes to be created (**required**).
 - `--rt-template <STRING>`: The absolute path to the YAML file with the runtime template (**required**).
-- `--run-on-ci <STRING>`: Identifies if the load is running on CI (**optional**, default is `false`).
+- `--run-on-ci <BOOL>`: Identifies if the load is running on CI (**optional**, default is `false`).
 
 #### Example
 
