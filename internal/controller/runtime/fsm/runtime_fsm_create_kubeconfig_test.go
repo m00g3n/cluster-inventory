@@ -3,7 +3,6 @@ package fsm
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/mock"
 	"time"
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -11,6 +10,7 @@ import (
 	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics/mocks"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
+	"github.com/stretchr/testify/mock"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
