@@ -163,7 +163,7 @@ var _ = Describe("KIM sFnInitialise", func() {
 			&systemState{instance: testRtWithDeletionTimestamp},
 			testOpts{
 				MatchExpectedErr: BeNil(),
-				MatchNextFnState: BeNil(),
+				MatchNextFnState: haveName("stopWithMetrics"),
 			},
 		),
 		Entry(
@@ -234,7 +234,7 @@ var _ = Describe("KIM sFnInitialise", func() {
 			&systemState{instance: testDryRunRtWithFinalizerAndProvisioningReadyCondition},
 			testOpts{
 				MatchExpectedErr: BeNil(),
-				MatchNextFnState: BeNil(),
+				MatchNextFnState: haveName("stopWithMetrics"),
 			},
 		),
 		Entry(
