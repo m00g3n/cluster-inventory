@@ -25,7 +25,7 @@ rt-load <command> [options]
 
 ### `create`
 
-Creates a specified number of Runtime resources.
+Creates a specified number of runtime resources.
 
 #### Options
 
@@ -44,7 +44,7 @@ Creates a specified number of Runtime resources.
 
 ### `delete`
 
-Deletes Runtime resources based on the specified load ID.
+Deletes runtime resources based on the specified load ID.
 
 #### Options
 
