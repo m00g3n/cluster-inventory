@@ -7,7 +7,7 @@ import (
 
 	gardener "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	imv1 "github.com/kyma-project/infrastructure-manager/api/v1"
-	"github.com/kyma-project/infrastructure-manager/internal/gardener/shoot/extender"
+	"github.com/kyma-project/infrastructure-manager/pkg/gardener/shoot/extender"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 

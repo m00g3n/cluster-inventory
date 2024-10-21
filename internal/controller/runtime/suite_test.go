@@ -33,7 +33,7 @@ import (
 	"github.com/kyma-project/infrastructure-manager/internal/config"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/metrics/mocks"
 	"github.com/kyma-project/infrastructure-manager/internal/controller/runtime/fsm"
-	gardener_shoot "github.com/kyma-project/infrastructure-manager/internal/gardener/shoot"
+	gardener_shoot "github.com/kyma-project/infrastructure-manager/pkg/gardener/shoot"
 	. "github.com/onsi/ginkgo/v2" //nolint:revive
 	. "github.com/onsi/gomega"    //nolint:revive
 	"github.com/stretchr/testify/mock"
