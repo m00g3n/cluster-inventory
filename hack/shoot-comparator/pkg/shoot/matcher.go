@@ -73,6 +73,11 @@ func (m *Matcher) Match(actual interface{}) (success bool, err error) {
 			path:          "spec/extensions",
 		},
 		{
+			GomegaMatcher: gomega.BeComparableTo(shootToMatch.Spec.CloudProfileName),
+			actual:        shootActual.Spec.CloudProfileName,
+			path:          "spec/cloudProfileName",
+		},
+		{
 			GomegaMatcher: gstruct.MatchFields(gstruct.IgnoreMissing, gstruct.Fields{
 				"ClusterAutoscaler":           gstruct.Ignore(),
 				"KubeAPIServer":               newKubeAPIServerMatcher(shootToMatch.Spec.Kubernetes),
