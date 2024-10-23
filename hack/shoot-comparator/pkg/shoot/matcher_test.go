@@ -125,6 +125,26 @@ var _ = Describe(":: shoot matcher :: ", func() {
 			false,
 		),
 		Entry(
+			"should detect differences in spec/exposureClassName #1",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				ExposureClassName: ptr.To[string]("mage"),
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				ExposureClassName: ptr.To[string]("bard"),
+			})),
+			false,
+		),
+		Entry(
+			"should detect no differences in spec/exposureClassName #1",
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				ExposureClassName: ptr.To[string]("mage"),
+			})),
+			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
+				ExposureClassName: ptr.To[string]("mage"),
+			})),
+			true,
+		),
+		Entry(
 			"should detect differences in spec/secretBindingName #1",
 			deepCp(empty, withShootSpec(v1beta1.ShootSpec{
 				SecretBindingName: ptr.To[string]("test-1"),
