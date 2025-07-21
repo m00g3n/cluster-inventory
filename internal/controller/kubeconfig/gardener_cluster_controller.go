@@ -436,5 +436,9 @@ func (controller *GardenerClusterController) SetupWithManager(mgr ctrl.Manager, 
 			predicate.GenerationChangedPredicate{}),
 		)).
 		WithOptions(pkgctrl.Options{MaxConcurrentReconciles: numberOfWorkers}).
+		//		WithOptions(pkgctrl.Options{
+		//			RateLimiter: workqueue.NewTypedItemExponentialFailureRateLimiter[reconcile.Request](
+		//				10*time.Second, 5*time.Minute),
+		//		}).
 		Complete(controller)
 }
